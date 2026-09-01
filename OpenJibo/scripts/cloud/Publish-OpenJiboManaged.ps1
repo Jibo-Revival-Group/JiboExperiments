@@ -21,4 +21,5 @@ if (-not (Test-Path -LiteralPath $resolvedDockerfilePath)) {
 $image = "$RegistryName.azurecr.io/$ImageName:$Tag"
 
 Write-Host "Building managed Open Jibo image in ACR: $image"
-az acr build --registry $RegistryName --image "$ImageName`:$Tag" --file $resolvedDockerfilePath $repoRoot
+# Managed deployments rely on Azure Speech, so skip baking in whisper.cpp and its model.
+az acr build --registry $RegistryName --image "$ImageName`:$Tag" --file $resolvedDockerfilePath --build-arg ENABLE_LOCAL_WHISPER=false $repoRoot

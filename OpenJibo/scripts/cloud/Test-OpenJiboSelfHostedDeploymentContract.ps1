@@ -1,5 +1,6 @@
 param(
     [string]$ComposePath = "docker-compose.yml",
+    [string]$DockerfilePath = "Dockerfile",
     [string]$WorkflowPath = "../.github/workflows/openjibo-cloud-ci.yml",
     [string]$MigrationScriptPath = "scripts/cloud/Invoke-OpenJiboMigration.ps1",
     [string]$LinuxMigrationScriptPath = "scripts/cloud/invoke-openjibo-migration.sh",
@@ -25,6 +26,7 @@ function Get-RepoFileText {
 }
 
 $composeText = Get-RepoFileText -RelativePath $ComposePath
+$dockerfileText = Get-RepoFileText -RelativePath $DockerfilePath
 $workflowText = Get-RepoFileText -RelativePath $WorkflowPath
 $migrationText = Get-RepoFileText -RelativePath $MigrationScriptPath
 $linuxMigrationText = Get-RepoFileText -RelativePath $LinuxMigrationScriptPath
@@ -136,6 +138,33 @@ if ($composeText -notmatch [regex]::Escape("./scripts/cloud/postgres-init:/docke
 
 if ($composeEnvBootstrapText -notmatch [regex]::Escape("OPENJIBO_POSTGRES_PASSWORD")) {
     throw "Compose env bootstrap is missing the PostgreSQL password propagation logic."
+}
+
+$requiredDockerfileMarkers = @(
+    "ARG ENABLE_LOCAL_WHISPER=true",
+    'whisper-${ENABLE_LOCAL_WHISPER}',
+    "ggml-org/whisper.cpp.git",
+    "download-ggml-model.sh",
+    "/usr/bin/whisper.cpp/build/bin"
+)
+
+foreach ($marker in $requiredDockerfileMarkers) {
+    if ($dockerfileText -notmatch [regex]::Escape($marker)) {
+        throw "Dockerfile is missing expected local Whisper build marker: $marker"
+    }
+}
+
+$requiredComposeWhisperMarkers = @(
+    'ENABLE_LOCAL_WHISPER: ${OPENJIBO_ENABLE_LOCAL_WHISPER:-true}',
+    'WHISPER_MODEL: ${OPENJIBO_WHISPER_MODEL:-base.en}',
+    "OPENJIBO_STT_WHISPER_CLI_PATH",
+    "OPENJIBO_STT_WHISPER_MODEL_PATH"
+)
+
+foreach ($marker in $requiredComposeWhisperMarkers) {
+    if ($composeText -notmatch [regex]::Escape($marker)) {
+        throw "Self-hosted compose is missing expected local Whisper wiring marker: $marker"
+    }
 }
 
 Write-Host "Self-hosted deployment contract checks passed."

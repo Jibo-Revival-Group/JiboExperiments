@@ -19,6 +19,8 @@ Current release truth lives in [docs/development-plan.md](docs/development-plan.
 
 For local setup, use [docs/local-cloud-quickstart.md](docs/local-cloud-quickstart.md).
 
+To self-host the Docker Compose stack on your own hardware, start with [docs/self-hosted-runbook.md](docs/self-hosted-runbook.md).
+
 For device bootstrap and OOBE QR setup, use:
 
 - [docs/device-bootstrap.md](docs/device-bootstrap.md)

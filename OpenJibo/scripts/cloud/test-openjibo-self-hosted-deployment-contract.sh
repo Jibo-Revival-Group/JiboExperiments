@@ -2,6 +2,7 @@
 set -euo pipefail
 
 compose_path="docker-compose.yml"
+dockerfile_path="Dockerfile"
 workflow_path="../.github/workflows/openjibo-cloud-ci.yml"
 migration_script_path="scripts/cloud/Invoke-OpenJiboMigration.ps1"
 linux_migration_script_path="scripts/cloud/invoke-openjibo-migration.sh"
@@ -26,6 +27,7 @@ get_repo_file_text() {
 }
 
 compose_text="$(get_repo_file_text "$compose_path")"
+dockerfile_text="$(get_repo_file_text "$dockerfile_path")"
 workflow_text="$(get_repo_file_text "$workflow_path")"
 migration_text="$(get_repo_file_text "$migration_script_path")"
 linux_migration_text="$(get_repo_file_text "$linux_migration_script_path")"
@@ -154,5 +156,34 @@ if [[ "$compose_env_bootstrap_text" != *"OPENJIBO_POSTGRES_PASSWORD"* ]]; then
   echo "Compose env bootstrap is missing the PostgreSQL password propagation logic." >&2
   exit 1
 fi
+
+required_dockerfile_markers=(
+  "ARG ENABLE_LOCAL_WHISPER=true"
+  "whisper-\${ENABLE_LOCAL_WHISPER}"
+  "ggml-org/whisper.cpp.git"
+  "download-ggml-model.sh"
+  "/usr/bin/whisper.cpp/build/bin"
+)
+
+for marker in "${required_dockerfile_markers[@]}"; do
+  if [[ "$dockerfile_text" != *"$marker"* ]]; then
+    echo "Dockerfile is missing expected local Whisper build marker: $marker" >&2
+    exit 1
+  fi
+done
+
+required_compose_whisper_markers=(
+  "ENABLE_LOCAL_WHISPER: \${OPENJIBO_ENABLE_LOCAL_WHISPER:-true}"
+  "WHISPER_MODEL: \${OPENJIBO_WHISPER_MODEL:-base.en}"
+  "OPENJIBO_STT_WHISPER_CLI_PATH"
+  "OPENJIBO_STT_WHISPER_MODEL_PATH"
+)
+
+for marker in "${required_compose_whisper_markers[@]}"; do
+  if [[ "$compose_text" != *"$marker"* ]]; then
+    echo "Self-hosted compose is missing expected local Whisper wiring marker: $marker" >&2
+    exit 1
+  fi
+done
 
 echo "Self-hosted deployment contract checks passed."

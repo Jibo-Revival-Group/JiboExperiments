@@ -144,4 +144,4 @@ The managed workflow runs PostgreSQL migrations on every deploy before smoke tes
 
 The smoke helper treats `Loop_20160324.SetEnrollment` as best-effort during managed deploys. If the hosted app returns a transient `500` there, the script still continues to the recognition-observation proof so a single enrollment edge case does not block the deploy gate.
 
-See [docs/local-cloud-quickstart.md](../../docs/local-cloud-quickstart.md) for the full local setup guide.
+See [docs/local-cloud-quickstart.md](../../docs/local-cloud-quickstart.md) for the full local (non-Docker) setup guide, and [docs/self-hosted-runbook.md](../../docs/self-hosted-runbook.md) for the single-source-of-truth Docker Compose self-hosting runbook covering configuration, building the container (including local Whisper vs. Azure Speech), and starting the stack.

@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        ENABLE_LOCAL_WHISPER: ${OPENJIBO_ENABLE_LOCAL_WHISPER:-true}
+        WHISPER_MODEL: ${OPENJIBO_WHISPER_MODEL:-base.en}
     image: openjibo-cloud:self-hosted
     env_file:
       - .env
@@ -29,6 +32,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        ENABLE_LOCAL_WHISPER: ${OPENJIBO_ENABLE_LOCAL_WHISPER:-true}
+        WHISPER_MODEL: ${OPENJIBO_WHISPER_MODEL:-base.en}
     image: openjibo-cloud:self-hosted
     env_file:
       - .env
@@ -43,6 +49,9 @@ services:
       OPENJIBO_POSTGRES_PASSWORD: ${OPENJIBO_POSTGRES_PASSWORD}
       OpenJibo__PersonalMemory__Backend: PostgreSql
       OpenJibo__Media__Backend: File
+      OpenJibo__Stt__EnableLocalWhisperCpp: ${OPENJIBO_ENABLE_LOCAL_WHISPER:-true}
+      OPENJIBO_STT_WHISPER_CLI_PATH: /usr/bin/whisper.cpp/build/bin/whisper-cli
+      OPENJIBO_STT_WHISPER_MODEL_PATH: /usr/bin/whisper.cpp/models/ggml-${OPENJIBO_WHISPER_MODEL:-base.en}.bin
       OpenJibo__State__PersistencePath: /data/state/cloud-state.json
       OpenJibo__PersonalMemory__PersistencePath: /data/personal-memory/personal-memory.json
       OpenJibo__Media__DirectoryPath: /data/media

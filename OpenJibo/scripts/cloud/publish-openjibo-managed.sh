@@ -57,4 +57,5 @@ fi
 
 echo "Building managed Open Jibo image in ACR: ${registry_name}.azurecr.io/${image_name}:${tag}"
 cd "$repo_root"
-exec az acr build --registry "$registry_name" --image "${image_name}:${tag}" --file "$resolved_dockerfile_path" "$repo_root"
+# Managed deployments rely on Azure Speech, so skip baking in whisper.cpp and its model.
+exec az acr build --registry "$registry_name" --image "${image_name}:${tag}" --file "$resolved_dockerfile_path" --build-arg ENABLE_LOCAL_WHISPER=false "$repo_root"

@@ -454,6 +454,11 @@ for marker in "apt-get install -y --no-install-recommends ffmpeg" "/usr/bin/ffmp
   fi
 done
 
+if [[ "$linux_publish_script_text" != *"--build-arg ENABLE_LOCAL_WHISPER=false"* ]]; then
+  echo "Linux publish script must build managed images with ENABLE_LOCAL_WHISPER=false to stay on Azure Speech and avoid baking in whisper.cpp." >&2
+  exit 1
+fi
+
 for forbidden_marker in "OPENJIBO_MEDIA_CONNECTION_STRING" "OPENJIBO_STATE_CONNECTION_STRING" "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING" "openjiboacr" "openjibokv" "-MediaConnectionString" "output storageConnectionString" "listKeys(storageAccount" "keyvault set-policy" "AZURE_SPEECH_SUBSCRIPTION_KEY" "--azure-speech-subscription-key"; do
   if [[ "$workflow_text" == *"$forbidden_marker"* ]]; then
     echo "Workflow still references forbidden marker: $forbidden_marker" >&2

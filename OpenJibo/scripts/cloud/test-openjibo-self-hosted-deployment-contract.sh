@@ -10,6 +10,7 @@ smoke_script_path="scripts/cloud/invoke-cloud-smoke.sh"
 stack_script_path="scripts/cloud/invoke-openjibo-self-hosted-stack.sh"
 postgres_init_script_path="scripts/cloud/postgres-init/01-create-databases.sh"
 compose_env_bootstrap_script_path="scripts/cloud/initialize-openjibo-compose-env.sh"
+runbook_path="docs/self-hosted-runbook.md"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
@@ -35,6 +36,7 @@ smoke_text="$(get_repo_file_text "$smoke_script_path")"
 stack_text="$(get_repo_file_text "$stack_script_path")"
 postgres_init_text="$(get_repo_file_text "$postgres_init_script_path")"
 compose_env_bootstrap_text="$(get_repo_file_text "$compose_env_bootstrap_script_path")"
+runbook_text="$(get_repo_file_text "$runbook_path")"
 
 required_compose_markers=(
   "services:"
@@ -80,6 +82,8 @@ required_workflow_markers=(
   "invoke-openjibo-self-hosted-stack.sh"
   "test-openjibo-self-hosted-deployment-contract.sh"
   "invoke-cloud-smoke.sh"
+  "Repeat startup with persisted volumes"
+  "invoke-openjibo-self-hosted-stack.sh --skip-build"
 )
 
 for marker in "${required_compose_markers[@]}"; do
@@ -151,6 +155,42 @@ if [[ "$postgres_init_text" != *"openjibo_memory"* ]]; then
   echo "Self-hosted postgres init script is missing the memory database creation." >&2
   exit 1
 fi
+
+
+assert_compose_contract() {
+  local pattern="$1"
+  local message="$2"
+  if ! grep -Pzoq "$pattern" <<< "$compose_text"; then
+    echo "$message" >&2
+    exit 1
+  fi
+}
+
+assert_compose_contract '(?s)migrate:\s+.*?command:\s+.*?- /app/migrations/Jibo\.Cloud\.Migrations\.dll\s+.*?- --apply\s+.*?- --target\s+.*?- all' 'Migration service must apply all migrations with the checked-in migration binary.'
+assert_compose_contract '(?s)api:\s+.*?depends_on:\s+.*?migrate:\s+.*?condition: service_completed_successfully' 'API must wait for a successful migration service.'
+assert_compose_contract '(?s)migrate:\s+.*?depends_on:\s+.*?postgres:\s+.*?condition: service_healthy' 'Migration service must wait for healthy PostgreSQL.'
+assert_compose_contract '(?s)api:\s+.*?volumes:\s+.*?- api-data:/data' 'API must use the persistent api-data volume.'
+assert_compose_contract '(?s)postgres:\s+.*?volumes:\s+.*?- postgres-data:/var/lib/postgresql/data' 'PostgreSQL must use the persistent postgres-data volume.'
+
+required_runbook_markers=(
+  "docker compose exec -T postgres pg_dump"
+  "openjibo_state"
+  "openjibo_memory"
+  "-Preview"
+  "--preview"
+  "docker compose logs --no-color migrate"
+  "docker compose logs --no-color postgres"
+  "docker compose down -v"
+  "28P01: password authentication failed"
+  "\\password openjibo"
+)
+
+for marker in "${required_runbook_markers[@]}"; do
+  if [[ "$runbook_text" != *"$marker"* ]]; then
+    echo "Self-hosted runbook is missing required migration/recovery guidance: $marker" >&2
+    exit 1
+  fi
+done
 
 if [[ "$compose_env_bootstrap_text" != *"OPENJIBO_POSTGRES_PASSWORD"* ]]; then
   echo "Compose env bootstrap is missing the PostgreSQL password propagation logic." >&2

@@ -54,11 +54,81 @@ Speech-to-text options (see [section 4](#4-speech-to-text-local-whisper-vs-azure
 This builds the `api`/`migrate` image (installing whisper.cpp and its model as part of the build, unless disabled), starts PostgreSQL, applies migrations, and starts the API on port `8080`.
 
 - Use `-SkipBuild` / `--skip-build` on later runs if you have not changed the Dockerfile, `.env` whisper settings, or source.
-- Omit `-RunMigration` / `--run-migration` once your schema is already up to date; the compose file only prevents `api` from starting before `migrate` completes on first bring-up.
+- Migrations are a required, idempotent startup dependency: Compose runs `migrate` before `api` on every stack startup, and already-applied migration scripts are skipped by the migration ledger.
+- `-RunMigration` / `--run-migration` explicitly targets the migration service for visibility and compatibility with the initial bring-up/retry procedure; it is not a switch that disables migrations. Use `-SkipBuild` / `--skip-build` for repeat starts when the image does not need rebuilding.
 
 Rebuild is required any time you change `OPENJIBO_ENABLE_LOCAL_WHISPER` or `OPENJIBO_WHISPER_MODEL`, since those are Docker build arguments, not just runtime environment variables.
 
-## 4. Speech-to-text: local Whisper vs Azure Speech
+## 4. Database backups and migrations
+
+The PostgreSQL volume is persistent. Before applying a schema migration or restoring data, make a plain-SQL backup of both databases and keep the files outside Docker's managed volumes:
+
+```powershell
+New-Item -ItemType Directory -Force backups | Out-Null
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+docker compose exec -T postgres pg_dump -U openjibo -d openjibo_state > "backups\openjibo_state-$stamp.sql"
+docker compose exec -T postgres pg_dump -U openjibo -d openjibo_memory > "backups\openjibo_memory-$stamp.sql"
+```
+
+```bash
+mkdir -p backups
+stamp="$(date -u +%Y%m%d-%H%M%S)"
+docker compose exec -T postgres pg_dump -U openjibo -d openjibo_state > "backups/openjibo_state-${stamp}.sql"
+docker compose exec -T postgres pg_dump -U openjibo -d openjibo_memory > "backups/openjibo_memory-${stamp}.sql"
+```
+
+Protect these files as production data. Do not commit them or leave them in a shared directory.
+
+For a migration review, the existing wrappers support a non-mutating preview. Run them from the repository root with the PostgreSQL connection environment set to the exposed Compose database (`localhost:5432`) and the same credentials as `.env`:
+
+```powershell
+$env:OPENJIBO_POSTGRES_HOST = "localhost"
+$env:OPENJIBO_POSTGRES_PORT = "5432"
+$env:OPENJIBO_POSTGRES_USER = "openjibo"
+$env:OPENJIBO_POSTGRES_PASSWORD = "<the value from .env>"
+.\scripts\cloud\Invoke-OpenJiboMigration.ps1 -Target all -Preview
+.\scripts\cloud\Invoke-OpenJiboMigration.ps1 -Target all
+```
+
+```bash
+export OPENJIBO_POSTGRES_HOST=localhost
+export OPENJIBO_POSTGRES_PORT=5432
+export OPENJIBO_POSTGRES_USER=openjibo
+export OPENJIBO_POSTGRES_PASSWORD='<the value from .env>'
+./scripts/cloud/invoke-openjibo-migration.sh --target all --preview
+./scripts/cloud/invoke-openjibo-migration.sh --target all
+```
+
+The normal containerized apply path is the stack launcher documented in section 3 (`-RunMigration` / `--run-migration`). Review the preview output and confirm the backups exist before applying. Do not use legacy import switches unless you are intentionally importing a preserved legacy snapshot.
+
+If migration fails, migrations are transactional. Do not delete the volumes. Inspect the failure and retry after correcting the cause:
+
+```text
+docker compose ps -a
+docker compose logs --no-color migrate
+docker compose logs --no-color postgres
+```
+
+Then rerun the launcher with `-RunMigration` / `--run-migration` (and `-SkipBuild` / `--skip-build` when the image does not need rebuilding). If the backup must be restored, stop `api`, restore the corresponding SQL dump into its matching database with `psql`, verify both databases, and rerun the migration. Keep the pre-migration dumps until the API and robot inventory have been verified.
+
+### PostgreSQL password changes
+
+Changing `OPENJIBO_POSTGRES_PASSWORD` in `.env` does not change the password stored inside an existing PostgreSQL volume; the init environment is only applied when the database is first initialized. That mismatch causes `28P01: password authentication failed` from `migrate` and `api`.
+
+For a safe rotation, stop the API, connect through the local Compose socket, and use `psql`'s interactive password command so the new password is not placed in shell history:
+
+```text
+docker compose stop api
+docker compose exec postgres psql -U openjibo -d openjibo_state
+\password openjibo
+\q
+```
+
+After `\password` succeeds, update `OPENJIBO_POSTGRES_PASSWORD` in `.env` to the same value, then recreate the API with the documented launcher (`-SkipBuild` / `--skip-build`). Test `/health` before reconnecting robots. If the old role password is unavailable, restore from a known-good backup or use an administrative PostgreSQL role; do not destroy `postgres-data` as a password-recovery shortcut.
+
+> **Data-loss warning:** `docker compose down -v` removes the persistent `postgres-data` and `api-data` volumes. Use ordinary `docker compose down` when stopping the stack. Use `down -v` only when intentionally resetting the entire self-hosted installation and after confirming backups.
+
+## 5. Speech-to-text: local Whisper vs Azure Speech
 
 By default, the container image builds [whisper.cpp](https://github.com/ggml-org/whisper.cpp) from source and downloads the `base.en` model at build time, landing both at `/usr/bin/whisper.cpp/` inside the image. `docker-compose.yml` wires this up automatically:
 
@@ -86,7 +156,7 @@ OpenJibo__Stt__AzureSpeechSubscriptionKey=<your-key>
 
 Rebuild after changing `OPENJIBO_ENABLE_LOCAL_WHISPER` since it controls which Docker build stage runs.
 
-## 5. Verify the stack
+## 6. Verify the stack
 
 ```powershell
 .\scripts\cloud\Invoke-CloudSmoke.ps1 -BaseUrl http://localhost:8080 -TargetMode open-jibo-self-hosted
@@ -102,7 +172,7 @@ Or just hit the health check directly:
 Invoke-RestMethod http://localhost:8080/health
 ```
 
-## 6. Point a physical Jibo at the stack
+## 7. Point a physical Jibo at the stack
 
 See [docs/single-robot-http-self-hosting.md](single-robot-http-self-hosting.md) for the robot-side override JSON, the tokenless single-robot compatibility flag, and common `WebSocket Exception: Not authorized` / DNS troubleshooting. See [docs/device-bootstrap.md](device-bootstrap.md) for the device bootstrap steps themselves.
 

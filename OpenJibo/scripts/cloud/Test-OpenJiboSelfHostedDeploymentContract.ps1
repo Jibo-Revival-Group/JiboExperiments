@@ -7,7 +7,8 @@ param(
     [string]$SmokeScriptPath = "scripts/cloud/Invoke-CloudSmoke.ps1",
     [string]$LinuxSmokeScriptPath = "scripts/cloud/invoke-cloud-smoke.sh",
     [string]$StackScriptPath = "scripts/cloud/invoke-openjibo-self-hosted-stack.sh",
-    [string]$ComposeEnvBootstrapScriptPath = "scripts/cloud/initialize-openjibo-compose-env.sh"
+    [string]$ComposeEnvBootstrapScriptPath = "scripts/cloud/initialize-openjibo-compose-env.sh",
+    [string]$RunbookPath = "docs/self-hosted-runbook.md"
 )
 
 $ErrorActionPreference = "Stop"
@@ -34,6 +35,7 @@ $smokeText = Get-RepoFileText -RelativePath $SmokeScriptPath
 $linuxSmokeText = Get-RepoFileText -RelativePath $LinuxSmokeScriptPath
 $stackText = Get-RepoFileText -RelativePath $StackScriptPath
 $composeEnvBootstrapText = Get-RepoFileText -RelativePath $ComposeEnvBootstrapScriptPath
+$runbookText = Get-RepoFileText -RelativePath $RunbookPath
 
 $requiredComposeMarkers = @(
     "services:",
@@ -77,7 +79,9 @@ $requiredWorkflowMarkers = @(
     "working-directory: OpenJibo",
     "invoke-openjibo-self-hosted-stack.sh",
     "test-openjibo-self-hosted-deployment-contract.sh",
-    "invoke-cloud-smoke.sh"
+    "invoke-cloud-smoke.sh",
+    "Repeat startup with persisted volumes",
+    "invoke-openjibo-self-hosted-stack.sh --skip-build"
 )
 
 foreach ($marker in $requiredComposeMarkers) {
@@ -140,6 +144,42 @@ if ($composeEnvBootstrapText -notmatch [regex]::Escape("OPENJIBO_POSTGRES_PASSWO
     throw "Compose env bootstrap is missing the PostgreSQL password propagation logic."
 }
 
+function Assert-ContractPattern {
+    param(
+        [string]$Text,
+        [string]$Pattern,
+        [string]$FailureMessage
+    )
+
+    if (-not [regex]::IsMatch($Text, $Pattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+        throw $FailureMessage
+    }
+}
+
+Assert-ContractPattern $composeText 'migrate:\s+.*?command:\s+.*?- /app/migrations/Jibo\.Cloud\.Migrations\.dll\s+.*?- --apply\s+.*?- --target\s+.*?- all' 'Migration service must apply all migrations with the checked-in migration binary.'
+Assert-ContractPattern $composeText 'api:\s+.*?depends_on:\s+.*?migrate:\s+.*?condition: service_completed_successfully' 'API must wait for a successful migration service.'
+Assert-ContractPattern $composeText 'migrate:\s+.*?depends_on:\s+.*?postgres:\s+.*?condition: service_healthy' 'Migration service must wait for healthy PostgreSQL.'
+Assert-ContractPattern $composeText 'api:\s+.*?volumes:\s+.*?- api-data:/data' 'API must use the persistent api-data volume.'
+Assert-ContractPattern $composeText 'postgres:\s+.*?volumes:\s+.*?- postgres-data:/var/lib/postgresql/data' 'PostgreSQL must use the persistent postgres-data volume.'
+
+$requiredRunbookMarkers = @(
+    "docker compose exec -T postgres pg_dump",
+    "openjibo_state",
+    "openjibo_memory",
+    "-Preview",
+    "--preview",
+    "docker compose logs --no-color migrate",
+    "docker compose logs --no-color postgres",
+    "docker compose down -v",
+    "28P01: password authentication failed",
+    "\password openjibo"
+)
+
+foreach ($marker in $requiredRunbookMarkers) {
+    if ($runbookText -notmatch [regex]::Escape($marker)) {
+        throw "Self-hosted runbook is missing required migration/recovery guidance: $marker"
+    }
+}
 $requiredDockerfileMarkers = @(
     "ARG ENABLE_LOCAL_WHISPER=true",
     'whisper-${ENABLE_LOCAL_WHISPER}',

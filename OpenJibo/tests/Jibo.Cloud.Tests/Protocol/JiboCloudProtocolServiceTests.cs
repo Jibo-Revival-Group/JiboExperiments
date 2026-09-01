@@ -576,6 +576,32 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public void NewRobotToken_FriendlyIdentityReusesExistingCanonicalDevice()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "physical-device-001",
+            RobotId = "Royal-Current-Sage-Canvas",
+            FriendlyName = "Royal-Current-Sage-Canvas",
+            RegistrationSource = RobotRegistrationSources.Physical
+        });
+        var handler = new CloudAuthProtocolHandler(store);
+
+        var result = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"Royal-Current-Sage-Canvas"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var session = store.FindSessionByToken(payload.RootElement.GetProperty("token").GetString()!);
+        Assert.NotNull(session);
+        Assert.Equal("physical-device-001", session.DeviceId);
+        Assert.DoesNotContain(store.GetDevices(), device =>
+            device.DeviceId.Equals("Royal-Current-Sage-Canvas", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task GetRobot_WithRequestedId_DoesNotMutateRobotOrProfile()
     {
         var store = new InMemoryCloudStateStore();

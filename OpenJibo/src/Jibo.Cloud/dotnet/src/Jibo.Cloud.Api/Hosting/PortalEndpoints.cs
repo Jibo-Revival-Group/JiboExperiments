@@ -1253,7 +1253,8 @@ internal static class PortalEndpoints
                 item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
 
-            foreach (var robotSession in cloudStateStore.GetSessions().Where(item => SessionMatchesDevice(item, device)))
+            foreach (var robotSession in cloudStateStore.GetSessions()
+                         .Where(item => SessionProvidesIdentityEvidenceForDevice(item, device)))
             {
                 foreach (var key in new[] { "robotFriendlyId", "friendlyId", "registeredRobotId", "robotId" })
                 {
@@ -2365,6 +2366,10 @@ internal static class PortalEndpoints
         return IdentityMatches(ReadSessionMetadata(session, "registeredDeviceId"), device.DeviceId) ||
                IdentityMatches(ReadSessionMetadata(session, "registeredRobotId"), device.RobotId);
     }
+
+    private static bool SessionProvidesIdentityEvidenceForDevice(CloudSession session, DeviceRegistration device) =>
+        SessionMatchesDevice(session, device) ||
+        IdentityMatches(ReadSessionMetadata(session, "identitySuggestionDeviceId"), device.DeviceId);
 
     private static IEnumerable<string> GetSessionIdentityValues(CloudSession session)
     {

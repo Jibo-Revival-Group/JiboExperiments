@@ -214,6 +214,8 @@ public static class ServiceCollectionExtensions
             });
             services.AddSingleton<ICloudStateSecretProtector>(provider =>
                 new UserDataCloudStateSecretProtector(provider.GetRequiredService<UserDataEncryptionService>()));
+            services.AddSingleton<IRobotIdentitySuggestionRepository,
+                PostgreSqlRobotIdentitySuggestionRepository>();
             services.AddSingleton<IBackupPayloadStore, MediaContentBackupPayloadStore>();
             services.AddSingleton<ICloudStateStore>(provider => new PostgreSqlCloudStateStore(
                 provider.GetRequiredService<PostgreSqlCloudStateDataSource>(),
@@ -308,7 +310,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<RobotPendingNotificationStore>();
         services.AddSingleton<RobotNotificationRegistry>();
         services.AddSingleton<RobotPresenceRegistry>();
-        services.AddSingleton<RobotIdentitySuggestionStore>();
+        services.AddSingleton(provider => new RobotIdentitySuggestionStore(
+            provider.GetRequiredService<ICloudStateStore>(),
+            provider.GetService<IRobotIdentitySuggestionRepository>()));
         services.AddSingleton(provider => new OpenJiboServerIdentity(
             configuration?["OpenJibo:CanonicalApiHostname"]));
         services.AddSingleton<FleetNetworkPresenceRegistry>();

@@ -23,4 +23,17 @@ public sealed class CloudStateMigrationSchemaTests
             forwardMigration,
             StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void RobotIdentitySuggestions_AreDurableAndCaseInsensitive()
+    {
+        var migration = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
+            "008_create_robot_identity_suggestions.state.sql"));
+
+        Assert.Contains("CREATE TABLE IF NOT EXISTS RobotIdentitySuggestions", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("LOWER(ObservedDeviceId), LOWER(ProposedRobotId)", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("DismissedUtc IS NULL", migration, StringComparison.OrdinalIgnoreCase);
+    }
 }

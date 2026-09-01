@@ -28,12 +28,24 @@ public sealed class CloudStateMigrationSchemaTests
     public void RobotIdentitySuggestions_AreDurableAndCaseInsensitive()
     {
         var migration = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
-            "008_create_robot_identity_suggestions.state.sql"));
+            "009_create_robot_identity_suggestions.state.sql"));
 
         Assert.Contains("CREATE TABLE IF NOT EXISTS RobotIdentitySuggestions", migration,
             StringComparison.OrdinalIgnoreCase);
         Assert.Contains("LOWER(ObservedDeviceId), LOWER(ProposedRobotId)", migration,
             StringComparison.OrdinalIgnoreCase);
         Assert.Contains("DismissedUtc IS NULL", migration, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void UserDevices_EnforceOneCurrentOwnerPerDevice()
+    {
+        var migration = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
+            "008_create_user_devices.state.sql"));
+
+        Assert.Contains("CREATE TABLE IF NOT EXISTS UserDevices", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("CREATE UNIQUE INDEX IF NOT EXISTS UX_UserDevices_Device", migration,
+            StringComparison.OrdinalIgnoreCase);
     }
 }

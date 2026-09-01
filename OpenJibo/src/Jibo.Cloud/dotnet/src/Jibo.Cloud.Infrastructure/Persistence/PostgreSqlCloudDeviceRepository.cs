@@ -243,6 +243,34 @@ public sealed class PostgreSqlCloudDeviceRepository : ICloudDeviceRepository
         return Clone(device);
     }
 
+    public async Task<DeviceRegistration> UpdateFriendlyNameAsync(string deviceId, string friendlyName,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(friendlyName);
+
+        var normalizedDeviceId = deviceId.Trim();
+        await using var connection = await _dataSource.Value.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using (var command = new NpgsqlCommand("""
+                                                     UPDATE Devices
+                                                     SET FriendlyName = @friendlyName, UpdatedUtc = NOW()
+                                                     WHERE LOWER(DeviceId) = LOWER(@deviceId)
+                                                     """, connection, transaction))
+        {
+            command.Parameters.AddWithValue("deviceId", normalizedDeviceId);
+            command.Parameters.AddWithValue("friendlyName", friendlyName.Trim());
+            if (await command.ExecuteNonQueryAsync(cancellationToken) == 0)
+                throw new KeyNotFoundException("Robot record was not found.");
+        }
+
+        await CloudStateRevision.BumpAsync(connection, transaction, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        _cache.Remove(normalizedDeviceId);
+        return await GetByDeviceIdAsync(normalizedDeviceId, cancellationToken)
+               ?? throw new KeyNotFoundException("Robot record was not found.");
+    }
+
     public async Task<RobotCredentialBinding?> GetCredentialBindingAsync(string accessKeyFingerprint,
         CancellationToken cancellationToken = default)
     {

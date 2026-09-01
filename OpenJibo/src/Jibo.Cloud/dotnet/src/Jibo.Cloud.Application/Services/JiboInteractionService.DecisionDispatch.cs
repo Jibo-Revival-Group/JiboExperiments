@@ -42,9 +42,14 @@ public sealed partial class JiboInteractionService
         var greetingPresence = ResolveGreetingPresenceProfile(turn);
 
         if (string.Equals(messageType, "TRIGGER", StringComparison.OrdinalIgnoreCase))
+        {
+            if (RequiresLinkedUser(turn))
+                return BuildAccountRequiredDecision();
+
             return ShouldHandleProactiveGreetingTrigger(turn, triggerSource, greetingPresence)
                 ? BuildProactiveGreetingDecision(turn, greetingPresence, referenceLocalTime)
                 : BuildTriggerIgnoredDecision();
+        }
 
         var isTimerValueTurn = IsClockTimerValueTurn(clientRules, listenRules);
         var isAlarmValueTurn = IsClockAlarmValueTurn(clientRules, listenRules);
@@ -67,6 +72,10 @@ public sealed partial class JiboInteractionService
 
         if (ShouldTreatAsHaClimateClarify(turn, lowered, semanticIntent))
             semanticIntent = "ha_climate_clarify";
+
+        if (RequiresLinkedUser(turn) &&
+            !string.Equals(semanticIntent, "verify_me", StringComparison.OrdinalIgnoreCase))
+            return BuildAccountRequiredDecision();
 
         var personalReportDecision = await PersonalReportOrchestrator.TryBuildDecisionAsync(
             turn,
@@ -144,6 +153,29 @@ public sealed partial class JiboInteractionService
             cancellationToken
         );
     }
+
+    private bool RequiresLinkedUser(TurnContext turn)
+    {
+        if (!IsUserRequiredLoginEnabled() || cloudStateStore is null)
+            return false;
+
+        var (deviceId, _) = JiboIdentityResolver.Resolve(turn, cloudStateStore);
+        return string.IsNullOrWhiteSpace(deviceId) ||
+               string.IsNullOrWhiteSpace(cloudStateStore.GetUserIdForDevice(deviceId));
+    }
+
+    private static bool IsUserRequiredLoginEnabled()
+    {
+        var value = Environment.GetEnvironmentVariable("OPENJIBO_USER_REQUIRED_LOGIN");
+        return value is not null &&
+               (value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+                value.Equals("yes", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static JiboInteractionDecision BuildAccountRequiredDecision() =>
+        new("account_required",
+            "Please pair me with an OpenJibo account in the portal before we continue.");
 
     private async Task<JiboInteractionDecision> RouteSemanticIntent(TurnContext turn, string semanticIntent,
         JiboExperienceCatalog catalog, string lowered, IReadOnlyDictionary<string, string> clientEntities,

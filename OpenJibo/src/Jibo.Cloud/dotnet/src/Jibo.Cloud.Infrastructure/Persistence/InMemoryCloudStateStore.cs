@@ -53,6 +53,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly HashSet<string> _revokedIdentityGraphAnchors = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<TrustedServerAdmissionRecord> _trustedServerAdmissions = [];
     private readonly List<TrustedServerRecord> _trustedServers = [];
+    private readonly List<UserDeviceLink> _userDeviceLinks = [];
 
     private readonly BoundedCloudSessionRegistry _sessions;
 
@@ -208,7 +209,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         lock (_syncRoot)
         {
-            return _devices.Values.Select(CloneDeviceRegistration).ToArray();
+            return _devices.Values.Select(device => CloneDeviceRegistration(device)).ToArray();
         }
     }
 
@@ -346,6 +347,27 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     public DeviceRegistration RenameDeviceForAdministration(string deviceId, string robotId) => RenameDevice(deviceId, robotId);
+
+    public DeviceRegistration RenameDeviceName(string deviceId, string name)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId) || string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Device ID and name are required.");
+
+        lock (_syncRoot)
+        {
+            if (!_devices.TryGetValue(deviceId.Trim(), out var existing))
+                throw new KeyNotFoundException("Robot record was not found.");
+            if (existing.IsHidden || existing.ArchivedUtc is not null)
+                throw new InvalidOperationException("Archived robot records cannot be renamed.");
+
+            var renamed = CloneDeviceRegistration(existing, name.Trim());
+            _devices[existing.DeviceId] = renamed;
+            if (existing.DeviceId.Equals(_robot.DeviceId, StringComparison.OrdinalIgnoreCase))
+                _robot = renamed;
+            TouchState();
+            return renamed;
+        }
+    }
 
     public DeviceRegistration? FindDeviceByFriendlyId(string friendlyId)
     {
@@ -784,6 +806,63 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         TouchState();
         return _users.First(u => u.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public UserDeviceLink LinkUserToDevice(string userId, string deviceId, string claimSource)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new ArgumentException("UserId is required.", nameof(userId));
+        if (string.IsNullOrWhiteSpace(deviceId))
+            throw new ArgumentException("DeviceId is required.", nameof(deviceId));
+
+        lock (_syncRoot)
+        {
+            var user = _users.FirstOrDefault(item =>
+                item.Id.Equals(userId.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (user is null)
+                throw new KeyNotFoundException("User record was not found.");
+
+            var device = _devices.Values.FirstOrDefault(item =>
+                item.DeviceId.Equals(deviceId.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (device is null)
+                throw new KeyNotFoundException("Robot record was not found.");
+
+            _userDeviceLinks.RemoveAll(item =>
+                item.DeviceId.Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase));
+            var link = new UserDeviceLink(user.Id, device.DeviceId,
+                string.IsNullOrWhiteSpace(claimSource) ? "portal-pairing" : claimSource.Trim(),
+                DateTimeOffset.UtcNow);
+            _userDeviceLinks.Add(link);
+            TouchState();
+            return link;
+        }
+    }
+
+    public IReadOnlyList<DeviceRegistration> GetDevicesForUser(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId)) return [];
+
+        lock (_syncRoot)
+        {
+            var deviceIds = _userDeviceLinks
+                .Where(item => item.UserId.Equals(userId.Trim(), StringComparison.OrdinalIgnoreCase))
+                .Select(item => item.DeviceId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return _devices.Values
+                .Where(item => deviceIds.Contains(item.DeviceId))
+                .Select(device => CloneDeviceRegistration(device))
+                .OrderBy(item => item.FriendlyName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(item => item.DeviceId, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+    }
+
+    public string? GetUserIdForDevice(string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId)) return null;
+        lock (_syncRoot)
+            return _userDeviceLinks.FirstOrDefault(item =>
+                item.DeviceId.Equals(deviceId.Trim(), StringComparison.OrdinalIgnoreCase))?.UserId;
     }
 
     public string IssueHubToken(string? deviceId = null, bool useDefaultRobot = true)
@@ -3400,13 +3479,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         };
     }
 
-    private static DeviceRegistration CloneDeviceRegistration(DeviceRegistration device)
+    private static DeviceRegistration CloneDeviceRegistration(DeviceRegistration device,
+        string? friendlyName = null)
     {
         return new DeviceRegistration
         {
             DeviceId = device.DeviceId,
             RobotId = device.RobotId,
-            FriendlyName = device.FriendlyName,
+            FriendlyName = friendlyName ?? device.FriendlyName,
             FirmwareVersion = device.FirmwareVersion,
             ApplicationVersion = device.ApplicationVersion,
             IsActive = device.IsActive,
@@ -3479,7 +3559,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             RecognitionObservations = _recognitionObservations.ToArray(),
             RevokedIdentityGraphAnchors = _revokedIdentityGraphAnchors.ToArray(),
             TrustedServerAdmissions = _trustedServerAdmissions.ToArray(),
-            TrustedServers = _trustedServers.ToArray()
+            TrustedServers = _trustedServers.ToArray(),
+            UserDeviceLinks = _userDeviceLinks.ToArray()
         };
     }
 
@@ -3583,6 +3664,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         _users.Clear();
         _users.AddRange(snapshot.Users ?? []);
+
+        _userDeviceLinks.Clear();
+        foreach (var link in snapshot.UserDeviceLinks ?? [])
+            if (!string.IsNullOrWhiteSpace(link.UserId) && !string.IsNullOrWhiteSpace(link.DeviceId) &&
+                _users.Any(user => user.Id.Equals(link.UserId, StringComparison.OrdinalIgnoreCase)) &&
+                _devices.ContainsKey(link.DeviceId))
+                _userDeviceLinks.Add(link);
 
         _recognitionObservations.Clear();
         _recognitionObservations.AddRange(snapshot.RecognitionObservations ?? []);
@@ -3930,6 +4018,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         public string[]? RevokedIdentityGraphAnchors { get; init; }
         public TrustedServerAdmissionRecord[]? TrustedServerAdmissions { get; init; }
         public TrustedServerRecord[]? TrustedServers { get; init; }
+        public UserDeviceLink[]? UserDeviceLinks { get; init; }
     }
 
     private sealed class CloudSessionSnapshot

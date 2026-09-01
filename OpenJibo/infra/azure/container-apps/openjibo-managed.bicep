@@ -281,6 +281,11 @@ var managedEnvVars = concat([
     value: 'http://+:8080'
   }
   {
+    // Managed images intentionally omit whisper.cpp and use Azure Speech instead.
+    name: 'OpenJibo__Stt__EnableLocalWhisperCpp'
+    value: 'false'
+  }
+  {
     name: 'OpenJibo__CanonicalApiHostname'
     value: apiHostname
   }

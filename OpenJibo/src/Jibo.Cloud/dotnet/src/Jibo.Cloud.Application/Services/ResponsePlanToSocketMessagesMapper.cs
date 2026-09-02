@@ -535,6 +535,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var onRobot = skill?.SkillName?.StartsWith("@be/", StringComparison.OrdinalIgnoreCase) == true;
         var skillId = onRobot ? skill!.SkillName : "chitchat-skill";
         var emitSkillAction = speak is not null && !onRobot;
+        var skipSurprises = turn.Attributes.TryGetValue("triggerSource", out var triggerSource) &&
+                            string.Equals(triggerSource?.ToString(), "SURPRISE",
+                                StringComparison.OrdinalIgnoreCase);
         var messages = new List<SocketReplyPlan>
         {
             new(JsonSerializer.Serialize(new
@@ -551,7 +554,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                         onRobot,
                         isProactive = true,
                         launch = true,
-                        skipSurprises = true
+                        skipSurprises
                     }
                 },
                 final = !emitSkillAction

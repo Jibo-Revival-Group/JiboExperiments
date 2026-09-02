@@ -12,9 +12,8 @@ public sealed class TransportMetricsTests
     public void HttpPayload_RecordsExactBytesWithOnlyBoundedTags()
     {
         var measurements = new List<MeasurementRecord>();
-        using var listener = CreateListener(measurements);
-
         using var metrics = new TransportMetrics();
+        using var listener = CreateListener(measurements, meter: metrics.Meter);
         metrics.HttpPayload("out", "device/secret-id", "attacker-method", 701, 19);
 
         var bytes = Assert.Single(measurements,
@@ -38,9 +37,8 @@ public sealed class TransportMetricsTests
     public void HttpPayload_UsesBoundedStatusClass(int statusCode, string expectedClass)
     {
         var measurements = new List<MeasurementRecord>();
-        using var listener = CreateListener(measurements);
-
         using var metrics = new TransportMetrics();
+        using var listener = CreateListener(measurements, meter: metrics.Meter);
         metrics.HttpPayload("in", "protocol", "post", statusCode, -4);
 
         var bytes = Assert.Single(measurements,
@@ -56,10 +54,11 @@ public sealed class TransportMetricsTests
     public void WebSocketMessage_RecordsExactBytesWithOnlyBoundedTags()
     {
         var measurements = new List<MeasurementRecord>();
+        using var metrics = new TransportMetrics();
         using var listener = new MeterListener();
         listener.InstrumentPublished = (instrument, meterListener) =>
         {
-            if (instrument.Meter.Name == TransportMetrics.MeterName)
+            if (ReferenceEquals(instrument.Meter, metrics.Meter))
                 meterListener.EnableMeasurementEvents(instrument);
         };
         listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
@@ -69,7 +68,6 @@ public sealed class TransportMetricsTests
         });
         listener.Start();
 
-        using var metrics = new TransportMetrics();
         metrics.WebSocketMessage("out", "attacker-controlled-kind", "attacker-controlled-payload",
             "token-should-never-be-a-tag-value", 7);
 
@@ -88,17 +86,18 @@ public sealed class TransportMetricsTests
     public void ActiveConnections_UsesBoundedSocketKind()
     {
         var values = new List<(long Value, string? Kind)>();
+        using var metrics = new TransportMetrics();
         using var listener = new MeterListener();
         listener.InstrumentPublished = (instrument, meterListener) =>
         {
-            if (instrument.Name == "openjibo.transport.websocket.active_connections")
+            if (ReferenceEquals(instrument.Meter, metrics.Meter) &&
+                instrument.Name == "openjibo.transport.websocket.active_connections")
                 meterListener.EnableMeasurementEvents(instrument);
         };
         listener.SetMeasurementEventCallback<long>((_, measurement, tags, _) =>
             values.Add((measurement, tags.ToArray().Single().Value?.ToString())));
         listener.Start();
 
-        using var metrics = new TransportMetrics();
         metrics.WebSocketConnectionOpened("neo-hub-listen");
         metrics.WebSocketConnectionClosed("neo-hub-listen");
 
@@ -142,8 +141,8 @@ public sealed class TransportMetricsTests
     public void BufferedAudio_RecordsAcceptedAndRejectedBytesWithoutTags()
     {
         var measurements = new List<MeasurementRecord>();
-        using var listener = CreateListener(measurements);
         using var metrics = new TransportMetrics();
+        using var listener = CreateListener(measurements, meter: metrics.Meter);
 
         metrics.BufferedAudioAccepted(4096);
         metrics.BufferedAudioLimitRejected(1_048_577);
@@ -175,8 +174,8 @@ public sealed class TransportMetricsTests
     {
         var measurements = new List<MeasurementRecord>();
         var doubleMeasurements = new List<DoubleMeasurementRecord>();
-        using var listener = CreateListener(measurements, doubleMeasurements);
         using var metrics = new TransportMetrics();
+        using var listener = CreateListener(measurements, doubleMeasurements, metrics.Meter);
 
         metrics.ActiveTurnsChanged(1);
         metrics.TurnPhaseCompleted("secret-phase", "secret-outcome", -12.5);
@@ -212,8 +211,8 @@ public sealed class TransportMetricsTests
     public void PersistenceMetrics_RecordBoundedCacheAndPoolDimensions()
     {
         var measurements = new List<MeasurementRecord>();
-        using var listener = CreateListener(measurements);
         using var metrics = new TransportMetrics();
+        using var listener = CreateListener(measurements, meter: metrics.Meter);
 
         metrics.PersistenceCacheAccess("secret-store", "secret-result");
         metrics.PersistenceCacheAccess("cloud_device", "hit");

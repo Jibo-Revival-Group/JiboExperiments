@@ -72,6 +72,56 @@ public sealed class PostgreSqlCloudDeviceRepository : ICloudDeviceRepository
         return device;
     }
 
+    public async Task<IReadOnlyList<DeviceRegistration>> FindVisibleIdentityCandidatesAsync(string accountId,
+        string identity, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(accountId) || string.IsNullOrWhiteSpace(identity)) return [];
+
+        await using var connection = await _dataSource.Value.OpenConnectionAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"""
+                               WITH candidates AS (
+                                   SELECT {QualifiedDeviceColumns},
+                                          CASE
+                                              WHEN LOWER(d.DeviceId) = LOWER(@identity) THEN 0
+                                              WHEN LOWER(d.VerifiedSerialNumber) = LOWER(@identity) THEN 1
+                                              WHEN LOWER(d.RobotId) = LOWER(@identity) THEN 2
+                                              WHEN LOWER(d.FriendlyName) = LOWER(@identity) THEN 3
+                                          END AS IdentityPriority
+                                   FROM Devices d
+                                   INNER JOIN AccountDevices ad
+                                       ON ad.DeviceId = d.DeviceId AND ad.AccountId = @accountId
+                                   WHERE NOT d.IsHidden AND d.ArchivedUtc IS NULL
+                                     AND (LOWER(d.DeviceId) = LOWER(@identity)
+                                       OR LOWER(d.VerifiedSerialNumber) = LOWER(@identity)
+                                       OR LOWER(d.RobotId) = LOWER(@identity)
+                                       OR LOWER(d.FriendlyName) = LOWER(@identity))
+                               ), minimum AS (
+                                   SELECT MIN(IdentityPriority) AS IdentityPriority FROM candidates
+                               )
+                               SELECT c.DeviceId, c.RobotId, c.FriendlyName, c.FirmwareVersion,
+                                      c.ApplicationVersion, c.IsActive, c.CertificateThumbprint,
+                                      c.IssuedIdentityId, c.BuildHash, c.ConfigHash, c.VerifiedSerialNumber,
+                                      c.SerialEvidenceSource, c.SerialEvidenceVerifiedUtc, c.RegistrationSource,
+                                      c.IsHidden, c.ArchivedUtc
+                               FROM candidates c
+                               CROSS JOIN minimum m
+                               WHERE c.IdentityPriority = m.IdentityPriority
+                               ORDER BY c.DeviceId
+                               LIMIT 2
+                               """;
+        command.Parameters.AddWithValue("accountId", accountId.Trim());
+        command.Parameters.AddWithValue("identity", identity.Trim());
+
+        var devices = new List<DeviceRegistration>(2);
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+            while (await reader.ReadAsync(cancellationToken)) devices.Add(MapDevice(reader));
+
+        await LoadHostMappingsAsync(connection, devices, cancellationToken);
+        foreach (var device in devices) _cache.Set(device.DeviceId, Clone(device));
+        return devices.Select(Clone).ToArray();
+    }
+
     public async Task<DeviceRegistration?> GetDefaultAsync(CancellationToken cancellationToken = default)
     {
         var device = await ReadOneWithoutValueAsync("IsDefault", cancellationToken);

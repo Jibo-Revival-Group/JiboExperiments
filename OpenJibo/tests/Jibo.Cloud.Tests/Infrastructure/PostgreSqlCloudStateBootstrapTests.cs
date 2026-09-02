@@ -67,6 +67,8 @@ public sealed class PostgreSqlCloudStateBootstrapTests
         internal int UpsertCount { get; private set; }
         public Task<DeviceRegistration?> GetByDeviceIdAsync(string deviceId, CancellationToken cancellationToken = default) => Task.FromResult(Device?.DeviceId == deviceId ? Device : null);
         public Task<DeviceRegistration?> FindByFriendlyIdAsync(string friendlyId, CancellationToken cancellationToken = default) => Task.FromResult(Device);
+        public Task<IReadOnlyList<DeviceRegistration>> FindVisibleIdentityCandidatesAsync(string accountId, string identity, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<DeviceRegistration>>(Device is null || Device.IsHidden || Device.ArchivedUtc is not null ? [] : [Device]);
         public Task<DeviceRegistration?> GetDefaultAsync(CancellationToken cancellationToken = default) => Task.FromResult(Device);
         public Task<IReadOnlyList<DeviceRegistration>> ListForAccountAsync(string accountId, bool includeArchived = false, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<DeviceRegistration>>(Device is null ? [] : [Device]);
         public Task<IReadOnlyList<DeviceRegistration>> ListAllAsync(bool includeArchived = true, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<DeviceRegistration>>(Device is null ? [] : [Device]);

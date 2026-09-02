@@ -568,10 +568,12 @@ public sealed class WebSocketTurnFinalizationService(
         var observedDeviceId = session.Metadata.TryGetValue("identitySuggestionDeviceId", out var observedValue)
             ? observedValue?.ToString()
             : null;
-        var observedDevice = string.IsNullOrWhiteSpace(observedDeviceId)
-            ? null
-            : cloudStateStore.FindDeviceByFriendlyId(observedDeviceId);
-        if (observedDevice is null || observedDevice.IsHidden || observedDevice.ArchivedUtc is not null)
+        var observedCandidates = string.IsNullOrWhiteSpace(observedDeviceId)
+            ? []
+            : cloudStateStore.FindVisibleIdentityCandidates(observedDeviceId);
+        if (observedCandidates.Count == 1)
+            observedDeviceId = observedCandidates[0].DeviceId;
+        else
             observedDeviceId = null;
         var persistenceDeviceId = !string.IsNullOrWhiteSpace(registeredDeviceId)
             ? registeredDeviceId
@@ -584,19 +586,8 @@ public sealed class WebSocketTurnFinalizationService(
     private string? ResolveVisibleDeviceId(string identity)
     {
         if (cloudStateStore is null || string.IsNullOrWhiteSpace(identity)) return null;
-        var normalized = identity.Trim();
-        return cloudStateStore.GetDevices()
-            .Where(device => !device.IsHidden && device.ArchivedUtc is null)
-            .Where(device => new[] { device.DeviceId, device.RobotId, device.FriendlyName }
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Any(value => value!.Equals(normalized, StringComparison.OrdinalIgnoreCase)))
-            .OrderByDescending(device =>
-                device.DeviceId.Equals(normalized, StringComparison.OrdinalIgnoreCase))
-            .ThenByDescending(device =>
-                device.RobotId.Equals(normalized, StringComparison.OrdinalIgnoreCase))
-            .ThenBy(device => device.DeviceId, StringComparer.OrdinalIgnoreCase)
-            .Select(device => device.DeviceId)
-            .FirstOrDefault();
+        var candidates = cloudStateStore.FindVisibleIdentityCandidates(identity.Trim());
+        return candidates.Count == 1 ? candidates[0].DeviceId : null;
     }
 
     private static void PersistContextSkillId(CloudSession session, string? text)

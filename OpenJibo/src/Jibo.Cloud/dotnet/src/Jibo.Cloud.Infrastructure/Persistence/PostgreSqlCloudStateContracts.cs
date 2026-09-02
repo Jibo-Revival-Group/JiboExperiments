@@ -24,6 +24,8 @@ public interface ICloudDeviceRepository
         CancellationToken cancellationToken = default);
     Task<DeviceRegistration?> FindByFriendlyIdAsync(string friendlyId,
         CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DeviceRegistration>> FindVisibleIdentityCandidatesAsync(string accountId, string identity,
+        CancellationToken cancellationToken = default);
     Task<DeviceRegistration?> GetDefaultAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<DeviceRegistration>> ListForAccountAsync(string accountId, bool includeArchived = false,
         CancellationToken cancellationToken = default);

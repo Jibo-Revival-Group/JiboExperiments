@@ -263,40 +263,18 @@ public sealed class CloudAuthProtocolHandler(
     private DeviceRegistration? FindVisibleDeviceByIdentity(string identity)
     {
         var normalized = identity.Trim();
-        var visibleDevices = stateStore.GetDevices()
-            .Where(device => !device.IsHidden && device.ArchivedUtc is null)
-            .ToArray();
-
-        // DeviceId is authoritative. The remaining fields may corroborate identity,
-        // but only when they identify exactly one visible record. Choosing among a
-        // duplicate would silently issue the reconnecting robot another robot's token.
-        var exactDevice = visibleDevices.FirstOrDefault(device =>
-            device.DeviceId.Equals(normalized, StringComparison.OrdinalIgnoreCase));
-        if (exactDevice is not null) return exactDevice;
-
-        foreach (var candidateSet in new[]
-                 {
-                     visibleDevices.Where(device => IdentityMatches(device.VerifiedSerialNumber, normalized)),
-                     visibleDevices.Where(device => IdentityMatches(device.RobotId, normalized)),
-                     visibleDevices.Where(device => IdentityMatches(device.FriendlyName, normalized))
-                 })
+        var candidates = stateStore.FindVisibleIdentityCandidates(normalized);
+        if (candidates.Count == 1) return candidates[0];
+        if (candidates.Count > 1)
         {
-            var candidates = candidateSet.Take(2).ToArray();
-            if (candidates.Length == 1) return candidates[0];
-            if (candidates.Length > 1)
-            {
-                _logger.LogWarning("NewRobotToken identity {Identity} matched multiple visible robot records; refusing automatic reuse.",
-                    normalized);
-                return null;
-            }
+            // Choosing among a duplicate would silently issue the reconnecting robot
+            // another robot's token, so ambiguity must remain a non-match.
+            _logger.LogWarning("NewRobotToken identity {Identity} matched multiple visible robot records; refusing automatic reuse.",
+                normalized);
         }
 
         return null;
     }
-
-    private static bool IdentityMatches(string? value, string identity) =>
-        !string.IsNullOrWhiteSpace(value) &&
-        value.Trim().Equals(identity, StringComparison.OrdinalIgnoreCase);
 
     private ProtocolDispatchResult? TryIssueDeploymentSmokeHubToken(string deviceId, string? registrationSource,
         ProtocolEnvelope envelope)

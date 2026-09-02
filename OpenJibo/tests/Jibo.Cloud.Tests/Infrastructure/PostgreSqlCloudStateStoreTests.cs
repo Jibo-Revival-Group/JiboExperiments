@@ -171,6 +171,24 @@ public sealed partial class PostgreSqlCloudStateStoreTests
     }
 
     [Fact]
+    public void FindVisibleIdentityCandidates_DelegatesUsingDefaultAccount()
+    {
+        var devices = new FakeDeviceRepository(new DeviceRegistration
+        {
+            DeviceId = "device-1",
+            RobotId = "robot-1",
+            FriendlyName = "Kitchen Jibo"
+        });
+        var store = CreateStore(new FakeTokenRepository(), deviceRepository: devices);
+
+        var result = store.FindVisibleIdentityCandidates("  robot-1  ");
+
+        Assert.Single(result);
+        Assert.Equal("account-1", devices.LastIdentityAccountId);
+        Assert.Equal("robot-1", devices.LastIdentity);
+    }
+
+    [Fact]
     public void InMemoryGetPeople_WithLoopId_PreservesCaseInsensitiveCompatibility()
     {
         var store = new InMemoryCloudStateStore();
@@ -217,7 +235,8 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         IRecognitionObservationRepository? recognition = null,
         ICommuteProfileRepository? commutes = null, ICalendarEventRepository? calendar = null,
         IGreetingPresenceRepository? greetings = null, IAtomicLoopBackupRestorer? atomicBackupRestorer = null,
-        ICloudStateSecretProtector? secretProtector = null, DeviceRegistration? device = null)
+        ICloudStateSecretProtector? secretProtector = null, DeviceRegistration? device = null,
+        ICloudDeviceRepository? deviceRepository = null)
     {
         var account = new AccountProfile { AccountId = "account-1", Email = "owner@example.com" };
         device ??= new DeviceRegistration
@@ -230,7 +249,7 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         return new PostgreSqlCloudStateStore(
             new FakeMetadataRepository(),
             new FakeAccountRepository(account),
-            new FakeDeviceRepository(device),
+            deviceRepository ?? new FakeDeviceRepository(device),
             tokens,
             new FakeIdentityLinkRepository(),
             new BoundedCloudSessionRegistry(4, 4),
@@ -325,11 +344,24 @@ public sealed partial class PostgreSqlCloudStateStoreTests
 
     private sealed class FakeDeviceRepository(DeviceRegistration device) : ICloudDeviceRepository
     {
+        internal string? LastIdentityAccountId { get; private set; }
+        internal string? LastIdentity { get; private set; }
+
         public Task<DeviceRegistration?> GetByDeviceIdAsync(string deviceId,
             CancellationToken cancellationToken = default) =>
             Task.FromResult<DeviceRegistration?>(deviceId == device.DeviceId ? device : null);
         public Task<DeviceRegistration?> FindByFriendlyIdAsync(string friendlyId,
             CancellationToken cancellationToken = default) => Task.FromResult<DeviceRegistration?>(device);
+        public Task<IReadOnlyList<DeviceRegistration>> FindVisibleIdentityCandidatesAsync(string accountId,
+            string identity, CancellationToken cancellationToken = default) =>
+            RecordIdentityQuery(accountId, identity);
+
+        private Task<IReadOnlyList<DeviceRegistration>> RecordIdentityQuery(string accountId, string identity)
+        {
+            LastIdentityAccountId = accountId;
+            LastIdentity = identity;
+            return Task.FromResult<IReadOnlyList<DeviceRegistration>>(device.IsHidden || device.ArchivedUtc is not null ? [] : [device]);
+        }
         public Task<DeviceRegistration?> GetDefaultAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<DeviceRegistration?>(device);
         public Task<IReadOnlyList<DeviceRegistration>> ListForAccountAsync(string accountId,

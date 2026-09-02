@@ -4020,6 +4020,48 @@ public sealed class JiboWebSocketServiceTests
         Assert.DoesNotContain("&apos;", esml, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("SURPRISE", true)]
+    [InlineData("surprise", true)]
+    [InlineData("PRESENCE", false)]
+    [InlineData(null, false)]
+    public void ResponsePlanMapper_ProactiveSkipSurprisesMatchesTriggerSource(
+        string? triggerSource,
+        bool expected)
+    {
+        var plan = new ResponsePlan
+        {
+            IntentName = "proactive_greeting",
+            Actions =
+            {
+                new SpeakAction
+                {
+                    Sequence = 0,
+                    Text = "Hello.",
+                    Voice = "griffin"
+                }
+            }
+        };
+        var attributes = new Dictionary<string, object?>
+        {
+            ["transID"] = "trans-proactive-skip-surprises"
+        };
+        if (triggerSource is not null)
+            attributes["triggerSource"] = triggerSource;
+
+        var replies = ResponsePlanToSocketMessagesMapper.MapProactive(
+            plan,
+            new TurnContext { Attributes = attributes },
+            new CloudSession());
+
+        using var payload = JsonDocument.Parse(replies[0].Text);
+        Assert.Equal(expected, payload.RootElement
+            .GetProperty("data")
+            .GetProperty("match")
+            .GetProperty("skipSurprises")
+            .GetBoolean());
+    }
+
     [Fact]
     public void ResponsePlan_WithListenContexts_EmitsFollowUpListenPacket()
     {
@@ -9308,7 +9350,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Contains(contextReplies, candidate => ReadReplyType(candidate) == "SKILL_ACTION");
         using var payload = JsonDocument.Parse(contextReplies[0].Text!);
         Assert.False(payload.RootElement.GetProperty("final").GetBoolean());
-        Assert.True(payload.RootElement.GetProperty("data").TryGetProperty("match", out _));
+        Assert.True(payload.RootElement.GetProperty("data").TryGetProperty("match", out var match));
+        Assert.False(match.GetProperty("skipSurprises").GetBoolean());
     }
 
     [Fact]

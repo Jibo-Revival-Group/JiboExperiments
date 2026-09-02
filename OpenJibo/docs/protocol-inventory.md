@@ -65,8 +65,8 @@ Observed from `open-jibo-link.js`:
 | `open-jibo-socket.jibo.pro/{token}` | native compatibility notification socket alias | medium | routed with the same API-side socket behavior as the stock API socket |
 | `neo-hub.jibo.com/{listen-path}` | legacy listen turn flow with JSON and binary audio traffic | medium | fixture-backed synthetic turn flow implemented for `LISTEN`, `CONTEXT`, `CLIENT_NLU`, `CLIENT_ASR`, `EOS`, and first chat/joke skill responses |
 | `neohub.openjibo.com/{listen-path}` | managed listen turn flow with JSON and binary audio traffic | medium | managed hub alias for the same listen/proactive turn flow |
-| `neo-hub.jibo.com/v1/proactive` | legacy proactive connection flow | medium | stub endpoint implemented |
-| `neohub.openjibo.com/v1/proactive` | managed proactive connection flow | medium | managed hub alias for proactive traffic |
+| `neo-hub.jibo.com/v1/proactive` | legacy proactive connection flow | medium | authenticated (or bounded tokenless self-host compatibility) `TRIGGER` + `CONTEXT` transaction implemented; emits `PROACTIVE` match/no-action and optional `SKILL_ACTION` |
+| `neohub.openjibo.com/v1/proactive` | managed proactive connection flow | medium | managed alias for the same proactive transaction |
 
 ### Current WebSocket Parity Slice
 
@@ -83,7 +83,12 @@ The current .NET pass covers only a narrow, explicitly synthetic subset of obser
 - `EOS` emission after completed turns
 - delayed `SKILL_ACTION` emission after `EOS` on completed turn flows to better match the Node oracle timing
 - first richer vertical slice for joke/chat `SKILL_ACTION` playback
+- proactive `TRIGGER` correlation with the following `CONTEXT`, including final no-action and matched cloud-speech response shapes
 - fixture-backed joke-turn payload fidelity for `CLIENT_ASR -> LISTEN -> EOS -> delayed SKILL_ACTION`, including Node-like `EOS` envelope fields and the currently observed joke `SKILL_ACTION` metadata shape
+
+The Jetstream compatibility probe currently validates proactive socket acceptance and the final
+no-action response path. Matched proactive selection and its optional delayed `SKILL_ACTION` remain
+covered by focused .NET tests rather than required deployed-probe behavior.
 
 This does not yet mean parity for:
 

@@ -13,6 +13,64 @@ namespace Jibo.Cloud.Tests.Infrastructure;
 public sealed class PersistenceStoreTests
 {
     [Fact]
+    public void CloudStateStore_FindVisibleIdentityCandidates_PreservesPrecedenceVisibilityAndCap()
+    {
+        var store = new InMemoryCloudStateStore(new RecordingSnapshotStore());
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "serial-device",
+            RobotId = "serial-robot",
+            FriendlyName = "serial-shared",
+            VerifiedSerialNumber = "serial-shared"
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "friendly-device",
+            RobotId = "friendly-robot",
+            FriendlyName = "serial-shared"
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "ambiguous-a",
+            RobotId = "ambiguous-robot-a",
+            FriendlyName = "ambiguous"
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "ambiguous-b",
+            RobotId = "ambiguous-robot-b",
+            FriendlyName = "ambiguous"
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "ambiguous-c",
+            RobotId = "ambiguous-robot-c",
+            FriendlyName = "ambiguous"
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "hidden-ambiguous",
+            RobotId = "hidden-robot",
+            FriendlyName = "ambiguous",
+            IsHidden = true
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "archived-ambiguous",
+            RobotId = "archived-robot",
+            FriendlyName = "ambiguous",
+            ArchivedUtc = DateTimeOffset.UtcNow
+        });
+
+        var serialCandidates = store.FindVisibleIdentityCandidates("SERIAL-SHARED");
+        var ambiguousCandidates = store.FindVisibleIdentityCandidates("ambiguous");
+
+        var serial = Assert.Single(serialCandidates);
+        Assert.Equal("serial-device", serial.DeviceId);
+        Assert.Equal(["ambiguous-a", "ambiguous-b"], ambiguousCandidates.Select(device => device.DeviceId));
+    }
+
+    [Fact]
     public void CloudStateStore_BoundsEphemeralSessionsWithoutRevokingIssuedTokens()
     {
         var store = new InMemoryCloudStateStore(new RecordingSnapshotStore());

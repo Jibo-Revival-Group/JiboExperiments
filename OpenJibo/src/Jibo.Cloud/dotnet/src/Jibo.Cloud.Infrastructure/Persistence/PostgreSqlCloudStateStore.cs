@@ -386,6 +386,11 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
     public DeviceRegistration? FindDeviceByFriendlyId(string friendlyId) =>
         Sync(_devices.FindByFriendlyIdAsync(friendlyId));
 
+    public IReadOnlyList<DeviceRegistration> FindVisibleIdentityCandidates(string identity) =>
+        string.IsNullOrWhiteSpace(identity)
+            ? []
+            : Sync(_devices.FindVisibleIdentityCandidatesAsync(GetAccount().AccountId, identity.Trim()));
+
     public DeviceRegistration? FindDeviceByAwsCredentialFingerprint(string accessKeyFingerprint) =>
         Sync(_devices.FindByCredentialFingerprintAsync(accessKeyFingerprint));
 

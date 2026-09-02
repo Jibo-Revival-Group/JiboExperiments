@@ -48,4 +48,18 @@ public sealed class CloudStateMigrationSchemaTests
         Assert.Contains("CREATE UNIQUE INDEX IF NOT EXISTS UX_UserDevices_Device", migration,
             StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void Devices_IndexVerifiedSerialNumbersCaseInsensitively()
+    {
+        var migration = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
+            "010_index_verified_serial_number.state.sql"));
+
+        Assert.Contains("CREATE INDEX IF NOT EXISTS IX_Devices_VerifiedSerialNumber_CI", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ON Devices (LOWER(VerifiedSerialNumber))", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("WHERE VerifiedSerialNumber IS NOT NULL", migration,
+            StringComparison.OrdinalIgnoreCase);
+    }
 }

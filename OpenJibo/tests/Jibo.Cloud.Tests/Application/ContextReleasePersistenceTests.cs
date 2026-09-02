@@ -89,13 +89,15 @@ public sealed class ContextReleasePersistenceTests
             FriendlyName = "Royal-Current-Sage-Canvas",
             RegistrationSource = RobotRegistrationSources.Physical
         });
+        var suggestions = new RobotIdentitySuggestionStore(store);
         var turnService = new WebSocketTurnFinalizationService(
             Mock.Of<IConversationBroker>(),
             Mock.Of<ISttStrategySelector>(),
             Mock.Of<ITurnTelemetrySink>(),
             NullLogger<WebSocketTurnFinalizationService>.Instance,
-            cloudStateStore: store);
-        var session = store.OpenSession("neo-hub-listen", null, "conn:canonical-identity",
+            cloudStateStore: store,
+            identitySuggestionStore: suggestions);
+        var session = store.OpenSession("neo-hub-listen", "Royal-Current-Sage-Canvas", "conn:canonical-identity",
             "neohub.openjibo.com", "/v1/listen");
 
         await turnService.HandleContextAsync(session, new WebSocketMessageEnvelope

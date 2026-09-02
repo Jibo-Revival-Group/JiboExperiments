@@ -5,6 +5,7 @@ namespace Jibo.Cloud.Application.Abstractions;
 
 public interface ICloudStateStore
 {
+    // Identity candidate lookup is bounded by each production implementation.
     PersistenceStateInfo GetPersistenceStateInfo();
     void LoadPersistedState();
     void SavePersistedState();
@@ -24,6 +25,7 @@ public interface ICloudStateStore
     DeviceRegistration RenameDeviceForAdministration(string deviceId, string robotId);
     DeviceRegistration RenameDeviceName(string deviceId, string name);
     DeviceRegistration? FindDeviceByFriendlyId(string friendlyId);
+    IReadOnlyList<DeviceRegistration> FindVisibleIdentityCandidates(string identity);
     DeviceRegistration? FindDeviceByAwsCredentialFingerprint(string accessKeyFingerprint);
     IReadOnlyList<RobotCredentialBinding> GetRobotCredentialBindings();
     RobotCredentialBinding BindAwsCredentialFingerprint(string deviceId, string accessKeyFingerprint,

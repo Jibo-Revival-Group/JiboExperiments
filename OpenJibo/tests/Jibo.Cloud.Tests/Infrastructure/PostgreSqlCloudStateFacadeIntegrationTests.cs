@@ -33,6 +33,62 @@ public sealed class PostgreSqlCloudStateFacadeIntegrationTests
 
     [PostgreSqlIntegrationFact]
     [Trait("Category", "PostgreSqlIntegration")]
+    public async Task VisibleIdentityCandidates_AreScopedPrioritizedCappedAndHydrateOnlyResults()
+    {
+        await using var database = await CloudStateTestDatabase.CreateAsync();
+        await using var source = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
+        var store = new PostgreSqlCloudStateStore(source, new PlaintextTestProtector());
+
+        await database.ExecuteAsync("""
+            INSERT INTO Accounts (AccountId,Email,AccessKeyId,IsDefault)
+            VALUES ('other-identity-account','other-identity@example.invalid','other-identity-access',FALSE);
+            INSERT INTO Devices
+                (DeviceId,RobotId,FriendlyName,VerifiedSerialNumber,RegistrationSource,IsHidden,IsDefault,ArchivedUtc)
+            VALUES
+                ('identity-exact','identity-lower','identity-friendly','identity-serial','physical',FALSE,FALSE,NULL),
+                ('identity-lower-match','identity-exact','identity-lower-name','identity-lower-serial','physical',FALSE,FALSE,NULL),
+                ('default-isolation','isolation-robot','isolation-key',NULL,'physical',FALSE,FALSE,NULL),
+                ('other-isolation','other-isolation-robot','isolation-key',NULL,'physical',FALSE,FALSE,NULL),
+                ('bounded-a','bounded-robot-a','bounded-friendly',NULL,'physical',FALSE,FALSE,NULL),
+                ('bounded-b','bounded-robot-b','bounded-friendly',NULL,'physical',FALSE,FALSE,NULL),
+                ('bounded-c','bounded-robot-c','bounded-friendly',NULL,'physical',FALSE,FALSE,NULL),
+                ('bounded-hidden','bounded-robot-hidden','bounded-friendly',NULL,'physical',TRUE,FALSE,NULL),
+                ('bounded-archived','bounded-robot-archived','bounded-friendly',NULL,'physical',FALSE,FALSE,NOW());
+            INSERT INTO AccountDevices (AccountId,DeviceId)
+            VALUES
+                ('usr_openjibo_owner','identity-exact'),
+                ('usr_openjibo_owner','identity-lower-match'),
+                ('usr_openjibo_owner','default-isolation'),
+                ('usr_openjibo_owner','bounded-a'),
+                ('usr_openjibo_owner','bounded-b'),
+                ('usr_openjibo_owner','bounded-c'),
+                ('usr_openjibo_owner','bounded-hidden'),
+                ('usr_openjibo_owner','bounded-archived'),
+                ('other-identity-account','other-isolation');
+            INSERT INTO DeviceHostMappings (DeviceId,MappingKey,MappingValue)
+            VALUES
+                ('bounded-a','selected','yes-a'),
+                ('bounded-b','selected','yes-b'),
+                ('bounded-c','selected','should-not-be-loaded'),
+                ('bounded-hidden','selected','hidden');
+            """);
+
+        var exact = store.FindVisibleIdentityCandidates("identity-exact");
+        var isolated = store.FindVisibleIdentityCandidates("isolation-key");
+        var bounded = store.FindVisibleIdentityCandidates("bounded-friendly");
+        var nullSerial = store.FindVisibleIdentityCandidates("missing-serial");
+
+        Assert.Equal("identity-exact", Assert.Single(exact).DeviceId);
+        Assert.Equal("default-isolation", Assert.Single(isolated).DeviceId);
+        Assert.Equal(["bounded-a", "bounded-b"], bounded.Select(device => device.DeviceId));
+        Assert.DoesNotContain(bounded, device => device.DeviceId is "bounded-c" or "bounded-hidden" or "bounded-archived");
+        Assert.Equal("yes-a", bounded[0].HostMappings["selected"]);
+        Assert.Equal("yes-b", bounded[1].HostMappings["selected"]);
+        Assert.Empty(nullSerial);
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
     public async Task IndependentStores_ObserveCommittedScopedChangesWithoutSnapshotOrSessionWrites()
     {
         await using var database = await CloudStateTestDatabase.CreateAsync();

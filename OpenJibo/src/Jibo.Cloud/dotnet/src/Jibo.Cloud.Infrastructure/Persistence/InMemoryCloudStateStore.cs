@@ -380,6 +380,39 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             IdentityMatches(device.FriendlyName, trimmed));
     }
 
+    public IReadOnlyList<DeviceRegistration> FindVisibleIdentityCandidates(string identity)
+    {
+        if (string.IsNullOrWhiteSpace(identity)) return [];
+
+        var normalized = identity.Trim();
+        lock (_syncRoot)
+        {
+            var candidates = _devices.Values
+                .Where(device => !device.IsHidden && device.ArchivedUtc is null)
+                .Select(device => (Device: device, Priority: IdentityPriority(device, normalized)))
+                .Where(candidate => candidate.Priority >= 0)
+                .ToArray();
+            if (candidates.Length == 0) return [];
+
+            var minimumPriority = candidates.Min(candidate => candidate.Priority);
+            return candidates
+                .Where(candidate => candidate.Priority == minimumPriority)
+                .OrderBy(candidate => candidate.Device.DeviceId, StringComparer.OrdinalIgnoreCase)
+                .Take(2)
+                .Select(candidate => CloneDeviceRegistration(candidate.Device))
+                .ToArray();
+        }
+    }
+
+    private static int IdentityPriority(DeviceRegistration device, string identity)
+    {
+        if (string.Equals(device.DeviceId, identity, StringComparison.OrdinalIgnoreCase)) return 0;
+        if (string.Equals(device.VerifiedSerialNumber, identity, StringComparison.OrdinalIgnoreCase)) return 1;
+        if (string.Equals(device.RobotId, identity, StringComparison.OrdinalIgnoreCase)) return 2;
+        if (string.Equals(device.FriendlyName, identity, StringComparison.OrdinalIgnoreCase)) return 3;
+        return -1;
+    }
+
     public DeviceRegistration? FindDeviceByAwsCredentialFingerprint(string accessKeyFingerprint)
     {
         if (string.IsNullOrWhiteSpace(accessKeyFingerprint)) return null;

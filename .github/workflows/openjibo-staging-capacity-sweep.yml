@@ -1,0 +1,294 @@
+name: openjibo-staging-capacity-sweep
+run-name: OpenJibo staging 6/10/15/20 capacity sweep @ ${{ github.sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      turn_percent:
+        description: Percent of connected robots turning simultaneously per round
+        required: true
+        type: choice
+        options:
+          - "10"
+          - "25"
+          - "50"
+        default: "25"
+      turn_rounds:
+        description: Concurrent-turn rounds per tier (1-1000)
+        required: true
+        default: "10"
+      round_interval_ms:
+        description: Delay between turn rounds in milliseconds (0-60000)
+        required: true
+        default: "5000"
+
+concurrency:
+  group: openjibo-managed-staging
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    environment:
+      name: openjibo-staging
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: OpenJibo
+    env:
+      OPENJIBO_RESOURCE_GROUP: ${{ secrets.OPENJIBO_RESOURCE_GROUP }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Azure login
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install Application Insights CLI extension
+        shell: bash
+        run: az extension add --name application-insights --yes
+
+      - name: Validate staging-only inputs
+        shell: bash
+        env:
+          TURN_PERCENT: ${{ inputs.turn_percent }}
+          TURN_ROUNDS: ${{ inputs.turn_rounds }}
+          ROUND_INTERVAL_MS: ${{ inputs.round_interval_ms }}
+        run: |
+          set -euo pipefail
+          if [[ "$OPENJIBO_RESOURCE_GROUP" != "rg-openjibo-staging" ]]; then
+            echo "Capacity sweeps are restricted to rg-openjibo-staging." >&2
+            exit 1
+          fi
+          if [[ "$TURN_PERCENT" != "10" && "$TURN_PERCENT" != "25" && "$TURN_PERCENT" != "50" ]]; then
+            echo "turn_percent must be 10, 25, or 50." >&2
+            exit 1
+          fi
+          if [[ ! "$TURN_ROUNDS" =~ ^[0-9]+$ ]] || (( TURN_ROUNDS < 1 || TURN_ROUNDS > 1000 )); then
+            echo "turn_rounds must be from 1 through 1000." >&2
+            exit 1
+          fi
+          if [[ ! "$ROUND_INTERVAL_MS" =~ ^[0-9]+$ ]] || (( ROUND_INTERVAL_MS > 60000 )); then
+            echo "round_interval_ms must be from 0 through 60000." >&2
+            exit 1
+          fi
+
+      - name: Capture staging baseline
+        id: baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_count="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "length(@)" --output tsv)"
+          app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
+          if [[ "$app_count" != "1" || "$app_name" != "openjibo-cloud" ]]; then
+            echo "Expected exactly one staging Container App named openjibo-cloud." >&2
+            exit 1
+          fi
+          image="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.template.containers[0].image --output tsv)"
+          revision="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.latestReadyRevisionName --output tsv)"
+          fqdn="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.configuration.ingress.fqdn --output tsv)"
+          min_replicas="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.template.scale.minReplicas --output tsv)"
+          max_replicas="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.template.scale.maxReplicas --output tsv)"
+          smoke_enabled="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query "properties.template.containers[0].env[?name=='OpenJibo__ReleaseSmoke__Enabled'].value | [0]" --output tsv)"
+          smoke_secret_refs="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query "length(properties.template.containers[0].env[?name=='OpenJibo__ReleaseSmoke__Secret'])" --output tsv)"
+          stored_smoke_secrets="$(az containerapp secret list --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query "length([?name=='release-smoke-authorization'])" --output tsv)"
+          if [[ -z "$image" || -z "$revision" || -z "$fqdn" ]]; then
+            echo "Staging image, ready revision, and ingress FQDN are required." >&2
+            exit 1
+          fi
+          case "$fqdn" in
+            openjibo-cloud.*.azurecontainerapps.io) ;;
+            *)
+              echo "Capacity sweeps require the generated staging Container Apps hostname." >&2
+              exit 1
+              ;;
+          esac
+          if [[ "$smoke_enabled" != "false" || "$smoke_secret_refs" != "0" ||
+                "$stored_smoke_secrets" != "0" ]]; then
+            echo "Staging must begin with release-smoke disabled and no retained authorization secret." >&2
+            exit 1
+          fi
+          echo "app_name=$app_name" >> "$GITHUB_OUTPUT"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          echo "fqdn=$fqdn" >> "$GITHUB_OUTPUT"
+          echo "min_replicas=${min_replicas:-1}" >> "$GITHUB_OUTPUT"
+          echo "max_replicas=${max_replicas:-2}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate temporary release smoke authorization
+        shell: bash
+        run: |
+          smoke_secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$smoke_secret"
+          echo "OPENJIBO_RELEASE_SMOKE_SECRET=$smoke_secret" >> "$GITHUB_ENV"
+
+      - name: Enable bounded two-replica sweep
+        id: probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_name="${{ steps.baseline.outputs.app_name }}"
+          az containerapp secret set --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --secrets "release-smoke-authorization=$OPENJIBO_RELEASE_SMOKE_SECRET" --output none
+          az containerapp update --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --min-replicas 2 --max-replicas 2 --set-env-vars "OpenJibo__ReleaseSmoke__Enabled=true" "OpenJibo__ReleaseSmoke__Secret=secretref:release-smoke-authorization" "OpenJibo__ReleaseSmoke__MaxConcurrentDevices=20" --output none
+          probe_revision="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.latestRevisionName --output tsv)"
+          probe_image="$(az containerapp revision show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --revision "$probe_revision" --query properties.template.containers[0].image --output tsv)"
+          if [[ "$probe_image" != "${{ steps.baseline.outputs.image }}" ]]; then
+            echo "The capacity sweep must not change the deployed image." >&2
+            exit 1
+          fi
+          az containerapp revision restart --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --revision "$probe_revision" --output none
+          ready=false
+          for _ in $(seq 1 30); do
+            latest_ready="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.latestReadyRevisionName --output tsv)"
+            active="$(az containerapp revision show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --revision "$probe_revision" --query properties.active --output tsv)"
+            running_state="$(az containerapp revision show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --revision "$probe_revision" --query properties.runningState --output tsv)"
+            running="$(az containerapp replica list --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --revision "$probe_revision" --query "[?properties.runningState=='Running'] | length(@)" --output tsv)"
+            if [[ "$latest_ready" == "$probe_revision" && "$active" == "true" &&
+                  ( "$running_state" == "Running" || "$running_state" == "RunningAtMaxScale" ) &&
+                  "${running:-0}" -ge 2 ]]; then
+              ready=true
+              break
+            fi
+            sleep 5
+          done
+          if [[ "$ready" != "true" ]]; then
+            echo "The sweep revision did not become active with two running replicas." >&2
+            exit 1
+          fi
+          echo "revision=$probe_revision" >> "$GITHUB_OUTPUT"
+
+      - name: Run serial 6, 10, 15, and 20 robot tiers
+        shell: bash
+        env:
+          BASE_URL: https://${{ steps.baseline.outputs.fqdn }}
+          OPENJIBO_RELEASE_SMOKE_ALLOWED_HOST: ${{ steps.baseline.outputs.fqdn }}
+          TEST_ROBOT_ID: open-jibo-smoke-staging
+          RELEASE_SMOKE_TURN_PERCENT: ${{ inputs.turn_percent }}
+          RELEASE_SMOKE_TURN_ROUNDS: ${{ inputs.turn_rounds }}
+          RELEASE_SMOKE_ROUND_INTERVAL_MS: ${{ inputs.round_interval_ms }}
+          RELEASE_SMOKE_HOLD_MS: "500"
+          RELEASE_SMOKE_MIN_REPLICAS: "2"
+          RELEASE_SMOKE_EXPECTED_REVISION: ${{ steps.probe.outputs.revision }}
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/openjibo-staging-capacity"
+          mkdir -p "$evidence_dir"
+          python3 - "$evidence_dir/manifest.json" "${{ steps.probe.outputs.revision }}" "${{ steps.baseline.outputs.revision }}" "${{ steps.baseline.outputs.image }}" <<'PY'
+          import json
+          import os
+          import sys
+
+          manifest = {
+              "commit": os.environ["GITHUB_SHA"],
+              "runId": os.environ["GITHUB_RUN_ID"],
+              "probeRevision": sys.argv[2],
+              "baselineRevision": sys.argv[3],
+              "image": sys.argv[4],
+              "tiers": [6, 10, 15, 20],
+              "syntheticIdentityUpperBound": 21,
+          }
+          with open(sys.argv[1], "w", encoding="utf-8") as output:
+              json.dump(manifest, output, indent=2)
+          PY
+          for tier in 6 10 15 20; do
+            echo "Running staging capacity tier with $tier connected fake robots."
+            tier_started_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            RELEASE_SMOKE_CONCURRENCY="$tier" node ./scripts/cloud/invoke-release-smoke.mjs | tee "$evidence_dir/tier-${tier}.json"
+            tier_completed_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            python3 - "$evidence_dir/tier-${tier}-window.json" "$tier" "$tier_started_utc" "$tier_completed_utc" <<'PY'
+          import json
+          import sys
+
+          with open(sys.argv[1], "w", encoding="utf-8") as output:
+              json.dump({
+                  "tier": int(sys.argv[2]),
+                  "startedUtc": sys.argv[3],
+                  "completedUtc": sys.argv[4],
+              }, output, indent=2)
+          PY
+          done
+
+      - name: Capture exact-revision aggregate report
+        shell: bash
+        run: |
+          set -euo pipefail
+          report_path="$RUNNER_TEMP/openjibo-staging-capacity/aggregate-report.json"
+          telemetry_observed=false
+          for attempt in 1 2 3; do
+            sleep 60
+            node ./scripts/cloud/openjibo-capacity-report.mjs --resource-group "$OPENJIBO_RESOURCE_GROUP" --container-app "${{ steps.baseline.outputs.app_name }}" --application-insights appi-openjibo-managed --days 1 --average-robots 2.5 --format json --output "$report_path"
+            if node -e 'const r=require(process.argv[1]); process.exit(r.evidence.representativeActivityObserved ? 0 : 1)' "$report_path"; then
+              telemetry_observed=true
+              break
+            fi
+            echo "Aggregate application telemetry is not visible yet (attempt $attempt of 3)." >&2
+          done
+          if [[ "$telemetry_observed" != "true" ]]; then
+            echo "Load passed, but aggregate telemetry was not ingested within the bounded wait." >&2
+            touch "$RUNNER_TEMP/openjibo-staging-capacity/telemetry-not-yet-ingested"
+          fi
+          report_revision="$(node -e 'const r=require(process.argv[1]); process.stdout.write(r.scope.revision || "")' "$report_path")"
+          if [[ "$report_revision" != "${{ steps.probe.outputs.revision }}" ]]; then
+            echo "Aggregate report revision does not match the capacity probe revision." >&2
+            exit 1
+          fi
+
+      - name: Disable temporary release smoke authorization
+        if: always() && steps.baseline.outputs.app_name != ''
+        shell: bash
+        run: bash ./scripts/cloud/cleanup-release-smoke-authorization.sh --resource-group "$OPENJIBO_RESOURCE_GROUP" --app-name "${{ steps.baseline.outputs.app_name }}"
+
+      - name: Restore staging scale
+        if: always() && steps.baseline.outputs.app_name != ''
+        shell: bash
+        run: az containerapp update --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "${{ steps.baseline.outputs.app_name }}" --min-replicas "${{ steps.baseline.outputs.min_replicas }}" --max-replicas "${{ steps.baseline.outputs.max_replicas }}" --output none
+
+      - name: Verify staging invariants after cleanup
+        if: always() && steps.baseline.outputs.app_name != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_name="${{ steps.baseline.outputs.app_name }}"
+          current_image="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.template.containers[0].image --output tsv)"
+          current_min="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.template.scale.minReplicas --output tsv)"
+          current_max="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.template.scale.maxReplicas --output tsv)"
+          smoke_enabled="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query "properties.template.containers[0].env[?name=='OpenJibo__ReleaseSmoke__Enabled'].value | [0]" --output tsv)"
+          smoke_secret_refs="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query "length(properties.template.containers[0].env[?name=='OpenJibo__ReleaseSmoke__Secret'])" --output tsv)"
+          stored_smoke_secrets="$(az containerapp secret list --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query "length([?name=='release-smoke-authorization'])" --output tsv)"
+          if [[ "$current_image" != "${{ steps.baseline.outputs.image }}" ||
+                "${current_min:-1}" != "${{ steps.baseline.outputs.min_replicas }}" ||
+                "${current_max:-2}" != "${{ steps.baseline.outputs.max_replicas }}" ||
+                "$smoke_enabled" != "false" || "$smoke_secret_refs" != "0" ||
+                "$stored_smoke_secrets" != "0" ]]; then
+            echo "Staging image, scale, or release-smoke cleanup invariants were not restored." >&2
+            exit 1
+          fi
+          for _ in $(seq 1 30); do
+            if curl --fail --silent --show-error "https://${{ steps.baseline.outputs.fqdn }}/health" >/dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Staging did not become healthy after capacity-sweep cleanup." >&2
+          exit 1
+
+      - name: Upload staging capacity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openjibo-staging-capacity-${{ github.run_id }}
+          path: ${{ runner.temp }}/openjibo-staging-capacity
+          retention-days: 30
+          if-no-files-found: warn

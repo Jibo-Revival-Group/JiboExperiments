@@ -171,6 +171,8 @@ Keep the production PostgreSQL binding pinned through the
 [managed persistence deployment runbook](managed-persistence-deployment-runbook.md), run the new two-replica
 staging gate against a restored production snapshot, retain its cross-replica committed-read evidence, verify
 family counts, identity mappings, and v1 restore, then collect seven representative
-days of application, .NET, Npgsql, Container Apps, and PostgreSQL metrics. Preserve the legacy snapshots,
+days of application, .NET, Npgsql, Container Apps, and PostgreSQL metrics. Use passive aggregate-only production
+telemetry for the representative 2.5-real-robot baseline and reserve active fake-robot tiers for staging; do not
+reset the production revision during the observation window. Preserve the legacy snapshots,
 pre-cutover database, and exported v1 backup payloads until that observation window and a separately reviewed
 recovery drill pass.

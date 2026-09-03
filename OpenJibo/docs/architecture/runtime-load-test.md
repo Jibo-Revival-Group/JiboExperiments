@@ -27,6 +27,29 @@ Run `node ./scripts/cloud/invoke-release-smoke.mjs` with `BASE_URL` and these op
 Use a stable `TEST_ROBOT_ID` prefix for repeated staging experiments so the generated device identities are easy
 to identify. Do not target production for a capacity run.
 
+## Managed Staging Sweep
+
+Run the `openjibo-staging-capacity-sweep` workflow to exercise the current staging image without publishing a
+new image, running migrations, cloning databases, or creating a production promotion gate. It:
+
+1. verifies the exact `rg-openjibo-staging` resource group and rejects production ingress hostnames;
+2. records the current image, ready revision, and replica scale;
+3. creates a temporary release-smoke secret, pins two replicas, and requires the resulting configuration revision
+   to serve from the unchanged image;
+4. runs the 6, 10, 15, and 20 connected-robot tiers serially with the selected turn percentage, round count, and
+   interval;
+5. waits briefly for aggregate telemetry, captures an exact-revision one-day capacity report, and uploads the
+   manifest plus each tier's JSON result;
+6. always disables release-smoke authorization, removes its secret after a healthy disabled revision exists,
+   restores the original scale, and verifies the image and cleanup invariants.
+
+The fixed `open-jibo-smoke-staging` namespace reuses the same bounded identities on later runs. A complete sweep
+can create at most 21 staging-only synthetic registrations: one primary control identity plus 20 concurrent-tier
+identities. Those records remain hidden deployment-smoke data rather than visible robot inventory.
+
+The temporary authorization and cleanup operations create configuration revisions, so this workflow intentionally
+resets any passive staging exact-revision observation window. It does not affect the passive production baseline.
+
 ## Certification Matrix
 
 Run connected-robot tiers `6`, `10`, `15`, and `20`. At each tier, run `10%`, `25%`, and `50%` simultaneous

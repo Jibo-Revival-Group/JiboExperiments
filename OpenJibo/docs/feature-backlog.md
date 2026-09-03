@@ -659,10 +659,18 @@ These are the carryover items that need a clean proof pass first:
   - the application, .NET runtime, and Npgsql meters are exported to Application Insights; the exact-revision capacity reporter reconciles those values with Container Apps wire/memory/restart metrics and the PostgreSQL server limit without exposing identifiers or pool names
   - managed pool ceilings are explicit at eight cloud-state plus four personal-memory connections per replica, producing a 24/50 worst-case pool budget at the configured two-replica maximum
 - Remaining rollout and measurement work:
-  - keep exact revision `b5b75f1949e7a8452ccdc784ed86db527597749f` continuously available long enough to collect seven representative days, then retain the generated capacity report beside its staging gate artifact
+  - retain the exact-commit staging gate for `b5b75f1949e7a8452ccdc784ed86db527597749f`; use an unchanged production revision for the passive seven-day real-robot baseline and staging only for active load tiers
   - use the report to reconcile application payload bytes with Container Apps `RxBytes + TxBytes`; separate steady robot traffic from deployment/image/startup overhead before forming a bandwidth hypothesis
   - add reviewed alerts for working set/GC, pool waits, persistence failures/latency, audio-limit rejection, and unexpected legacy snapshot selection after the representative baseline establishes non-noisy thresholds and an operator action group
   - keep WebSocket compression disabled until a stock OS 1.9 physical-client canary proves negotiation and reconnect behavior; evaluate static HTTP text compression separately
+- Capacity observation update (`2026-09-03`):
+  - production revision `openjibo-cloud--0000049` on image `sha-3773955b69c6` has 47.58 of the requested 168 exact-revision hours (28.3% coverage)
+  - production has representative activity so far: 4,819 platform requests, about 1.75 GiB inbound application payload, database duration and connection samples, and a 99.65% bounded-cache hit ratio
+  - application outbound payload was only about 0.51 MiB, roughly 0.03% of measured application payload bytes; static HTTP text compression therefore cannot materially extend the current bandwidth runway and remains a latency/portal optimization rather than a capacity prerequisite
+  - observed production headroom remains large but is not yet a capacity claim: application memory peaked at about 261 MiB of 2 GiB, platform memory at about 279 MiB, hourly-average CPU peaked at 1.75% of one core, and PostgreSQL connections peaked at 3 of 50
+  - no restart, pending-request, database-failure, or audio-limit-rejection event was detected in the aggregate window; the only current production blocker is the incomplete observation window
+  - staging revision `openjibo-cloud--0000092` has a similar 47.87-hour window but no application requests or payload traffic and no database-duration samples, so waiting alone cannot make that idle window representative
+  - preserve the current production revision for the passive 2.5-robot baseline; run active 6/10/15/20 fake-robot tiers only in staging and treat their deployment/configuration revisions as separate evidence
 - Exit criteria:
   - production DI does not resolve `InMemoryCloudStateStore` for durable cloud state or personal memory
   - no production mutation serializes or rewrites a whole-cloud JSON snapshot
@@ -672,7 +680,8 @@ These are the carryover items that need a clean proof pass first:
   - migration dry-run, apply, verification, rollback/export, backup creation, and restore all have automated tests and a managed-deployment smoke check
   - operators can detect persistence degradation before robot requests begin timing out while `/health` remains green
 - Next action:
-  - keep the current exact revision in staging and run `openjibo-capacity-report.mjs --days 7 --average-robots 2.5` after the observation window; do not make a fleet-capacity claim from the current deployment/smoke-heavy sample
+  - keep the current exact revision in production and rerun `openjibo-capacity-report.mjs --resource-group rg-openjibo-prod --days 7 --average-robots 2.5` after at least 134.4 observed hours; do not make a fleet-capacity claim before the full gate passes
+  - schedule the 6/10/15/20 connected fake-robot worksheet separately in staging; do not enable release-smoke authorization or change scale on production
 
 ### Next Up (`2026-05-06`): Dialog Parsing Expansion And Ambiguity Guardrails
 

@@ -86,6 +86,25 @@ node scripts/cloud/openjibo-capacity-report.mjs `
   --output artifact-output/openjibo-staging-capacity.md
 ```
 
+Use staging for active fake-robot load tiers. A passive baseline for the real average of 2.5 connected robots
+must instead read production aggregate telemetry without sending probe traffic:
+
+```powershell
+node scripts/cloud/openjibo-capacity-report.mjs `
+  --resource-group rg-openjibo-prod `
+  --container-app openjibo-cloud `
+  --application-insights appi-openjibo-managed `
+  --days 7 `
+  --average-robots 2.5 `
+  --format markdown `
+  --output artifact-output/openjibo-production-capacity.md
+```
+
+Do not run the fake-robot load driver against production. Keep the production image and ready revision unchanged
+during the passive observation window: even a configuration-only Container App update creates a new revision and
+restarts the exact-revision evidence clock. An idle staging window does not become representative merely by
+reaching seven days; it still needs application payload traffic and database command samples.
+
 The report resolves the latest ready revision first and filters both Application Insights and Container Apps
 metrics to that exact revision. This prevents an old rollback, failed deployment, or overlapping rollout replica
 from being attributed to the build under observation. It reads only aggregate metric values; it does not query or
@@ -101,6 +120,12 @@ deployment, load-smoke, or unusual robot-use periods that overlap the window.
 Application payload bytes are expected to be below Container Apps `RxBytes + TxBytes`: platform traffic also
 contains TLS/WebSocket framing, database and provider calls, health traffic, image/startup activity, and other
 protocol overhead. Investigate a rising gap across comparable quiet windows; do not expect equality.
+
+In the September 3 production sample, outbound application payload was about 0.51 MiB versus roughly 1.75 GiB
+inbound. Even eliminating all measured outbound application bytes would change total application payload by only
+about 0.03%. Static HTTP text compression is therefore not a meaningful capacity-runway lever for this workload;
+keep it as a separate portal/latency optimization. The inbound side remains dominated by already-compressed
+Ogg Opus audio and must be evaluated through packet/envelope changes and physical-client compatibility evidence.
 
 The capacity report may infer a zero for missing database pending-request samples only when database
 command-duration and connection-usage samples are present. It may infer a zero for missing restart samples only

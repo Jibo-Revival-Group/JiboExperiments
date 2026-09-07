@@ -14,6 +14,15 @@ internal static class ScriptedReplyTestAssertions
         JiboInteractionDecision decision,
         string expectedIntent,
         string? expectedReplySnippet = null)
+        => await AssertImportedScriptedReplyAsync(
+            decision,
+            expectedIntent,
+            string.IsNullOrWhiteSpace(expectedReplySnippet) ? [] : [expectedReplySnippet]);
+
+    internal static async Task AssertImportedScriptedReplyAsync(
+        JiboInteractionDecision decision,
+        string expectedIntent,
+        params string[] expectedReplySnippets)
     {
         Assert.Equal(expectedIntent, decision.IntentName);
 
@@ -21,21 +30,16 @@ internal static class ScriptedReplyTestAssertions
         if (TryMatchesImportedMimReply(catalog, expectedIntent, decision.ReplyText))
             return;
 
-        if (!string.IsNullOrWhiteSpace(expectedReplySnippet))
+        var alternatives = expectedReplySnippets
+            .Where(snippet => !string.IsNullOrWhiteSpace(snippet))
+            .ToArray();
+
+        if (alternatives.Length > 0)
         {
-            if (expectedReplySnippet.Contains("||", StringComparison.Ordinal))
-            {
-                var alternatives = expectedReplySnippet
-                    .Split("||", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-                Assert.True(
-                    alternatives.Any(snippet =>
-                        decision.ReplyText.Contains(snippet, StringComparison.OrdinalIgnoreCase)),
-                    $"Expected reply to contain one of: [{string.Join(", ", alternatives)}], but was: \"{decision.ReplyText}\"");
-            }
-            else
-            {
-                Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-            }
+            Assert.True(
+                alternatives.Any(snippet =>
+                    decision.ReplyText.Contains(snippet, StringComparison.OrdinalIgnoreCase)),
+                $"Expected reply to contain one of: [{string.Join(", ", alternatives.Select(snippet => $"\"{snippet}\""))}], but was: \"{decision.ReplyText}\"");
         }
     }
 
@@ -43,9 +47,13 @@ internal static class ScriptedReplyTestAssertions
         JiboInteractionDecision decision,
         string expectedIntent,
         string? expectedReplySnippet = null)
-    {
-        AssertImportedScriptedReplyAsync(decision, expectedIntent, expectedReplySnippet).GetAwaiter().GetResult();
-    }
+        => AssertImportedScriptedReplyAsync(decision, expectedIntent, expectedReplySnippet).GetAwaiter().GetResult();
+
+    internal static void AssertImportedScriptedReply(
+        JiboInteractionDecision decision,
+        string expectedIntent,
+        params string[] expectedReplySnippets)
+        => AssertImportedScriptedReplyAsync(decision, expectedIntent, expectedReplySnippets).GetAwaiter().GetResult();
 
     private static bool TryMatchesImportedMimReply(
         JiboExperienceCatalog catalog,

@@ -148,7 +148,6 @@ jobs:
             echo "The capacity sweep must not change the deployed image." >&2
             exit 1
           fi
-          az containerapp revision restart --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --revision "$probe_revision" --output none
           ready=false
           for _ in $(seq 1 30); do
             latest_ready="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.latestReadyRevisionName --output tsv)"
@@ -242,6 +241,11 @@ jobs:
           report_revision="$(node -e 'const r=require(process.argv[1]); process.stdout.write(r.scope.revision || "")' "$report_path")"
           if [[ "$report_revision" != "${{ steps.probe.outputs.revision }}" ]]; then
             echo "Aggregate report revision does not match the capacity probe revision." >&2
+            exit 1
+          fi
+          if node -e 'const r=require(process.argv[1]); process.exit(r.evidence.blockers.includes("reliability-signal-detected") ? 0 : 1)' "$report_path"; then
+            echo "Aggregate telemetry detected a restart, database failure, pool wait, or audio-limit rejection." >&2
+            touch "$RUNNER_TEMP/openjibo-staging-capacity/reliability-signal-detected"
             exit 1
           fi
 

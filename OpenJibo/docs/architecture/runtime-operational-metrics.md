@@ -1,6 +1,6 @@
 # Runtime Operational Metrics
 
-Status date: `2026-08-31`
+Status date: `2026-09-07`
 
 OpenJibo emits privacy-safe aggregate measurements through the .NET meter `OpenJibo.Transport`. These
 measurements are intended to establish a concurrency and cost envelope; they are not a customer activity log.
@@ -138,6 +138,52 @@ restart samples only when distinct populated working-set and replica hours meet 
 are recorded in
 `evidence.inferredZeroSignals`; without the corroborating signals, the missing metric remains a blocker and is not
 treated as zero.
+
+## Representative Production Baseline
+
+The read-only report generated on `2026-09-07` covers 143.38 of 168 hours (85.35%) for production revision
+`openjibo-cloud--0000049` and image `sha-3773955b69c6`. It is the first sample to pass the representative-evidence
+gate at the planning assumption of 2.5 average continuously connected robots.
+
+| Signal | Observed baseline |
+| --- | ---: |
+| Application working-set maximum | 261 MiB of 2 GiB |
+| Container Apps working-set maximum | 304 MiB of 2 GiB |
+| Highest hourly-average CPU | 2.1% of one core |
+| PostgreSQL connections | P95 2, maximum 3 of 50 |
+| PostgreSQL command duration | 1.70 ms weighted average, 1.83 s observed maximum |
+| Persistence cache hit ratio | 99.64% |
+| Buffered audio | P95 0 B, 153 KiB high-water maximum |
+| Application payload per observed robot-day | 307 MiB |
+| Estimated platform wire traffic per observed robot-day | 395 MiB |
+
+No restart, database command failure, pending-request queue, or audio-limit rejection was observed. These values
+describe this revision and workload only. The per-robot traffic values are useful for a cost worksheet but must
+not be extrapolated as a fleet-capacity curve.
+
+## Provisional Alert Review Table
+
+These are candidate sustained-window thresholds derived from the representative baseline and current hard limits.
+They are not deployed alerts. Review the operator action group, ownership, and escalation procedure before enabling
+paging, and prefer per-replica/finer-grained queries where an hourly aggregate could hide a hot instance.
+
+| Signal | Review warning | Review critical |
+| --- | --- | --- |
+| Per-replica working set | above 1.0 GiB for 15 minutes | above 1.5 GiB for 5 minutes |
+| Per-replica CPU | above 50% for 15 minutes | above 70% for 10 minutes |
+| PostgreSQL live connections | P95 at least 12 for 15 minutes | at least 20, or server total above 30 |
+| Npgsql pending requests | any nonzero value sustained for 5 minutes | continued queueing with turn degradation |
+| Database command failure | any occurrence | repeated occurrence; invalidate capacity evidence |
+| Database weighted-average command duration | above 100 ms sustained | above 250 ms sustained |
+| Audio buffering | P95 above 16 MiB or high-water above 32 MiB | P95 above 32 MiB or high-water above 48 MiB |
+| Audio-limit rejection | any occurrence | immediate investigation |
+| Container restart | any unexpected occurrence | repeated or correlated with memory growth |
+| Persistence cache hit ratio | below 95% sustained | below 90% sustained |
+| Platform wire traffic per robot-day | above 500 MiB over 24 hours | above 700 MiB after workload-mix review |
+
+The audio high-water gauge resets when a replica restarts, so evaluate it with current buffered bytes and restart
+evidence. Do not turn the table into deployment defaults until the short staging matrix, longer soak, and operator
+review establish that these thresholds are actionable rather than noisy.
 
 ## Capacity Worksheet
 

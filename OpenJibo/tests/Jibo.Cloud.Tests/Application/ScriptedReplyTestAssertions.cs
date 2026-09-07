@@ -22,7 +22,21 @@ internal static class ScriptedReplyTestAssertions
             return;
 
         if (!string.IsNullOrWhiteSpace(expectedReplySnippet))
-            Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        {
+            if (expectedReplySnippet.Contains("||", StringComparison.Ordinal))
+            {
+                var alternatives = expectedReplySnippet
+                    .Split("||", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                Assert.True(
+                    alternatives.Any(snippet =>
+                        decision.ReplyText.Contains(snippet, StringComparison.OrdinalIgnoreCase)),
+                    $"Expected reply to contain one of: [{string.Join(", ", alternatives)}], but was: \"{decision.ReplyText}\"");
+            }
+            else
+            {
+                Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+            }
+        }
     }
 
     internal static void AssertImportedScriptedReply(

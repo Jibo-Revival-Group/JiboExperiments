@@ -1737,7 +1737,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what should I do for black history month", "seasonal_black_history_month_advice",
         "long way off")]
     [InlineData("what should I do for father's day", "seasonal_advice", "Father's Day is in the past")]
-    [InlineData("what should I do for star wars day", "seasonal_advice", "Star Wars Day is in the past")]
+    [InlineData("what should I do for star wars day", "seasonal_advice",
+        "Star Wars Day is in the past||lots of time to figure it out before Star Wars Day comes around again||dress up as R2-D2")]
     [InlineData("what should I do for dance like a chicken day", "seasonal_advice", "Dance Like A Chicken Day is in the past")]
     [InlineData("what should I do for d day", "seasonal_advice", "D Day means to you")]
     [InlineData("what should I do for eid al fitr", "seasonal_advice", "Eid")]

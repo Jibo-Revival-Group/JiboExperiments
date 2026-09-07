@@ -20,6 +20,7 @@ test("staging capacity sweep is bounded, serial, and staging-only", () => {
   assert.match(workflow, /RunningAtMaxScale/);
   assert.doesNotMatch(workflow, /deploy-openjibo-managed|clone-openjibo-managed-databases|--run-migration/);
   assert.doesNotMatch(workflow, /docker\s+(?:build|push)|az\s+acr\s+build|az\s+deployment\s/);
+  assert.doesNotMatch(workflow, /az\s+containerapp\s+revision\s+restart/);
 });
 
 test("staging capacity sweep retains evidence and always restores authorization and scale", () => {
@@ -42,6 +43,8 @@ test("staging capacity sweep retains evidence and always restores authorization 
   assert.match(workflow, /az extension add --name application-insights --yes/);
   assert.match(workflow, /telemetry-not-yet-ingested/);
   assert.match(workflow, /report_revision.*steps\.probe\.outputs\.revision/s);
+  assert.match(workflow, /evidence\.blockers\.includes\("reliability-signal-detected"\)/);
+  assert.match(workflow, /touch .*reliability-signal-detected/);
   assert.match(workflow, /current_image.*steps\.baseline\.outputs\.image/s);
   assert.match(workflow, /stored_smoke_secrets.*!= \"0\"/s);
   assert.match(workflow, /actions\/upload-artifact@v4/);

@@ -11,6 +11,7 @@ socket_hostname="open-jibo-socket.openjibo.com"
 neohub_hostname="neohub.openjibo.com"
 native_compatibility_api_hostname="open-jibo.jibo.pro"
 native_compatibility_socket_hostname="open-jibo-socket.jibo.pro"
+additional_compatibility_api_hostname="api.jibo.pro"
 enable_azure_speech=true
 azure_speech_region=""
 template_path="infra/azure/container-apps/openjibo-managed.bicep"
@@ -62,6 +63,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --native-compatibility-socket-hostname)
       native_compatibility_socket_hostname="${2:-open-jibo-socket.jibo.pro}"
+      shift 2
+      ;;
+    --additional-compatibility-api-hostname)
+      additional_compatibility_api_hostname="${2:-api.jibo.pro}"
       shift 2
       ;;
     --enable-azure-speech)
@@ -414,6 +419,7 @@ PY
   bind_containerapp_hostname "$neohub_hostname"
   bind_containerapp_hostname "$native_compatibility_api_hostname"
   bind_containerapp_hostname "$native_compatibility_socket_hostname"
+  bind_containerapp_hostname "$additional_compatibility_api_hostname"
 
   state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"
   postgres_server_name="$(parse_postgres_server_name "$state_connection_string")"

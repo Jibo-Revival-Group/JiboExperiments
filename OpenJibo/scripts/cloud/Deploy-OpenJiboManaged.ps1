@@ -12,6 +12,7 @@ param(
     [string]$NeoHubHostname = "neohub.openjibo.com",
     [string]$NativeCompatibilityApiHostname = "open-jibo.jibo.pro",
     [string]$NativeCompatibilitySocketHostname = "open-jibo-socket.jibo.pro",
+    [string]$AdditionalCompatibilityApiHostname = "api.jibo.pro",
     [Parameter(Mandatory = $true)]
     [string]$RegistryName,
     [bool]$EnableAzureSpeech = $true,
@@ -389,6 +390,7 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
     Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $NeoHubHostname
     Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $NativeCompatibilityApiHostname
     Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $NativeCompatibilitySocketHostname
+    Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $AdditionalCompatibilityApiHostname
 
     $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
     $postgresServerName = Get-PostgresServerNameFromConnectionString -ConnectionString $stateConnectionString

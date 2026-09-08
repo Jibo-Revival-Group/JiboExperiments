@@ -444,6 +444,7 @@ jobs:
             "${{ inputs.neohub_hostname }}"
             open-jibo.jibo.pro
             open-jibo-socket.jibo.pro
+            api.jibo.pro
           )
 
           for hostname in "${hostnames[@]}"; do
@@ -658,6 +659,7 @@ jobs:
               --neohub-hostname staging-neohub.openjibo.com
               --native-compatibility-api-hostname staging-open-jibo.jibo.pro
               --native-compatibility-socket-hostname staging-open-jibo-socket.jibo.pro
+              --additional-compatibility-api-hostname staging-api.jibo.pro
             )
             if [[ "${{ inputs.bind_staging_hostnames }}" != "true" ]]; then
               deploy_args+=(--skip-hostname-binding --smoke-generated-fqdn)

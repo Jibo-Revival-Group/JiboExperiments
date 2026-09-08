@@ -15,6 +15,7 @@ test("staging capacity sweep is bounded, serial, and staging-only", () => {
   assert.match(workflow, /syntheticIdentityUpperBound.*21/);
   assert.match(workflow, /cancel-in-progress: false/);
   assert.match(workflow, /TURN_ROUNDS: \$\{\{ inputs\.turn_rounds \}\}/);
+  assert.match(workflow, /RELEASE_SMOKE_BOOTSTRAP_CONCURRENCY: "4"/);
   assert.match(workflow, /Staging must begin with release-smoke disabled/);
   assert.match(workflow, /openjibo-cloud\.\*\.azurecontainerapps\.io/);
   assert.match(workflow, /RunningAtMaxScale/);
@@ -26,7 +27,7 @@ test("staging capacity sweep is bounded, serial, and staging-only", () => {
 test("staging capacity sweep retains evidence and always restores authorization and scale", () => {
   const configure = workflow.indexOf("- name: Enable bounded two-replica sweep");
   const run = workflow.indexOf("- name: Run serial 6, 10, 15, and 20 robot tiers");
-  const report = workflow.indexOf("- name: Capture exact-revision aggregate report");
+  const report = workflow.indexOf("- name: Capture and enforce exact-revision telemetry");
   const cleanup = workflow.indexOf("- name: Disable temporary release smoke authorization");
   const restore = workflow.indexOf("- name: Restore staging scale");
   const verify = workflow.indexOf("- name: Verify staging invariants after cleanup");
@@ -40,8 +41,11 @@ test("staging capacity sweep retains evidence and always restores authorization 
   assert.match(workflow, /tier-\$\{tier\}\.json/);
   assert.match(workflow, /tier-\$\{tier\}-window\.json/);
   assert.match(workflow, /aggregate-report\.json/);
+  assert.match(workflow, /openjibo-capacity-tier-evidence\.mjs/);
+  assert.match(workflow, /tier-database-evidence\.json/);
+  assert.match(workflow, /tier-telemetry-incomplete/);
   assert.match(workflow, /az extension add --name application-insights --yes/);
-  assert.match(workflow, /telemetry-not-yet-ingested/);
+  assert.match(workflow, /telemetry-not-yet-ingested[\s\S]*?exit 1/);
   assert.match(workflow, /report_revision.*steps\.probe\.outputs\.revision/s);
   assert.match(workflow, /evidence\.blockers\.includes\("reliability-signal-detected"\)/);
   assert.match(workflow, /touch .*reliability-signal-detected/);

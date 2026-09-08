@@ -178,6 +178,7 @@ jobs:
           RELEASE_SMOKE_TURN_ROUNDS: ${{ inputs.turn_rounds }}
           RELEASE_SMOKE_ROUND_INTERVAL_MS: ${{ inputs.round_interval_ms }}
           RELEASE_SMOKE_HOLD_MS: "500"
+          RELEASE_SMOKE_BOOTSTRAP_CONCURRENCY: "4"
           RELEASE_SMOKE_MIN_REPLICAS: "2"
           RELEASE_SMOKE_EXPECTED_REVISION: ${{ steps.probe.outputs.revision }}
         run: |
@@ -203,9 +204,9 @@ jobs:
           PY
           for tier in 6 10 15 20; do
             echo "Running staging capacity tier with $tier connected fake robots."
-            tier_started_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            tier_started_utc="$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)"
             RELEASE_SMOKE_CONCURRENCY="$tier" node ./scripts/cloud/invoke-release-smoke.mjs | tee "$evidence_dir/tier-${tier}.json"
-            tier_completed_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            tier_completed_utc="$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)"
             python3 - "$evidence_dir/tier-${tier}-window.json" "$tier" "$tier_started_utc" "$tier_completed_utc" <<'PY'
           import json
           import sys
@@ -219,7 +220,7 @@ jobs:
           PY
           done
 
-      - name: Capture exact-revision aggregate report
+      - name: Capture and enforce exact-revision telemetry
         shell: bash
         run: |
           set -euo pipefail
@@ -237,10 +238,32 @@ jobs:
           if [[ "$telemetry_observed" != "true" ]]; then
             echo "Load passed, but aggregate telemetry was not ingested within the bounded wait." >&2
             touch "$RUNNER_TEMP/openjibo-staging-capacity/telemetry-not-yet-ingested"
+            exit 1
           fi
           report_revision="$(node -e 'const r=require(process.argv[1]); process.stdout.write(r.scope.revision || "")' "$report_path")"
           if [[ "$report_revision" != "${{ steps.probe.outputs.revision }}" ]]; then
             echo "Aggregate report revision does not match the capacity probe revision." >&2
+            exit 1
+          fi
+          tier_evidence_path="$RUNNER_TEMP/openjibo-staging-capacity/tier-database-evidence.json"
+          tier_coverage=false
+          for attempt in 1 2 3; do
+            node ./scripts/cloud/openjibo-capacity-tier-evidence.mjs --resource-group "$OPENJIBO_RESOURCE_GROUP" --application-insights appi-openjibo-managed --revision "${{ steps.probe.outputs.revision }}" --windows-dir "$RUNNER_TEMP/openjibo-staging-capacity" --output "$tier_evidence_path"
+            if node -e 'const r=require(process.argv[1]); process.exit(r.coverage.complete ? 0 : 1)' "$tier_evidence_path"; then
+              tier_coverage=true
+              break
+            fi
+            echo "Per-tier database telemetry is incomplete (attempt $attempt of 3)." >&2
+            sleep 30
+          done
+          if [[ "$tier_coverage" != "true" ]]; then
+            echo "Capacity evidence is missing per-tier pending-request or connection-usage samples." >&2
+            touch "$RUNNER_TEMP/openjibo-staging-capacity/tier-telemetry-incomplete"
+            exit 1
+          fi
+          if node -e 'const r=require(process.argv[1]); process.exit((r.reliability.pendingRequestMax ?? 0) > 0 ? 0 : 1)' "$tier_evidence_path"; then
+            echo "Per-tier telemetry detected a PostgreSQL pool wait." >&2
+            touch "$RUNNER_TEMP/openjibo-staging-capacity/reliability-signal-detected"
             exit 1
           fi
           if node -e 'const r=require(process.argv[1]); process.exit(r.evidence.blockers.includes("reliability-signal-detected") ? 0 : 1)' "$report_path"; then

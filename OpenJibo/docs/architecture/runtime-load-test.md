@@ -18,6 +18,7 @@ Run `node ./scripts/cloud/invoke-release-smoke.mjs` with `BASE_URL` and these op
 | Variable | Default | Bound | Meaning |
 | --- | ---: | ---: | --- |
 | `RELEASE_SMOKE_CONCURRENCY` | `6` | `1-100` | Connected fake notification sockets |
+| `RELEASE_SMOKE_BOOTSTRAP_CONCURRENCY` | `4` | `1-100` | Maximum simultaneous token-issuance and initial socket operations |
 | `RELEASE_SMOKE_TURN_PERCENT` | `25` | `0-100` | Simultaneous turn share per round |
 | `RELEASE_SMOKE_TURN_ROUNDS` | `1` | `1-1000` | Number of rotating turn rounds |
 | `RELEASE_SMOKE_HOLD_MS` | `500` | `0-86400000` | Quiet hold after all sockets connect |
@@ -102,6 +103,18 @@ The curve is non-monotonic, so these brief samples do not show a linear saturati
 use and two requests pending. The next sample returned to zero and all turns completed, but any pool wait fails the
 certification rule. The 10% workflow run predated enforcement of that report result; the workflow now preserves the
 artifact, performs cleanup, and fails when aggregate telemetry reports `reliability-signal-detected`.
+
+The original driver issued every tier's tokens and initial notification sockets at once. The guarded repeat now
+limits that bootstrap phase to four operations while leaving the selected 10%, 25%, or 50% simultaneous turn load
+unchanged. This separates steady connected-robot/turn evidence from a 20-way enrollment burst; a reconnect or
+enrollment storm remains a separate scenario to test deliberately.
+
+The repeat workflow also writes `tier-database-evidence.json`. It queries only the exact probe revision and the
+recorded tier windows, retains bounded `cloud_state`/`personal_memory` pool and replica dimensions, and summarizes
+used connections, executing commands, and pending requests for each tier. Active connection gauges corroborate a
+zero when Npgsql does not create a pending-request series. A tier with no usable connection samples, aggregate
+telemetry that never becomes visible, or any observed pending request fails the evidence step; cleanup and artifact
+upload still run.
 
 Do not begin the 60-minute step yet. First repeat the short matrix with the new guard and retain per-tier pool
 samples so a wait can be attributed to connection/token ramp or turn processing. The aggregate reports' value of

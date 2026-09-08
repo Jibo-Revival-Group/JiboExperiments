@@ -687,6 +687,8 @@ These are the carryover items that need a clean proof pass first:
   - the three short sweeps completed 460 of 460 requested transcript-bearing turns without an incorrect reply, socket loss, or timeout; latency was non-monotonic, with repeated P95 peaks near 3.1 seconds at the 15-robot tier in the 25% and 50% runs and lower P95 at 20 robots
   - the 10% run observed one cloud-state pool sample with all eight connections used and two pending requests during the 20-robot tier; it returned to zero at the next sample, but this fails the no-pool-wait capacity criterion and prevents the short matrix from being certified
   - the staging workflow now fails after preserving its report whenever aggregate telemetry contains `reliability-signal-detected`; cleanup and evidence upload still run under `always()`
+  - the guarded repeat now bounds token issuance and initial notification-socket bootstrap to four concurrent robots without reducing the selected simultaneous-turn percentage; a separate reconnect/enrollment-storm scenario will retain the intentionally bursty case
+  - an exact-revision tier evidence collector records bounded Npgsql pool, used-connection, executing-command, and pending-request samples against each millisecond-precision tier window; missing usable connection telemetry now fails the evidence step rather than producing a false-green run
   - the staging aggregate windows were only about six minutes and intentionally remain `insufficient-evidence`; they exercise `CLIENT_ASR`, not physical Ogg/Opus audio or Azure Speech capacity, and cannot certify an enrollment or concurrency limit
 - Exit criteria:
   - production DI does not resolve `InMemoryCloudStateStore` for durable cloud state or personal memory
@@ -697,7 +699,7 @@ These are the carryover items that need a clean proof pass first:
   - migration dry-run, apply, verification, rollback/export, backup creation, and restore all have automated tests and a managed-deployment smoke check
   - operators can detect persistence degradation before robot requests begin timing out while `/health` remains green
 - Next action:
-  - repeat the short matrix with the new reliability guard and capture the cloud-state pool state around each tier; do not start the 60-minute step while any pending request is observed
+  - merge the bounded-bootstrap and per-tier evidence repair, then repeat the 10% short matrix with the new reliability guard; do not start the 60-minute step while any pending request is observed
   - investigate the pool-saturation sample, repeatable 15-robot latency tail, and aggregate `maximumReplicasObserved: 3` reading before treating short-run telemetry as a capacity boundary
   - add a captured-audio/reconnect soak on staging; do not make an Azure Speech, physical-audio, or 50-concurrent-robot claim from the transcript-bearing driver
   - draft sustained-window operational alerts from the representative baseline, but do not enable paging until an operator action group and response ownership are reviewed

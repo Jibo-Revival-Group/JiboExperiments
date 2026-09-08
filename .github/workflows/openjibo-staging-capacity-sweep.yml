@@ -220,6 +220,13 @@ jobs:
           PY
           done
 
+      - name: Refresh Azure login for telemetry
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Capture and enforce exact-revision telemetry
         shell: bash
         run: |
@@ -271,6 +278,14 @@ jobs:
             touch "$RUNNER_TEMP/openjibo-staging-capacity/reliability-signal-detected"
             exit 1
           fi
+
+      - name: Refresh Azure login for cleanup
+        if: always() && steps.baseline.outputs.app_name != ''
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Disable temporary release smoke authorization
         if: always() && steps.baseline.outputs.app_name != ''

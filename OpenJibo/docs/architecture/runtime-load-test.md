@@ -18,6 +18,7 @@ Run `node ./scripts/cloud/invoke-release-smoke.mjs` with `BASE_URL` and these op
 | Variable | Default | Bound | Meaning |
 | --- | ---: | ---: | --- |
 | `RELEASE_SMOKE_CONCURRENCY` | `6` | `1-100` | Connected fake notification sockets |
+| `RELEASE_SMOKE_BOOTSTRAP_CONCURRENCY` | `4` | `1-100` | Maximum simultaneous token-issuance and initial socket operations |
 | `RELEASE_SMOKE_TURN_PERCENT` | `25` | `0-100` | Simultaneous turn share per round |
 | `RELEASE_SMOKE_TURN_ROUNDS` | `1` | `1-1000` | Number of rotating turn rounds |
 | `RELEASE_SMOKE_HOLD_MS` | `500` | `0-86400000` | Quiet hold after all sockets connect |
@@ -73,3 +74,50 @@ turns returned the expected joke sequence. Client-observed turn latency was 218 
 Notification reconnect, malformed-frame recovery, missing-token rejection, and post-session robot persistence
 also passed. This proves the driver and current staging protocol path, not a capacity tier: the run was brief,
 used `CLIENT_ASR`, and preceded deployment/export of the new runtime measurements.
+
+## Short Matrix Evidence (`2026-09-07`)
+
+Runs `34121034373`, `34122033998`, and `34123116268` exercised the 25%, 50%, and 10% simultaneous-turn cases,
+respectively, against the unchanged image `sha-3773955b69c6`. Each run observed two serving replicas, proved a
+different replica could read a committed registration, restored the original one-to-two scale, disabled release
+smoke, and removed the temporary authorization secret. Across all runs, 460 of 460 requested turns completed with
+the expected reply order and no socket timeout or incorrect response.
+
+| Turn share | Connected robots | Active turns/round | Completed turns | Client P95 |
+| ---: | ---: | ---: | ---: | ---: |
+| 10% | 6 | 1 | 10 | 2,133 ms |
+| 10% | 10 | 1 | 10 | 792 ms |
+| 10% | 15 | 2 | 20 | 2,003 ms |
+| 10% | 20 | 2 | 20 | 1,773 ms |
+| 25% | 6 | 2 | 20 | 1,227 ms |
+| 25% | 10 | 3 | 30 | 1,906 ms |
+| 25% | 15 | 4 | 40 | 3,143 ms |
+| 25% | 20 | 5 | 50 | 1,973 ms |
+| 50% | 6 | 3 | 30 | 2,073 ms |
+| 50% | 10 | 5 | 50 | 1,168 ms |
+| 50% | 15 | 8 | 80 | 3,132 ms |
+| 50% | 20 | 10 | 100 | 2,324 ms |
+
+The curve is non-monotonic, so these brief samples do not show a linear saturation point. More importantly, the
+10% run captured one `cloud_state` pool sample during the 20-robot tier with all eight per-replica connections in
+use and two requests pending. The next sample returned to zero and all turns completed, but any pool wait fails the
+certification rule. The 10% workflow run predated enforcement of that report result; the workflow now preserves the
+artifact, performs cleanup, and fails when aggregate telemetry reports `reliability-signal-detected`.
+
+The original driver issued every tier's tokens and initial notification sockets at once. The guarded repeat now
+limits that bootstrap phase to four operations while leaving the selected 10%, 25%, or 50% simultaneous turn load
+unchanged. This separates steady connected-robot/turn evidence from a 20-way enrollment burst; a reconnect or
+enrollment storm remains a separate scenario to test deliberately.
+
+The repeat workflow also writes `tier-database-evidence.json`. It queries only the exact probe revision and the
+recorded tier windows, retains bounded `cloud_state`/`personal_memory` pool and replica dimensions, and summarizes
+used connections, executing commands, and pending requests for each tier. Active connection gauges corroborate a
+zero when Npgsql does not create a pending-request series. A tier with no usable connection samples, aggregate
+telemetry that never becomes visible, or any observed pending request fails the evidence step; cleanup and artifact
+upload still run.
+
+Do not begin the 60-minute step yet. First repeat the short matrix with the new guard and retain per-tier pool
+samples so a wait can be attributed to connection/token ramp or turn processing. The aggregate reports' value of
+three maximum replicas also needs correlation with revision lifecycle events because every point-in-time probe saw
+the required two replicas. Physical Ogg/Opus audio, STT-provider load, reconnect storms, and sustained memory slope
+remain outside this matrix.

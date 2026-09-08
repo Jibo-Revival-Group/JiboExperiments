@@ -677,6 +677,19 @@ These are the carryover items that need a clean proof pass first:
   - application working set remains bounded at about 261 MiB maximum, Container Apps working set at about 304 MiB, highest hourly-average CPU at 2.0% of one core, PostgreSQL connections at 3 of 50 maximum, and persistence cache hits at 99.6%
   - buffered audio was 0 bytes at P95 with a 149 KiB observed high-water mark; this is encouraging evidence that turn audio is released, but the passive baseline still does not replace the staged reconnect/audio soak
   - no production deployment, configuration update, or active load was run; rerun the same read-only report after the exact-revision window exceeds 134.4 hours and allow for telemetry ingestion delay
+- Capacity observation update (`2026-09-07`):
+  - production revision `openjibo-cloud--0000049` on image `sha-3773955b69c6` now has 143.38 of 168 exact-revision hours (85.35% coverage), passes the representative-evidence gate, and has no remaining report blocker or missing signal
+  - at the planning assumption of 2.5 average continuously connected robots, application memory peaked at about 261 MiB of 2 GiB, Container Apps memory at about 304 MiB, highest hourly-average CPU at 2.1% of one core, and PostgreSQL connections at 3 of 50
+  - no restart, database command failure, pending-request queue, or audio-limit rejection was observed; the bounded persistence cache hit ratio was 99.64%, while buffered audio was 0 bytes at P95 with a 153 KiB high-water mark
+  - application payload was about 307 MiB per observed robot-day; reconciling the 77.8% application-to-platform-wire ratio gives a planning estimate near 395 MiB of platform wire traffic per continuously connected robot-day
+  - this supports a healthy 2.5-robot production baseline and a bandwidth-cost worksheet, not linear fleet extrapolation; 50 enrolled robots remains an economic-planning scenario whose operational concurrency and full provider cost are unproven by this evidence
+  - staging workflow runs `34121034373` (25% simultaneous turns), `34122033998` (50%), and `34123116268` (10%) exercised the 6/10/15/20 connected-robot tiers on the unchanged production image with two serving replicas, cross-replica persistence proof, and cleanup restoration
+  - the three short sweeps completed 460 of 460 requested transcript-bearing turns without an incorrect reply, socket loss, or timeout; latency was non-monotonic, with repeated P95 peaks near 3.1 seconds at the 15-robot tier in the 25% and 50% runs and lower P95 at 20 robots
+  - the 10% run observed one cloud-state pool sample with all eight connections used and two pending requests during the 20-robot tier; it returned to zero at the next sample, but this fails the no-pool-wait capacity criterion and prevents the short matrix from being certified
+  - the staging workflow now fails after preserving its report whenever aggregate telemetry contains `reliability-signal-detected`; cleanup and evidence upload still run under `always()`
+  - the guarded repeat now bounds token issuance and initial notification-socket bootstrap to four concurrent robots without reducing the selected simultaneous-turn percentage; a separate reconnect/enrollment-storm scenario will retain the intentionally bursty case
+  - an exact-revision tier evidence collector records bounded Npgsql pool, used-connection, executing-command, and pending-request samples against each millisecond-precision tier window; missing usable connection telemetry now fails the evidence step rather than producing a false-green run
+  - the staging aggregate windows were only about six minutes and intentionally remain `insufficient-evidence`; they exercise `CLIENT_ASR`, not physical Ogg/Opus audio or Azure Speech capacity, and cannot certify an enrollment or concurrency limit
 - Exit criteria:
   - production DI does not resolve `InMemoryCloudStateStore` for durable cloud state or personal memory
   - no production mutation serializes or rewrites a whole-cloud JSON snapshot
@@ -686,8 +699,10 @@ These are the carryover items that need a clean proof pass first:
   - migration dry-run, apply, verification, rollback/export, backup creation, and restore all have automated tests and a managed-deployment smoke check
   - operators can detect persistence degradation before robot requests begin timing out while `/health` remains green
 - Next action:
-  - keep the current exact revision in production and rerun `openjibo-capacity-report.mjs --resource-group rg-openjibo-prod --days 7 --average-robots 2.5` after at least 134.4 observed hours; do not make a fleet-capacity claim before the full gate passes
-  - schedule the 6/10/15/20 connected fake-robot worksheet separately in staging; do not enable release-smoke authorization or change scale on production
+  - merge the bounded-bootstrap and per-tier evidence repair, then repeat the 10% short matrix with the new reliability guard; do not start the 60-minute step while any pending request is observed
+  - investigate the pool-saturation sample, repeatable 15-robot latency tail, and aggregate `maximumReplicasObserved: 3` reading before treating short-run telemetry as a capacity boundary
+  - add a captured-audio/reconnect soak on staging; do not make an Azure Speech, physical-audio, or 50-concurrent-robot claim from the transcript-bearing driver
+  - draft sustained-window operational alerts from the representative baseline, but do not enable paging until an operator action group and response ownership are reviewed
 
 ### Next Up (`2026-05-06`): Dialog Parsing Expansion And Ambiguity Guardrails
 

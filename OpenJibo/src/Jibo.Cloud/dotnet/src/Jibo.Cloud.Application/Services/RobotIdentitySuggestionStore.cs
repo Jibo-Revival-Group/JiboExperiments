@@ -241,15 +241,18 @@ public static class RobotIdentityCandidateExtractor
             return [];
 
         var syslogCandidates = ExtractSyslogCandidates(json);
+        var healthPayloadCandidates = ExtractHealthPayloadCandidates(json);
         if (!CandidateFields.Any(field => json.Contains(field, StringComparison.OrdinalIgnoreCase)) &&
             !json.Contains("\"jibo\"", StringComparison.OrdinalIgnoreCase) &&
             !json.Contains("\"serial_number\"", StringComparison.OrdinalIgnoreCase))
-            return syslogCandidates;
+            return syslogCandidates.Concat(healthPayloadCandidates).ToArray();
 
         try
         {
             using var document = JsonDocument.Parse(json);
-            var candidates = new List<RobotIdentityCandidate>(syslogCandidates);
+            var candidates = new List<RobotIdentityCandidate>(syslogCandidates.Count + healthPayloadCandidates.Count);
+            candidates.AddRange(syslogCandidates);
+            candidates.AddRange(healthPayloadCandidates);
             Visit(document.RootElement, string.Empty, candidates);
             return candidates
                 .Where(candidate => RobotIdentitySuggestionStore.IsSafeIdentityName(candidate.Value))
@@ -258,8 +261,76 @@ public static class RobotIdentityCandidateExtractor
         }
         catch (JsonException)
         {
-            return syslogCandidates;
+            return syslogCandidates.Concat(healthPayloadCandidates)
+                .DistinctBy(candidate => $"{candidate.Field}\0{candidate.Value}", StringComparer.OrdinalIgnoreCase)
+                .ToArray();
         }
+    }
+
+    /// <summary>
+    /// Reads serial numbers from a bounded robot-log prefix. A serial is evidence for matching an
+    /// existing verified registration; this method never treats a log as serial verification.
+    /// </summary>
+    public static IReadOnlyList<string> ExtractSerialNumbers(string? text) => ReadHealthHeaders(text).Serials;
+
+    // Stream only complete top-level string fields. This accepts NDJSON and a
+    // bounded prefix of a large health object without guessing across objects,
+    // nested components, or JSON-escaped log messages.
+    private static (string[] Names, string[] Serials) ReadHealthHeaders(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return ([], []);
+        var bytes = System.Text.Encoding.UTF8.GetBytes(text[..Math.Min(text.Length, 256 * 1024)]);
+        var reader = new Utf8JsonReader(bytes, isFinalBlock: false,
+            new JsonReaderState(new JsonReaderOptions { AllowMultipleValues = true }));
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var serials = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var rootNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var rootSerials = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        string? property = null;
+        void FinishRoot()
+        {
+            if (rootSerials.Count > 0)
+            {
+                names.UnionWith(rootNames);
+                serials.UnionWith(rootSerials);
+            }
+            rootNames.Clear();
+            rootSerials.Clear();
+        }
+        try
+        {
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonTokenType.StartObject && reader.CurrentDepth == 0)
+                {
+                    FinishRoot();
+                    property = null;
+                }
+                else if (reader.TokenType == JsonTokenType.PropertyName && reader.CurrentDepth == 1)
+                    property = reader.GetString();
+                else if (reader.TokenType == JsonTokenType.String && reader.CurrentDepth == 1)
+                {
+                    var value = reader.GetString()?.Trim();
+                    if (!string.IsNullOrWhiteSpace(value) && value.Length <= 120)
+                    {
+                        if (string.Equals(property, "name", StringComparison.OrdinalIgnoreCase)) rootNames.Add(value);
+                        if (string.Equals(property, "serial_number", StringComparison.OrdinalIgnoreCase)) rootSerials.Add(value);
+                    }
+                    property = null;
+                }
+                else
+                {
+                    property = null;
+                    if (reader.TokenType == JsonTokenType.EndObject && reader.CurrentDepth == 0) FinishRoot();
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Retain already parsed header strings when the sampled tail is incomplete.
+        }
+        FinishRoot();
+        return (names.ToArray(), serials.ToArray());
     }
 
     private static void Visit(JsonElement element, string path, List<RobotIdentityCandidate> candidates)
@@ -289,6 +360,12 @@ public static class RobotIdentityCandidateExtractor
                 Visit(item, $"{path}[{index++}]", candidates);
         }
     }
+
+    private static IReadOnlyList<RobotIdentityCandidate> ExtractHealthPayloadCandidates(string text) =>
+        ReadHealthHeaders(text).Names
+            .Where(RobotIdentitySuggestionStore.IsSafeIdentityName)
+            .Select(name => new RobotIdentityCandidate("name", name))
+            .ToArray();
 
     private static IReadOnlyList<RobotIdentityCandidate> ExtractSyslogCandidates(string text)
     {

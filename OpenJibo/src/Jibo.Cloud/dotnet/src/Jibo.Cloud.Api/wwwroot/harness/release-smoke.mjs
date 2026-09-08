@@ -1,6 +1,7 @@
 const DEFAULT_TIMEOUT_MS = 6000;
 const DEFAULT_LOAD_OPTIONS = Object.freeze({
   robotCount: 6,
+  bootstrapConcurrency: 4,
   turnPercent: 25,
   turnRounds: 1,
   holdMs: 500,
@@ -23,6 +24,8 @@ export function normalizeLoadOptions(options = {}) {
   return {
     robotCount: boundedInteger(options.robotCount ?? options.concurrency ?? DEFAULT_LOAD_OPTIONS.robotCount,
       "robotCount", 1, 100),
+    bootstrapConcurrency: boundedInteger(options.bootstrapConcurrency ?? DEFAULT_LOAD_OPTIONS.bootstrapConcurrency,
+      "bootstrapConcurrency", 1, 100),
     turnPercent: boundedInteger(options.turnPercent ?? DEFAULT_LOAD_OPTIONS.turnPercent,
       "turnPercent", 0, 100),
     turnRounds: boundedInteger(options.turnRounds ?? DEFAULT_LOAD_OPTIONS.turnRounds,
@@ -38,6 +41,23 @@ export function normalizeLoadOptions(options = {}) {
 
 function delay(milliseconds) {
   return milliseconds > 0 ? new Promise((resolve) => setTimeout(resolve, milliseconds)) : Promise.resolve();
+}
+
+export async function mapWithConcurrency(items, concurrency, action) {
+  assert(Array.isArray(items), "items must be an array.");
+  assert(typeof action === "function", "action must be a function.");
+  const workerCount = Math.min(items.length,
+    boundedInteger(concurrency, "concurrency", 1, 100));
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await action(items[index], index);
+    }
+  }));
+  return results;
 }
 
 const protocolResponseMetadata = new WeakMap();
@@ -321,6 +341,7 @@ export async function runReleaseSmoke({
   WebSocketImpl = globalThis.WebSocket,
   robotPrefix = `release-smoke-${Date.now()}`,
   concurrency = 6,
+  bootstrapConcurrency,
   turnPercent,
   turnRounds,
   holdMs,
@@ -338,6 +359,7 @@ export async function runReleaseSmoke({
   assert(typeof WebSocketImpl === "function", "A WebSocket implementation is required.");
   const loadOptions = normalizeLoadOptions({
     concurrency,
+    bootstrapConcurrency,
     turnPercent,
     turnRounds,
     holdMs,
@@ -498,7 +520,8 @@ export async function runReleaseSmoke({
   await runStep(`${loadOptions.robotCount} connected fake robots with concurrent turns`, async () => {
     const sockets = [];
     try {
-      const tokens = await Promise.all(Array.from({ length: loadOptions.robotCount }, async (_, index) => {
+      const tokens = await mapWithConcurrency(Array.from({ length: loadOptions.robotCount }),
+        loadOptions.bootstrapConcurrency, async (_, index) => {
         const concurrentDeviceId = `${robotPrefix}-concurrent-${index + 1}`;
         const issued = await protocolCall("Notification_20160715", "NewRobotToken", {
           deviceId: concurrentDeviceId,
@@ -508,10 +531,11 @@ export async function runReleaseSmoke({
         const hub = await protocolCall("Account_20160715", "CreateHubToken", { deviceId: concurrentDeviceId });
         assert(hub?.token, `Concurrent fake robot ${index + 1} did not receive a Hub token.`);
         return { deviceId: concurrentDeviceId, robotToken: issued.token, hubToken: hub.token };
-      }));
-      sockets.push(...await Promise.all(tokens.map(({ robotToken: issuedToken }, index) =>
+      });
+      sockets.push(...await mapWithConcurrency(tokens, loadOptions.bootstrapConcurrency,
+        ({ robotToken: issuedToken }, index) =>
         openSocket(WebSocketImpl, websocketUrl(baseUrl, `/${encodeURIComponent(issuedToken)}`),
-          `concurrent robot ${index + 1}`, loadOptions.timeoutMs))));
+          `concurrent robot ${index + 1}`, loadOptions.timeoutMs)));
       await delay(loadOptions.holdMs);
       assert(sockets.every((socket) => socket.readyState === 1),
         "One or more concurrent robot sockets closed unexpectedly.");

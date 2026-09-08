@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Azure;
 using Azure.Storage.Blobs;
@@ -16,6 +17,14 @@ public sealed class AzureBlobMediaContentStore : IMediaContentStore
     };
 
     private readonly BlobContainerClient _containerClient;
+    private readonly ConcurrentDictionary<string, ManifestCacheEntry> _manifestCache = new(StringComparer.Ordinal);
+    private readonly SemaphoreSlim _listingGate = new(1, 1);
+    private const int MaxCachedManifests = 4096;
+
+    public AzureBlobMediaContentStore(BlobContainerClient containerClient)
+    {
+        _containerClient = containerClient ?? throw new ArgumentNullException(nameof(containerClient));
+    }
 
     public AzureBlobMediaContentStore(string? connectionString, string containerName = "openjibo-media")
     {
@@ -101,46 +110,83 @@ public sealed class AzureBlobMediaContentStore : IMediaContentStore
             ? string.Empty
             : MediaPathHelper.GetRelativeStoragePath(prefix).Replace('\\', '/');
         if (!string.IsNullOrWhiteSpace(normalizedPrefix)) normalizedPrefix += "/";
-        var items = new List<MediaContentItem>();
+        // Blob listing includes ETags. Reuse unchanged manifests, while still
+        // enumerating the full prefix so maxCount means newest, not lexical first.
+        await _listingGate.WaitAsync(cancellationToken);
         try
         {
-            await foreach (var blob in _containerClient.GetBlobsAsync(BlobTraits.None, BlobStates.None,
-                               normalizedPrefix, cancellationToken))
+            var manifests = new List<BlobItem>();
+            try
             {
-                if (!blob.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
-
-                try
+                await foreach (var blob in _containerClient.GetBlobsAsync(BlobTraits.None, BlobStates.None,
+                                   normalizedPrefix, cancellationToken))
                 {
-                    var content = await _containerClient.GetBlobClient(blob.Name).DownloadContentAsync(cancellationToken);
-                    using var document = JsonDocument.Parse(content.Value.Content.ToStream());
-                    var root = document.RootElement;
-                    var path = root.TryGetProperty("path", out var pathElement) ? pathElement.GetString() : null;
-                    if (string.IsNullOrWhiteSpace(path)) continue;
-                    var contentType = root.TryGetProperty("contentType", out var typeElement)
-                        ? typeElement.GetString() ?? "application/octet-stream"
-                        : "application/octet-stream";
-                    var meta = root.TryGetProperty("meta", out var metaElement) && metaElement.ValueKind == JsonValueKind.Object
-                        ? JsonSerializer.Deserialize<Dictionary<string, object?>>(metaElement.GetRawText(), JsonOptions) ?? []
-                        : new Dictionary<string, object?>();
-                    items.Add(new MediaContentItem { Path = path, ContentType = contentType, Meta = meta });
-                }
-                catch (JsonException)
-                {
-                    // Keep listing healthy if one historic manifest cannot be parsed.
+                    if (blob.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                        manifests.Add(blob);
                 }
             }
-        }
-        catch (RequestFailedException exception) when (exception.Status == 404)
-        {
-            return [];
-        }
+            catch (RequestFailedException exception) when (exception.Status == 404)
+            {
+                _manifestCache.Clear();
+                return [];
+            }
 
-        return items
-            .OrderByDescending(item => ReadStoredUtc(item.Meta))
-            .Take(Math.Max(1, maxCount))
-            .ToArray();
+            var present = manifests.Select(blob => blob.Name).ToHashSet(StringComparer.Ordinal);
+            foreach (var key in _manifestCache.Keys)
+                if (key.StartsWith(normalizedPrefix, StringComparison.Ordinal) && !present.Contains(key))
+                    _manifestCache.TryRemove(key, out _);
+
+            var items = new ConcurrentBag<MediaContentItem>();
+            await Parallel.ForEachAsync(manifests,
+                new ParallelOptions { MaxDegreeOfParallelism = 8, CancellationToken = cancellationToken },
+                async (blob, token) =>
+                {
+                    var etag = blob.Properties.ETag;
+                    if (etag.HasValue && _manifestCache.TryGetValue(blob.Name, out var cached) && cached.ETag == etag)
+                    {
+                        items.Add(cached.Item);
+                        return;
+                    }
+                    _manifestCache.TryRemove(blob.Name, out _);
+                    try
+                    {
+                        var content = await _containerClient.GetBlobClient(blob.Name).DownloadContentAsync(token);
+                        using var document = JsonDocument.Parse(content.Value.Content.ToStream());
+                        var root = document.RootElement;
+                        var path = root.TryGetProperty("path", out var pathElement) ? pathElement.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(path)) return;
+                        var contentType = root.TryGetProperty("contentType", out var typeElement)
+                            ? typeElement.GetString() ?? "application/octet-stream"
+                            : "application/octet-stream";
+                        var meta = root.TryGetProperty("meta", out var metaElement) && metaElement.ValueKind == JsonValueKind.Object
+                            ? JsonSerializer.Deserialize<Dictionary<string, object?>>(metaElement.GetRawText(), JsonOptions) ?? []
+                            : new Dictionary<string, object?>();
+                        var item = new MediaContentItem { Path = path, ContentType = contentType, Meta = meta };
+                        items.Add(item);
+                        if (etag.HasValue && _manifestCache.Count < MaxCachedManifests)
+                            _manifestCache[blob.Name] = new ManifestCacheEntry(etag.Value, item);
+                    }
+                    catch (JsonException)
+                    {
+                        // One malformed historical manifest must not break the listing.
+                    }
+                    catch (RequestFailedException exception) when (exception.Status == 404)
+                    {
+                        // A retention job may delete a manifest after enumeration.
+                    }
+                });
+
+            return items.OrderByDescending(item => ReadStoredUtc(item.Meta))
+                .ThenBy(item => item.Path, StringComparer.Ordinal)
+                .Take(Math.Max(1, maxCount)).ToArray();
+        }
+        finally
+        {
+            _listingGate.Release();
+        }
     }
 
+    private sealed record ManifestCacheEntry(ETag ETag, MediaContentItem Item);
     private static DateTimeOffset ReadStoredUtc(IReadOnlyDictionary<string, object?> meta) =>
         meta.TryGetValue("storedUtc", out var value) &&
         DateTimeOffset.TryParse(value?.ToString(), out var parsed)

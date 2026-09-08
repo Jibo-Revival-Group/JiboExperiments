@@ -62,6 +62,7 @@ try {
     protocolCall,
     robotPrefix,
     concurrency: process.env.RELEASE_SMOKE_CONCURRENCY || 6,
+    bootstrapConcurrency: process.env.RELEASE_SMOKE_BOOTSTRAP_CONCURRENCY || 4,
     turnPercent: process.env.RELEASE_SMOKE_TURN_PERCENT || 25,
     turnRounds: process.env.RELEASE_SMOKE_TURN_ROUNDS || 1,
     holdMs: process.env.RELEASE_SMOKE_HOLD_MS || 500,

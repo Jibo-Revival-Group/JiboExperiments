@@ -9,6 +9,7 @@ import {
   collectReplicaEvidence,
   createProtocolCaller,
   getProtocolResponseMetadata,
+  mapWithConcurrency,
   normalizeLoadOptions,
   openSocket,
   runReleaseSmoke,
@@ -242,6 +243,7 @@ test("conversion scripts preserve explicit self-hosted API and Hub endpoints", (
 test("normalizeLoadOptions validates and preserves bounded load controls", () => {
   assert.deepEqual(normalizeLoadOptions({
     robotCount: "20",
+    bootstrapConcurrency: "4",
     turnPercent: "50",
     turnRounds: "4",
     holdMs: "1000",
@@ -249,6 +251,7 @@ test("normalizeLoadOptions validates and preserves bounded load controls", () =>
     timeoutMs: "9000",
   }), {
     robotCount: 20,
+    bootstrapConcurrency: 4,
     turnPercent: 50,
     turnRounds: 4,
     holdMs: 1000,
@@ -256,6 +259,7 @@ test("normalizeLoadOptions validates and preserves bounded load controls", () =>
     timeoutMs: 9000,
   });
   assert.throws(() => normalizeLoadOptions({ robotCount: 0 }), /robotCount/);
+  assert.throws(() => normalizeLoadOptions({ bootstrapConcurrency: 0 }), /bootstrapConcurrency/);
   assert.throws(() => normalizeLoadOptions({ turnPercent: 101 }), /turnPercent/);
   assert.throws(() => normalizeLoadOptions({ turnRounds: "not-a-number" }), /turnRounds/);
 });
@@ -290,6 +294,20 @@ test("createProtocolCaller authorizes bounded deployment-smoke token issuance", 
     instanceId: "revision-a/replica-1",
     revision: "revision-a",
   });
+});
+
+test("mapWithConcurrency bounds bootstrap work and preserves result order", async () => {
+  let active = 0;
+  let maximumActive = 0;
+  const result = await mapWithConcurrency([1, 2, 3, 4, 5, 6], 2, async (value) => {
+    active += 1;
+    maximumActive = Math.max(maximumActive, active);
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    active -= 1;
+    return value * 2;
+  });
+  assert.equal(maximumActive, 2);
+  assert.deepEqual(result, [2, 4, 6, 8, 10, 12]);
 });
 
 test("managed registration tolerates bounded authorization rollout and no other failures", async () => {
@@ -445,6 +463,7 @@ test("runReleaseSmoke proves cross-replica persistence and rotating concurrent t
     WebSocketImpl: FakeWebSocket,
     robotPrefix: "test-load",
     concurrency: 4,
+    bootstrapConcurrency: 2,
     turnPercent: 50,
     turnRounds: 2,
     holdMs: 0,
@@ -472,6 +491,7 @@ test("runReleaseSmoke proves cross-replica persistence and rotating concurrent t
   assert(primaryListenUrls.every((url) => new URL(url).pathname.endsWith("hub-test-load-primary-2")),
     "socket checks must use the final Hub token issued by the cross-replica read");
   assert.equal(result.load.robotCount, 4);
+  assert.equal(result.load.bootstrapConcurrency, 2);
   assert.equal(result.load.activeTurnsPerRound, 2);
   assert.equal(result.load.completedTurns, 4);
   assert.equal(result.results.find((step) => step.name.includes("connected fake robots"))?.status, "passed");

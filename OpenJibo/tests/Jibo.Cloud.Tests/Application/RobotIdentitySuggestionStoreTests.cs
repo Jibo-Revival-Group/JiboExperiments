@@ -58,6 +58,17 @@ public sealed class RobotIdentitySuggestionStoreTests
     }
 
     [Fact]
+    public void Extract_ReadsHealthHeaderAndSerialFromNdjsonPrefix()
+    {
+        const string log = "{\"system_clock\":1,\"name\":\"Black-Byte-Cookie-Crinkle\",\"serial_number\":\"BOJB-1000-0017-0630-0018\",\"health\":[]}\n{\"event\":\"later\"}";
+
+        var candidate = Assert.Single(RobotIdentityCandidateExtractor.Extract(log));
+        var serial = Assert.Single(RobotIdentityCandidateExtractor.ExtractSerialNumbers(log));
+
+        Assert.Equal("Black-Byte-Cookie-Crinkle", candidate.Value);
+        Assert.Equal("BOJB-1000-0017-0630-0018", serial);
+    }
+    [Fact]
     public void Extract_ReadsRobotHostnameFromSyslogLines()
     {
         var candidates = RobotIdentityCandidateExtractor.Extract(

@@ -1343,6 +1343,45 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal("Royal-Current-Sage-Canvas", repaired.FriendlyName);
     }
 
+    [Theory]
+    [InlineData(false, null, false)]
+    [InlineData(false, "BOJB-1000-0017-0630-0018", true)]
+    [InlineData(true, "BOJB-1000-0000-0000-0000", false)]
+    [InlineData(true, null, true)]
+    public async Task IdentitySuggestion_RecognizesHealthHeaderWithoutGuessingUnassignedOwnership(
+        bool attributed, string? verifiedSerial, bool expectedSuggestion)
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var device = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "5a41326368dfd00019692602",
+            RobotId = "robot-5a41326368dfd00019692602",
+            FriendlyName = "OpenJibo Registered Robot",
+            VerifiedSerialNumber = verifiedSerial
+        });
+        var media = factory.Services.GetRequiredService<IMediaContentStore>();
+        await media.StoreAsync("logs/events/health-header", "application/json",
+            Encoding.UTF8.GetBytes("{\"system_clock\":1788905276226939674,\"name\":\"Black-Byte-Cookie-Crinkle\",\"serial_number\":\"BOJB-1000-0017-0630-0018\",\"health\":[{"),
+            new Dictionary<string, object?> { ["deviceId"] = attributed ? device.DeviceId : null });
+        await AuthenticateAdminAsync(client);
+
+        var response = await client.GetAsync($"/api/portal/status/robots/{device.DeviceId}/identity-suggestion");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(expectedSuggestion, payload.GetProperty("suggested").GetBoolean());
+        if (expectedSuggestion)
+            Assert.Equal("Black-Byte-Cookie-Crinkle", payload.GetProperty("proposedRobotId").GetString());
+        if (!attributed)
+        {
+            var evidence = payload.GetProperty("unassignedEvidence").EnumerateArray().ToArray();
+            Assert.Contains(evidence, item => item.GetProperty("value").GetString() == "Black-Byte-Cookie-Crinkle");
+            Assert.Contains(evidence, item => item.GetProperty("value").GetString() == "BOJB-1000-0017-0630-0018");
+            // A read-time suggestion must not silently claim an upload or shared credential.
+            Assert.Null((await media.LoadAsync("logs/events/health-header"))!.Meta["deviceId"]);
+        }
+    }
     [Fact]
     public async Task IdentitySuggestion_InspectsArtifactPayloadWhenManifestHasNoRobotName()
     {

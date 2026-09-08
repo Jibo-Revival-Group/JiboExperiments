@@ -3366,6 +3366,101 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LogUpload_UnassignedHealthHeaderWithUniqueVerifiedSerial_IsAssigned()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Log.Identity.Tests", Guid.NewGuid().ToString("N"));
+        var stateStore = new InMemoryCloudStateStore();
+        var device = stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "5a41326368dfd00019692602",
+            RobotId = "robot-5a41326368dfd00019692602",
+            FriendlyName = "OpenJibo Registered Robot",
+            VerifiedSerialNumber = "BOJB-1000-0017-0630-0018"
+        });
+        var suggestions = new RobotIdentitySuggestionStore(stateStore);
+        var service = new JiboCloudProtocolService(stateStore, new FileMediaContentStore(directoryPath),
+            identitySuggestionStore: suggestions);
+
+        var upload = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com", Method = "PUT", Path = "/upload/log-events/identity-by-serial",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Content-Type"] = "application/json"
+            },
+            BodyText = "{\"name\":\"Black-Byte-Cookie-Crinkle\",\"serial_number\":\"BOJB-1000-0017-0630-0018\",\"health\":[]}"
+        });
+
+        Assert.Equal(200, upload.StatusCode);
+        Assert.Equal("Black-Byte-Cookie-Crinkle", suggestions.GetSuggestion(device.DeviceId)?.ProposedRobotId);
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(
+            Path.Combine(directoryPath, "logs", "events", "identity-by-serial.json")));
+        var meta = manifest.RootElement.GetProperty("meta");
+        Assert.Equal(device.DeviceId, meta.GetProperty("deviceId").GetString());
+        Assert.Equal("log-header-verified-serial", meta.GetProperty("identitySource").GetString());
+        Assert.Equal("BOJB-1000-0017-0630-0018", meta.GetProperty("observedSerialNumber").GetString());
+        Assert.Equal("Black-Byte-Cookie-Crinkle", meta.GetProperty("observedRobotName").GetString());
+    }
+
+    [Fact]
+    public async Task LogUpload_AttributedGeneratedDevice_RecordsFriendlyNameSuggestion()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Log.Identity.Tests", Guid.NewGuid().ToString("N"));
+        var stateStore = new InMemoryCloudStateStore();
+        var device = stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "5a41326368dfd00019692602", RobotId = "robot-5a41326368dfd00019692602",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        var suggestions = new RobotIdentitySuggestionStore(stateStore);
+        var service = new JiboCloudProtocolService(stateStore, new FileMediaContentStore(directoryPath),
+            identitySuggestionStore: suggestions);
+
+        await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com", Method = "PUT", Path = "/upload/log-events/identity-suggestion",
+            DeviceId = device.DeviceId, Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Content-Type"] = "application/json"
+            },
+            BodyText = "{\"name\":\"Black-Byte-Cookie-Crinkle\",\"serial_number\":\"BOJB-1000-0017-0630-0018\",\"health\":[]}"
+        });
+
+        Assert.Equal("Black-Byte-Cookie-Crinkle", suggestions.GetSuggestion(device.DeviceId)?.ProposedRobotId);
+    }
+
+    [Fact]
+    public async Task LogUpload_ConflictingSerialPreservesAttributionAndDoesNotSuggestName()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Log.Identity.Tests", Guid.NewGuid().ToString("N"));
+        var stateStore = new InMemoryCloudStateStore();
+        var device = stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "5a41326368dfd00019692602", RobotId = "robot-5a41326368dfd00019692602",
+            FriendlyName = "OpenJibo Registered Robot", VerifiedSerialNumber = "BOJB-1000-0017-0000-0001"
+        });
+        var suggestions = new RobotIdentitySuggestionStore(stateStore);
+        var service = new JiboCloudProtocolService(stateStore, new FileMediaContentStore(directoryPath),
+            identitySuggestionStore: suggestions);
+
+        await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com", Method = "PUT", Path = "/upload/log-events/identity-conflict",
+            DeviceId = device.DeviceId, Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Content-Type"] = "application/json"
+            },
+            BodyText = "{\"name\":\"Black-Byte-Cookie-Crinkle\",\"serial_number\":\"BOJB-1000-0017-0630-0018\",\"health\":[]}"
+        });
+
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(
+            Path.Combine(directoryPath, "logs", "events", "identity-conflict.json")));
+        var meta = manifest.RootElement.GetProperty("meta");
+        Assert.Equal(device.DeviceId, meta.GetProperty("deviceId").GetString());
+        Assert.True(meta.GetProperty("identityEvidenceConflict").GetBoolean());
+        Assert.Null(suggestions.GetSuggestion(device.DeviceId));
+    }
+    [Fact]
     public async Task PutEvents_PersistsInlineLogPayload()
     {
         var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Log.Tests", Guid.NewGuid().ToString("N"));

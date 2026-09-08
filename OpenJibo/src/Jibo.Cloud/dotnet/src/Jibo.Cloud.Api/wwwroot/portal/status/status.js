@@ -21,6 +21,9 @@ let bannerTone = "success";
 let refreshTimer = null;
 let refreshInFlight = false;
 let activeLogViewer = null;
+let identityScanDeviceId = null;
+let identityScanStartedAt = null;
+let identityScanProgressTimer = null;
 
 function escapeHtml(value) {
   return String(value)
@@ -296,7 +299,7 @@ function renderRobotRows(robots = [], changedRobotIds = new Set()) {
           <button class="button secondary compact open-lrd" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Open in LRD</button>
           ${shouldOfferIdentityReview(robot) ? `
             ${robot.identitySuggestion ? `<div class="muted-row">I think this robot is <span class="mono">${escapeHtml(robot.identitySuggestion.proposedRobotId)}</span>.</div>` : ""}
-            <button class="button secondary compact suggest-identity" data-device-id="${escapeHtml(robot.deviceId)}" type="button">${robot.identitySuggestion ? "Review identity update" : "Scan identity evidence"}</button>
+            <button class="button secondary compact suggest-identity" data-device-id="${escapeHtml(robot.deviceId)}" type="button" ${identityScanDeviceId === robot.deviceId ? "disabled" : ""}>${identityScanDeviceId === robot.deviceId ? "Scanning…" : robot.identitySuggestion ? "Review identity update" : "Scan identity evidence"}</button>
           ` : ""}
           ${hasRestorableDeviceIdentity(robot) ? `<button class="button secondary compact restore-device-identity" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-id="${escapeHtml(robot.robotId)}" type="button">Restore identity to device ID</button>` : ""}
           <button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button>
@@ -417,12 +420,34 @@ async function setRobotArchive(deviceId, hidden) {
 }
 
 async function suggestRobotIdentity(deviceId) {
+  if (identityScanDeviceId) return;
+  identityScanDeviceId = deviceId;
+  identityScanStartedAt = Date.now();
+  setStatusBanner("Scanning identity evidence…", "success");
+  if (latestSummary) renderStatusView(latestSummary);
+  identityScanProgressTimer = window.setInterval(() => {
+    const progress = document.getElementById("identityScanProgress");
+    if (progress && identityScanStartedAt) {
+      progress.textContent = `(${Math.max(0, Math.floor((Date.now() - identityScanStartedAt) / 1000))}s elapsed)`;
+    }
+  }, 1000);
   try {
     const suggestion = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/identity-suggestion`);
+    window.clearInterval(identityScanProgressTimer);
+    identityScanProgressTimer = null;
+    identityScanDeviceId = null;
+    identityScanStartedAt = null;
+    const unassignedEvidence = suggestion.unassignedEvidence || [];
+    const unassignedNote = unassignedEvidence.length
+      ? `Unassigned evidence found: ${unassignedEvidence.slice(0, 3).map(item => `${item.field}: ${item.value}`).join("; ")}`
+      : "";
     if (!suggestion.suggested) {
-      window.alert("No reliable robot identity was found in the latest stored sessions and artifacts.");
+      setStatusBanner(unassignedNote || "No reliable robot identity was found in the latest stored sessions and artifacts.", "success");
+      if (latestSummary) renderStatusView(latestSummary);
       return;
     }
+    setStatusBanner(unassignedNote || "Identity evidence scan complete.", "success");
+    if (latestSummary) renderStatusView(latestSummary);
     const evidence = (suggestion.evidence || []).slice(0, 3).map(item => `${item.field}: ${item.value}`).join("\n");
     const action = suggestion.action === "merge" ? "merge this record into" : "rename this record to";
     if (!window.confirm(`Evidence suggests ${suggestion.proposedRobotId}.\n\n${evidence}\n\nDo you want to ${action} ${suggestion.proposedRobotId}?`)) return;
@@ -432,6 +457,10 @@ async function suggestRobotIdentity(deviceId) {
     });
     await refreshStatus(result.action === "merge" ? "Identity suggestion applied by merge." : "Robot identity renamed.", "success", { force: true });
   } catch (error) {
+    window.clearInterval(identityScanProgressTimer);
+    identityScanProgressTimer = null;
+    identityScanDeviceId = null;
+    identityScanStartedAt = null;
     setStatusBanner(error.message, "error");
     renderStatusView(latestSummary);
   }
@@ -570,6 +599,7 @@ function renderLogViewer() {
             <span>${escapeHtml(formatDate(log.storedUtc))} · ${escapeHtml(log.contentLength || "?")} bytes</span>
             <small class="mono">${escapeHtml(log.path)}</small>
             ${log.identitySource ? `<small>Attributed by ${escapeHtml(log.identitySource)}${log.mergedFromDeviceId ? ` · merged from ${escapeHtml(log.mergedFromDeviceId)}` : ""}</small>` : ""}
+            ${log.observedRobotName || log.observedSerialNumber ? `<small>Observed ${escapeHtml([log.observedRobotName && `name: ${log.observedRobotName}`, log.observedSerialNumber && `serial: ${log.observedSerialNumber}`].filter(Boolean).join(" · "))}</small>` : ""}
           </button>`).join("")}</div>`;
   const audit = viewer.loading ? "" : renderArtifactAudit(items);
   const preview = viewer.loadingContent
@@ -1004,7 +1034,7 @@ function renderStatusView(summary, previous = previousSummary) {
       ${renderLogViewer()}
 
       ${errorBanner}
-      ${bannerMessage && !lastRefreshError ? `<p class="status ${bannerTone}" style="margin-top: 1rem;">${escapeHtml(bannerMessage)}</p>` : ""}
+      ${bannerMessage && !lastRefreshError ? `<p class="status ${bannerTone}" style="margin-top: 1rem;">${escapeHtml(bannerMessage)}${identityScanDeviceId ? ` <span id="identityScanProgress">(${Math.max(0, Math.floor((Date.now() - identityScanStartedAt) / 1000))}s elapsed)</span>` : ""}</p>` : ""}
     </div>
   `;
 

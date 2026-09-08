@@ -1167,6 +1167,8 @@ internal static class PortalEndpoints
                     contentLength = ReadArtifactMeta(item.Meta, "contentLength"),
                     contentSha256 = ReadArtifactMeta(item.Meta, "contentSha256"),
                     identitySource = ReadArtifactMeta(item.Meta, "identitySource"),
+                    observedRobotName = ReadArtifactMeta(item.Meta, "observedRobotName"),
+                    observedSerialNumber = ReadArtifactMeta(item.Meta, "observedSerialNumber"),
                     mergedFromDeviceId = ReadArtifactMeta(item.Meta, "mergedFromDeviceId")
                 });
             return Results.Json(new { logs });
@@ -1223,7 +1225,8 @@ internal static class PortalEndpoints
             if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
 
             var robotKeys = BuildRobotArtifactKeys(device, cloudStateStore);
-            var artifacts = (await mediaContentStore.ListAsync(string.Empty, 400, cancellationToken))
+            var listedArtifacts = await mediaContentStore.ListAsync(string.Empty, 400, cancellationToken);
+            var artifacts = listedArtifacts
                 .Where(item =>
                 {
                     var artifactDeviceId = ReadArtifactMeta(item.Meta, "deviceId");
@@ -1243,9 +1246,11 @@ internal static class PortalEndpoints
                     contentLength = ReadArtifactMeta(item.Meta, "contentLength"),
                     contentSha256 = ReadArtifactMeta(item.Meta, "contentSha256"),
                     identitySource = ReadArtifactMeta(item.Meta, "identitySource"),
+                    observedRobotName = ReadArtifactMeta(item.Meta, "observedRobotName"),
+                    observedSerialNumber = ReadArtifactMeta(item.Meta, "observedSerialNumber"),
                     mergedFromDeviceId = ReadArtifactMeta(item.Meta, "mergedFromDeviceId")
                 });
-            var unassignedCredentials = (await mediaContentStore.ListAsync(string.Empty, 400, cancellationToken))
+            var unassignedCredentials = listedArtifacts
                 .Where(item => string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")))
                 .Select(item => new
                 {
@@ -1409,7 +1414,8 @@ internal static class PortalEndpoints
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
-            var device = cloudStateStore.GetDevicesForAdministration().FirstOrDefault(item =>
+            var inventory = cloudStateStore.GetDevicesForAdministration();
+            var device = inventory.FirstOrDefault(item =>
                 item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
 
@@ -1454,14 +1460,48 @@ internal static class PortalEndpoints
             {
                 var artifact = item.artifact;
                 var content = item.content;
+                var observed = RobotLogIdentityEvidence.Extract(content?.Content ?? Array.Empty<byte>());
+                if (observed.HasConflictingEvidence ||
+                    (observed.HasSerialEvidence && !string.IsNullOrWhiteSpace(device.VerifiedSerialNumber) &&
+                     !string.Equals(observed.SerialNumber, device.VerifiedSerialNumber, StringComparison.OrdinalIgnoreCase)))
+                    continue;
                 foreach (var candidate in ExtractIdentityCandidates(content))
                     identitySuggestionStore.Observe(device.DeviceId, candidate.Value,
                         $"artifact-content:{artifact.Path}", candidate.Field);
             }
 
+            // Keep strong evidence from unassigned historical logs visible for review,
+            // and suggest a name only when an exact, unique identifier links it to this robot.
+            var unassignedArtifacts = artifacts
+                .Where(item => string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")))
+                .Where(item => item.Path.StartsWith("logs/", StringComparison.OrdinalIgnoreCase) ||
+                               item.ContentType.StartsWith("text/", StringComparison.OrdinalIgnoreCase) ||
+                               item.ContentType.Contains("json", StringComparison.OrdinalIgnoreCase) ||
+                               item.ContentType.Contains("gzip", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(item => ReadArtifactMeta(item.Meta, "storedUtc"))
+                .Take(24)
+                .ToArray();
+            var unassignedContents = await Task.WhenAll(unassignedArtifacts.Select(async artifact => new
+            {
+                artifact,
+                content = await TryLoadIdentityArtifactAsync(mediaContentStore, artifact.Path, cancellationToken)
+            }));
+            var unassignedEvidence = new List<object>();
+            foreach (var item in unassignedContents)
+            {
+                var observed = RobotLogIdentityEvidence.Extract(item.content?.Content ?? Array.Empty<byte>());
+                var matched = observed.ResolveDevice(inventory);
+                if (matched?.DeviceId.Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase) == true && !string.IsNullOrWhiteSpace(observed.RobotName))
+                    identitySuggestionStore.Observe(device.DeviceId, observed.RobotName, $"artifact-content:{item.artifact.Path}", "robotName");
+                if (!string.IsNullOrWhiteSpace(observed.RobotName))
+                    unassignedEvidence.Add(new { path = item.artifact.Path, field = "robotName", value = observed.RobotName, storedUtc = ReadArtifactMeta(item.artifact.Meta, "storedUtc") });
+                if (!string.IsNullOrWhiteSpace(observed.SerialNumber))
+                    unassignedEvidence.Add(new { path = item.artifact.Path, field = "serialNumber", value = observed.SerialNumber, storedUtc = ReadArtifactMeta(item.artifact.Meta, "storedUtc") });
+            }
+
             var suggestion = identitySuggestionStore.GetSuggestion(device.DeviceId);
             if (suggestion is null)
-                return Results.Json(new { suggested = false, currentRobotId = device.RobotId, evidence = Array.Empty<object>() });
+                return Results.Json(new { suggested = false, currentRobotId = device.RobotId, evidence = Array.Empty<object>(), unassignedEvidence });
 
             return Results.Json(new
             {
@@ -1473,7 +1513,8 @@ internal static class PortalEndpoints
                 suggestion.ObservationCount,
                 suggestion.FirstObservedUtc,
                 suggestion.LastObservedUtc,
-                suggestion.Evidence
+                suggestion.Evidence,
+                unassignedEvidence
             });
         });
 

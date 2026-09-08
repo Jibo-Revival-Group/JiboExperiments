@@ -198,6 +198,14 @@ public sealed class JiboCloudProtocolService(
         var associatedDeviceId = identity.BearerIdentity ?? identity.CredentialIdentity ?? identity.DeviceId;
         if (string.IsNullOrWhiteSpace(associatedDeviceId)) return;
 
+        var logEvidence = RobotLogIdentityEvidence.Extract(ReadBodyBytes(envelope));
+        var associatedDevice = stateStore.GetDevicesForAdministration().FirstOrDefault(device =>
+            device.DeviceId.Equals(associatedDeviceId, StringComparison.OrdinalIgnoreCase));
+        if (logEvidence.HasConflictingEvidence || associatedDevice is not null &&
+            logEvidence.HasSerialEvidence && !string.IsNullOrWhiteSpace(associatedDevice.VerifiedSerialNumber) &&
+            !string.Equals(associatedDevice.VerifiedSerialNumber, logEvidence.SerialNumber,
+                StringComparison.OrdinalIgnoreCase)) return;
+
         var operation = $"{envelope.ServicePrefix}.{envelope.Operation}".Trim('.');
         var source = string.IsNullOrWhiteSpace(operation)
             ? envelope.Transport
@@ -1344,13 +1352,36 @@ public sealed class JiboCloudProtocolService(
     private void StoreLogContent(string category, string uploadId, string contentType, byte[] content,
         ProtocolEnvelope envelope, ProtocolRobotIdentity identity)
     {
+        var logIdentity = RobotLogIdentityEvidence.Extract(content);
+        var devices = stateStore.GetDevicesForAdministration();
+        var existingDevice = string.IsNullOrWhiteSpace(identity.DeviceId) ? null : devices.FirstOrDefault(device =>
+            device.DeviceId.Equals(identity.DeviceId, StringComparison.OrdinalIgnoreCase));
+        var matchedDevice = existingDevice is null && !identity.Source.Equals("conflict", StringComparison.OrdinalIgnoreCase)
+            ? logIdentity.ResolveDevice(devices) : null;
+        var serialConflictsWithExisting = existingDevice is not null && logIdentity.HasSerialEvidence &&
+            !string.IsNullOrWhiteSpace(existingDevice.VerifiedSerialNumber) &&
+            !string.Equals(existingDevice.VerifiedSerialNumber, logIdentity.SerialNumber, StringComparison.OrdinalIgnoreCase);
+        var attributedDevice = existingDevice ?? matchedDevice;
+        if (attributedDevice is not null && identitySuggestionStore is not null && !logIdentity.HasConflictingEvidence &&
+            !serialConflictsWithExisting && RobotIdentitySuggestionStore.IsSafeIdentityName(logIdentity.RobotName))
+        {
+            identitySuggestionStore.Observe(attributedDevice.DeviceId, logIdentity.RobotName,
+                "log-header", "name");
+        }
         var metadata = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["artifactType"] = "robot-log",
             ["category"] = category,
             ["uploadId"] = uploadId,
-            ["deviceId"] = identity.DeviceId,
-            ["identitySource"] = identity.Source,
+            ["deviceId"] = matchedDevice?.DeviceId ?? identity.DeviceId,
+            ["identitySource"] = matchedDevice is null ? identity.Source :
+                !string.IsNullOrWhiteSpace(logIdentity.SerialNumber) &&
+                string.Equals(matchedDevice.VerifiedSerialNumber, logIdentity.SerialNumber, StringComparison.OrdinalIgnoreCase)
+                    ? "log-header-verified-serial" : "log-header-name",
+            ["observedSerialNumber"] = logIdentity.SerialNumber,
+            ["observedRobotName"] = logIdentity.RobotName,
+            ["identityEvidenceConflict"] = logIdentity.HasConflictingEvidence || serialConflictsWithExisting ||
+                identity.Source.Equals("conflict", StringComparison.OrdinalIgnoreCase),
             ["authScheme"] = identity.Aws.AuthScheme,
             ["awsSigV4"] = identity.Aws.IsSigV4,
             ["awsSigV3"] = identity.Aws.IsSigV3,

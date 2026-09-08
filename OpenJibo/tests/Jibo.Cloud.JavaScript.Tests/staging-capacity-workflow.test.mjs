@@ -27,15 +27,23 @@ test("staging capacity sweep is bounded, serial, and staging-only", () => {
 test("staging capacity sweep retains evidence and always restores authorization and scale", () => {
   const configure = workflow.indexOf("- name: Enable bounded two-replica sweep");
   const run = workflow.indexOf("- name: Run serial 6, 10, 15, and 20 robot tiers");
+  const telemetryRefresh = workflow.indexOf("- name: Refresh Azure login for telemetry");
   const report = workflow.indexOf("- name: Capture and enforce exact-revision telemetry");
+  const cleanupRefresh = workflow.indexOf("- name: Refresh Azure login for cleanup");
   const cleanup = workflow.indexOf("- name: Disable temporary release smoke authorization");
   const restore = workflow.indexOf("- name: Restore staging scale");
   const verify = workflow.indexOf("- name: Verify staging invariants after cleanup");
   const upload = workflow.indexOf("- name: Upload staging capacity evidence");
 
   assert.ok(configure >= 0 && configure < run);
-  assert.ok(run < report && report < cleanup);
+  assert.ok(run < telemetryRefresh && telemetryRefresh < report);
+  assert.ok(report < cleanupRefresh && cleanupRefresh < cleanup);
   assert.ok(cleanup < restore && restore < verify && verify < upload);
+  assert.equal((workflow.match(/uses: azure\/login@v3/g) ?? []).length, 3);
+  assert.match(
+    workflow,
+    /- name: Refresh Azure login for cleanup\s+if: always\(\) && steps\.baseline\.outputs\.app_name != ''\s+uses: azure\/login@v3/s,
+  );
   assert.match(workflow, /if: always\(\).*steps\.baseline\.outputs\.app_name/);
   assert.match(workflow, /cleanup-release-smoke-authorization\.sh/);
   assert.match(workflow, /tier-\$\{tier\}\.json/);

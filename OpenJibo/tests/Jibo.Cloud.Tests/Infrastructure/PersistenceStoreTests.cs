@@ -256,6 +256,28 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void MergeRobotRecordsForAdministration_RejectsHiddenRecordsWithoutMutation()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "hidden-source", RobotId = "hidden-source", IsHidden = true
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "visible-target", RobotId = "visible-target"
+        });
+
+        Assert.Throws<InvalidOperationException>(() =>
+            store.MergeRobotRecordsForAdministration("hidden-source", "visible-target"));
+
+        var source = store.GetDevicesForAdministration().Single(device => device.DeviceId == "hidden-source");
+        Assert.True(source.IsHidden);
+        Assert.Null(source.ArchivedUtc);
+        Assert.False(source.HostMappings.ContainsKey("openjibo.mergedIntoDeviceId"));
+    }
+
+    [Fact]
     public void Reconnect_ReinheritsExplicitSessionBindingForSameRuntimeIdentity()
     {
         var store = new InMemoryCloudStateStore();

@@ -477,8 +477,11 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             throw new ArgumentException("Choose two different robot records.");
         if (sourceDeviceId.Equals(_robot.DeviceId, StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("The active robot record must be the canonical target, not the merge source.");
-        if (!_devices.TryGetValue(sourceDeviceId, out var source) || !_devices.ContainsKey(targetDeviceId))
+        if (!_devices.TryGetValue(sourceDeviceId, out var source) ||
+            !_devices.TryGetValue(targetDeviceId, out var target))
             throw new KeyNotFoundException("Robot record was not found.");
+        if (source.IsHidden || source.ArchivedUtc is not null || target.IsHidden || target.ArchivedUtc is not null)
+            throw new InvalidOperationException("Robot merge requires two visible, unarchived records.");
 
         var migratedSessions = 0;
         foreach (var session in _sessions.Values.Where(session =>

@@ -1373,20 +1373,26 @@ internal static class PortalEndpoints
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
-            var adminDevices = cloudStateStore.GetDevicesForAdministration();
-            var source = adminDevices.FirstOrDefault(device => device.DeviceId.Equals(sourceDeviceId, StringComparison.OrdinalIgnoreCase));
-            var target = adminDevices.FirstOrDefault(device => device.DeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase));
-            if (source is null || target is null || source.DeviceId.Equals(target.DeviceId, StringComparison.OrdinalIgnoreCase))
-                return Results.BadRequest(new { error = "Choose two different registered robots." });
-            var artifactCount = (await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken))
-                .Count(item => ReadArtifactMeta(item.Meta, "deviceId").Equals(source.DeviceId, StringComparison.OrdinalIgnoreCase));
-            return Results.Json(new {
-                sourceDeviceId = source.DeviceId, targetDeviceId = target.DeviceId,
-                sessionCount = cloudStateStore.GetSessions().Count(item => source.DeviceId.Equals(item.DeviceId, StringComparison.OrdinalIgnoreCase)),
-                credentialBindingCount = cloudStateStore.GetRobotCredentialBindings().Count(item => source.DeviceId.Equals(item.DeviceId, StringComparison.OrdinalIgnoreCase)),
-                artifactCount,
-                note = "Household loops and people are not merged automatically. The source robot is archived."
-            });
+            try
+            {
+                var preview = await BuildRobotMergePreviewAsync(sourceDeviceId, targetDeviceId, cloudStateStore,
+                    mediaContentStore, cancellationToken);
+                var previewToken = portalSessionService.CreateRobotMergePreviewToken(session,
+                    preview.SourceDeviceId, preview.TargetDeviceId, preview.SnapshotFingerprint);
+                return Results.Json(new
+                {
+                    sourceDeviceId = preview.SourceDeviceId,
+                    targetDeviceId = preview.TargetDeviceId,
+                    sessionCount = preview.SessionIds.Count,
+                    credentialBindingCount = preview.CredentialFingerprints.Count,
+                    artifactCount = preview.Artifacts.Count,
+                    previewToken,
+                    note = "Household loops and people are not merged automatically. The source robot is archived."
+                });
+            }
+            catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
+            catch (KeyNotFoundException exception) { return Results.NotFound(new { error = exception.Message }); }
+            catch (InvalidOperationException exception) { return Results.Conflict(new { error = exception.Message }); }
         });
 
         app.MapPost("/api/portal/status/robots/{sourceDeviceId}/merge", async (
@@ -1398,13 +1404,30 @@ internal static class PortalEndpoints
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
             try
             {
-                var result = cloudStateStore.MergeRobotRecordsForAdministration(sourceDeviceId, request.TargetDeviceId ?? string.Empty);
-                var migratedArtifacts = await ReassignArtifactsAsync(mediaContentStore, result.SourceDeviceId,
-                    result.TargetDeviceId, "robot-merge", cancellationToken);
-                return Results.Json(new { ok = true, result, migratedArtifacts });
+                var preview = await BuildRobotMergePreviewAsync(sourceDeviceId, request.TargetDeviceId ?? string.Empty,
+                    cloudStateStore, mediaContentStore, cancellationToken);
+                if (!portalSessionService.TryValidateRobotMergePreviewToken(request.PreviewToken, session,
+                        preview.SourceDeviceId, preview.TargetDeviceId, preview.SnapshotFingerprint))
+                    return Results.Conflict(new
+                    {
+                        error = "The merge preview is missing, expired, or stale. Review the merge again before applying it."
+                    });
+                var result = cloudStateStore.MergeRobotRecordsForAdministration(
+                    preview.SourceDeviceId, preview.TargetDeviceId);
+                var artifactResult = await ReassignReviewedArtifactsAsync(mediaContentStore,
+                    result.SourceDeviceId, result.TargetDeviceId, preview.Artifacts, cancellationToken);
+                return Results.Json(new
+                {
+                    ok = true,
+                    result,
+                    migratedArtifacts = artifactResult.MigratedCount,
+                    skippedArtifacts = artifactResult.SkippedPaths,
+                    partial = artifactResult.SkippedPaths.Count > 0
+                });
             }
             catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
             catch (KeyNotFoundException) { return Results.NotFound(new { error = "Robot record was not found." }); }
+            catch (InvalidOperationException exception) { return Results.Conflict(new { error = exception.Message }); }
         });
 
         app.MapGet("/api/portal/status/robots/{deviceId}/identity-suggestion", async (
@@ -2184,6 +2207,119 @@ internal static class PortalEndpoints
             updated++;
         }
         return updated;
+    }
+
+    private static async Task<RobotMergePreview> BuildRobotMergePreviewAsync(
+        string sourceDeviceId,
+        string targetDeviceId,
+        ICloudStateStore cloudStateStore,
+        IMediaContentStore mediaContentStore,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(sourceDeviceId) || string.IsNullOrWhiteSpace(targetDeviceId) ||
+            sourceDeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Choose two different registered robots.");
+
+        var adminDevices = cloudStateStore.GetDevicesForAdministration();
+        var source = adminDevices.FirstOrDefault(device =>
+                         device.DeviceId.Equals(sourceDeviceId.Trim(), StringComparison.OrdinalIgnoreCase)) ??
+                     throw new KeyNotFoundException("Source robot record was not found.");
+        var target = adminDevices.FirstOrDefault(device =>
+                         device.DeviceId.Equals(targetDeviceId.Trim(), StringComparison.OrdinalIgnoreCase)) ??
+                     throw new KeyNotFoundException("Target robot record was not found.");
+        if (source.IsHidden || source.ArchivedUtc is not null || target.IsHidden || target.ArchivedUtc is not null)
+            throw new InvalidOperationException("Manual merge requires two visible, unarchived robot records.");
+        if (source.DeviceId.Equals(cloudStateStore.GetRobot().DeviceId, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("The active robot record must be the canonical target, not the merge source.");
+
+        var sessionIds = cloudStateStore.GetSessions()
+            .Where(item => source.DeviceId.Equals(item.DeviceId, StringComparison.OrdinalIgnoreCase))
+            .Select(item => item.SessionId)
+            .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var credentialFingerprints = cloudStateStore.GetRobotCredentialBindings()
+            .Where(item => source.DeviceId.Equals(item.DeviceId, StringComparison.OrdinalIgnoreCase))
+            .Select(item => item.AccessKeyFingerprint)
+            .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var artifactItems = (await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken))
+            .Where(item => ReadArtifactMeta(item.Meta, "deviceId")
+                .Equals(source.DeviceId, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(item => item.Path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var artifacts = new List<RobotMergeArtifactReference>(artifactItems.Length);
+        foreach (var item in artifactItems)
+        {
+            var content = await mediaContentStore.LoadAsync(item.Path, cancellationToken);
+            if (content is not null)
+                artifacts.Add(new RobotMergeArtifactReference(item.Path,
+                    Convert.ToHexString(SHA256.HashData(content.Content)).ToLowerInvariant()));
+        }
+
+        var snapshotJson = JsonSerializer.Serialize(new
+        {
+            source = BuildRobotMergeDeviceSnapshot(source),
+            target = BuildRobotMergeDeviceSnapshot(target),
+            sessionIds,
+            credentialFingerprints,
+            artifacts
+        });
+        var snapshotFingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(snapshotJson)))
+            .ToLowerInvariant();
+        return new RobotMergePreview(source.DeviceId, target.DeviceId, sessionIds, credentialFingerprints,
+            artifacts, snapshotFingerprint);
+    }
+
+    private static object BuildRobotMergeDeviceSnapshot(DeviceRegistration device) => new
+    {
+        device.DeviceId,
+        device.RobotId,
+        device.FriendlyName,
+        device.IsActive,
+        device.IsHidden,
+        archivedUtc = device.ArchivedUtc?.ToUnixTimeMilliseconds(),
+        device.VerifiedSerialNumber,
+        device.RegistrationSource,
+        hostMappings = device.HostMappings
+            .OrderBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(item => new { item.Key, item.Value })
+            .ToArray()
+    };
+
+    private static async Task<RobotMergeArtifactResult> ReassignReviewedArtifactsAsync(
+        IMediaContentStore mediaContentStore,
+        string sourceDeviceId,
+        string targetDeviceId,
+        IReadOnlyList<RobotMergeArtifactReference> reviewedArtifacts,
+        CancellationToken cancellationToken)
+    {
+        var updated = 0;
+        var skipped = new List<string>();
+        foreach (var artifact in reviewedArtifacts)
+        {
+            var content = await mediaContentStore.LoadAsync(artifact.Path, cancellationToken);
+            if (content is null ||
+                !ReadArtifactMeta(content.Meta, "deviceId").Equals(sourceDeviceId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                !Convert.ToHexString(SHA256.HashData(content.Content)).Equals(artifact.ContentSha256,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                skipped.Add(artifact.Path);
+                continue;
+            }
+            var meta = new Dictionary<string, object?>(content.Meta, StringComparer.OrdinalIgnoreCase)
+            {
+                ["deviceId"] = targetDeviceId,
+                ["identitySource"] = "robot-merge",
+                ["mergedFromDeviceId"] = sourceDeviceId,
+                ["mergedUtc"] = DateTimeOffset.UtcNow
+            };
+            await mediaContentStore.StoreAsync(artifact.Path, content.ContentType, content.Content, meta,
+                cancellationToken);
+            updated++;
+        }
+
+        return new RobotMergeArtifactResult(updated, skipped);
     }
 
     private static async Task<int> ReassignCredentialBackfillArtifactsAsync(IMediaContentStore mediaContentStore,
@@ -3340,12 +3476,24 @@ internal static class PortalEndpoints
     private sealed record BindRobotCredentialRequest(string? PortalSessionToken, string? AccessKeyFingerprint);
     private sealed record SwapRobotCredentialBindingsRequest(string? PortalSessionToken,
         string? FirstAccessKeyFingerprint, string? SecondAccessKeyFingerprint, bool Confirmed);
-    private sealed record MergeRobotRequest(string? PortalSessionToken, string? TargetDeviceId);
+    private sealed record MergeRobotRequest(string? PortalSessionToken, string? TargetDeviceId, string? PreviewToken);
     private sealed record ApplyIdentitySuggestionRequest(
         string? PortalSessionToken,
         string? ProposedRobotId,
         string? ExpectedAction,
         string? ExpectedTargetDeviceId);
+
+    private sealed record RobotMergePreview(
+        string SourceDeviceId,
+        string TargetDeviceId,
+        IReadOnlyList<string> SessionIds,
+        IReadOnlyList<string> CredentialFingerprints,
+        IReadOnlyList<RobotMergeArtifactReference> Artifacts,
+        string SnapshotFingerprint);
+
+    private sealed record RobotMergeArtifactReference(string Path, string ContentSha256);
+
+    private sealed record RobotMergeArtifactResult(int MigratedCount, IReadOnlyList<string> SkippedPaths);
 
     private sealed record FleetServerPresenceReportRequest(
         string? PortalSessionToken,

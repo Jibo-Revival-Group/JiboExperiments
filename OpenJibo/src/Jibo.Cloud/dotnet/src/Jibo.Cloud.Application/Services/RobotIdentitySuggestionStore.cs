@@ -4,17 +4,35 @@ using Jibo.Cloud.Domain.Models;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class RobotIdentitySuggestionStore(
-    ICloudStateStore cloudStateStore,
-    IRobotIdentitySuggestionRepository? repository = null)
+public sealed class RobotIdentitySuggestionStore
 {
     private const int MaxCandidatesPerDevice = 4;
     private const int MaxEvidencePerCandidate = 8;
     private const int MaxTrackedDevices = 1000;
     private static readonly TimeSpan SuggestionTtl = TimeSpan.FromDays(30);
+    private readonly ICloudStateStore cloudStateStore;
+    private readonly IRobotIdentitySuggestionRepository? repository;
     private readonly Dictionary<string, Dictionary<string, CandidateState>> _candidates =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Lock _syncRoot = new();
+    private readonly TimeProvider _timeProvider;
+
+    public RobotIdentitySuggestionStore(
+        ICloudStateStore cloudStateStore,
+        IRobotIdentitySuggestionRepository? repository = null)
+        : this(cloudStateStore, repository, TimeProvider.System)
+    {
+    }
+
+    internal RobotIdentitySuggestionStore(
+        ICloudStateStore cloudStateStore,
+        IRobotIdentitySuggestionRepository? repository,
+        TimeProvider timeProvider)
+    {
+        this.cloudStateStore = cloudStateStore;
+        this.repository = repository;
+        _timeProvider = timeProvider;
+    }
 
     public void Observe(string? deviceId, string? candidate, string source, string field)
     {
@@ -24,7 +42,7 @@ public sealed class RobotIdentitySuggestionStore(
         if (device is null || MatchesCurrentIdentity(device, candidate!)) return;
 
         var normalizedCandidate = candidate!.Trim();
-        var now = DateTimeOffset.UtcNow;
+        var now = _timeProvider.GetUtcNow();
         var evidence = new RobotIdentitySuggestionEvidence(source, field, normalizedCandidate, now);
         if (repository is not null)
         {
@@ -50,15 +68,6 @@ public sealed class RobotIdentitySuggestionStore(
 
             if (!deviceCandidates.TryGetValue(normalizedCandidate, out var state))
             {
-                if (deviceCandidates.Count >= MaxCandidatesPerDevice)
-                {
-                    var weakest = deviceCandidates
-                        .OrderBy(pair => pair.Value.ObservationCount)
-                        .ThenBy(pair => pair.Value.LastObservedUtc)
-                        .First();
-                    deviceCandidates.Remove(weakest.Key);
-                }
-
                 state = new CandidateState(normalizedCandidate, now);
                 deviceCandidates[normalizedCandidate] = state;
             }
@@ -73,6 +82,16 @@ public sealed class RobotIdentitySuggestionStore(
                 state.Evidence.Add(evidence);
                 if (state.Evidence.Count > MaxEvidencePerCandidate)
                     state.Evidence.RemoveAt(0);
+            }
+
+            if (deviceCandidates.Count > MaxCandidatesPerDevice)
+            {
+                var weakest = deviceCandidates
+                    .OrderBy(pair => pair.Value.ObservationCount)
+                    .ThenBy(pair => pair.Value.LastObservedUtc)
+                    .ThenByDescending(pair => pair.Value.ProposedRobotId, StringComparer.OrdinalIgnoreCase)
+                    .First();
+                deviceCandidates.Remove(weakest.Key);
             }
         }
     }
@@ -90,7 +109,7 @@ public sealed class RobotIdentitySuggestionStore(
         }
         else lock (_syncRoot)
         {
-            PurgeExpiredLocked(DateTimeOffset.UtcNow);
+            PurgeExpiredLocked(_timeProvider.GetUtcNow());
             if (!_candidates.TryGetValue(device.DeviceId, out var deviceCandidates)) return null;
 
             foreach (var stale in deviceCandidates
@@ -102,6 +121,7 @@ public sealed class RobotIdentitySuggestionStore(
             var localBest = deviceCandidates.Values
                 .OrderByDescending(candidate => candidate.ObservationCount)
                 .ThenByDescending(candidate => candidate.LastObservedUtc)
+                .ThenBy(candidate => candidate.ProposedRobotId, StringComparer.OrdinalIgnoreCase)
                 .FirstOrDefault();
             best = localBest is null
                 ? null

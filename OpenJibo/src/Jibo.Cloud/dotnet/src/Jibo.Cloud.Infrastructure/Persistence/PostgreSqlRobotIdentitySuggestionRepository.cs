@@ -56,8 +56,11 @@ public sealed class PostgreSqlRobotIdentitySuggestionRepository(PostgreSqlCloudS
                                                                 ROW_NUMBER() OVER (
                                                                     PARTITION BY LOWER(ObservedDeviceId)
                                                                     ORDER BY ObservationCount DESC,
-                                                                             LastObservedUtc DESC) AS rank
+                                                                             LastObservedUtc DESC,
+                                                                             LOWER(ProposedRobotId) COLLATE "C" ASC) AS rank
                                                          FROM RobotIdentitySuggestions
+                                                         WHERE DismissedUtc IS NULL
+                                                           AND LastObservedUtc >= NOW() - INTERVAL '30 days'
                                                      ) ranked
                                                      WHERE rank > 4
                                                  )
@@ -79,7 +82,8 @@ public sealed class PostgreSqlRobotIdentitySuggestionRepository(PostgreSqlCloudS
                               WHERE LOWER(ObservedDeviceId) = LOWER(@deviceId)
                                 AND DismissedUtc IS NULL
                                 AND LastObservedUtc >= NOW() - INTERVAL '30 days'
-                              ORDER BY ObservationCount DESC, LastObservedUtc DESC
+                              ORDER BY ObservationCount DESC, LastObservedUtc DESC,
+                                       LOWER(ProposedRobotId) COLLATE "C" ASC
                               LIMIT 1
                               """;
         command.Parameters.AddWithValue("deviceId", deviceId.Trim());

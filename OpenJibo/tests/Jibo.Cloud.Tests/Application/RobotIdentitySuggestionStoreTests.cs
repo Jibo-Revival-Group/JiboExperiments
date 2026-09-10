@@ -107,6 +107,50 @@ public sealed class RobotIdentitySuggestionStoreTests
     }
 
     [Fact]
+    public void GetSuggestion_BreaksExactTiesByProposedRobotIdRegardlessOfInsertionOrder()
+    {
+        var now = new DateTimeOffset(2026, 9, 10, 0, 0, 0, TimeSpan.Zero);
+
+        var first = CreateStore("observed-device-001", now);
+        first.Observe("observed-device-001", "Zulu-Beta-Charlie-Delta", "test", "name");
+        first.Observe("observed-device-001", "Alpha-Beta-Charlie-Delta", "test", "name");
+
+        var second = CreateStore("observed-device-002", now);
+        second.Observe("observed-device-002", "Alpha-Beta-Charlie-Delta", "test", "name");
+        second.Observe("observed-device-002", "Zulu-Beta-Charlie-Delta", "test", "name");
+
+        Assert.Equal("Alpha-Beta-Charlie-Delta",
+            first.GetSuggestion("observed-device-001")!.ProposedRobotId);
+        Assert.Equal("Alpha-Beta-Charlie-Delta",
+            second.GetSuggestion("observed-device-002")!.ProposedRobotId);
+    }
+
+    [Fact]
+    public void Observe_WhenCandidatesTie_EvictsLexicallyLastCandidate()
+    {
+        var now = new DateTimeOffset(2026, 9, 10, 0, 0, 0, TimeSpan.Zero);
+        var expected = new[]
+        {
+            "Alpha-Beta-Charlie-Delta",
+            "Whiskey-Beta-Charlie-Delta",
+            "Xray-Beta-Charlie-Delta",
+            "Yankee-Beta-Charlie-Delta"
+        };
+        var candidates = expected.Append("Zulu-Beta-Charlie-Delta").ToArray();
+
+        var forward = CreateStore("observed-device-001", now);
+        foreach (var candidate in candidates)
+            forward.Observe("observed-device-001", candidate, "test", "name");
+
+        var reverse = CreateStore("observed-device-002", now);
+        foreach (var candidate in candidates.Reverse())
+            reverse.Observe("observed-device-002", candidate, "test", "name");
+
+        Assert.Equal(expected, DrainSuggestions(forward, "observed-device-001"));
+        Assert.Equal(expected, DrainSuggestions(reverse, "observed-device-002"));
+    }
+
+    [Fact]
     public void Repository_SharesSuggestionsAcrossStoreInstances()
     {
         var stateStore = new InMemoryCloudStateStore();
@@ -131,6 +175,36 @@ public sealed class RobotIdentitySuggestionStoreTests
         Assert.Equal(2, suggestion.ObservationCount);
         reader.Dismiss("observed-device-001", suggestion.ProposedRobotId);
         Assert.Null(writer.GetSuggestion("observed-device-001"));
+    }
+
+    private static RobotIdentitySuggestionStore CreateStore(string deviceId, DateTimeOffset now)
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = deviceId,
+            RobotId = $"robot-{deviceId}",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        return new RobotIdentitySuggestionStore(stateStore, null, new FixedTimeProvider(now));
+    }
+
+    private static IReadOnlyList<string> DrainSuggestions(
+        RobotIdentitySuggestionStore suggestions,
+        string deviceId)
+    {
+        var selected = new List<string>();
+        while (suggestions.GetSuggestion(deviceId) is { } suggestion)
+        {
+            selected.Add(suggestion.ProposedRobotId);
+            suggestions.Dismiss(deviceId, suggestion.ProposedRobotId);
+        }
+        return selected;
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
     }
 
     private sealed class SharedSuggestionRepository : IRobotIdentitySuggestionRepository

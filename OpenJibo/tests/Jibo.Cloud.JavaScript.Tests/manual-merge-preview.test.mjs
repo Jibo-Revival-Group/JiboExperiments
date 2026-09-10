@@ -32,3 +32,36 @@ test("manual merge submits the signed preview token that was reviewed", async ()
   const body = JSON.parse(runInContext("requests[1][1].body", context));
   assert.deepEqual(body, { targetDeviceId: "canonical", previewToken: "signed-preview" });
 });
+
+test("live session linking carries cross-replica observed identity evidence", async () => {
+  const select = {
+    value: "canonical",
+    dataset: {
+      observedDeviceId: "observed-runtime-id",
+      lastSeenUtc: "2026-09-10T15:00:00Z",
+    },
+  };
+  const context = createContext({
+    document: { getElementById: () => null, querySelector: () => select },
+    CSS: { escape: value => value },
+    window: { confirm: () => true },
+  });
+  runInContext(source, context);
+  runInContext(`
+    const requests = [];
+    apiFetch = (...args) => {
+      requests.push(args);
+      return Promise.resolve({ ok: true });
+    };
+    refreshStatus = () => Promise.resolve();
+  `, context);
+
+  await runInContext("linkLiveSession('session-on-peer-replica')", context);
+
+  const body = JSON.parse(runInContext("requests[0][1].body", context));
+  assert.deepEqual(body, {
+    deviceId: "canonical",
+    observedDeviceId: "observed-runtime-id",
+    lastSeenUtc: "2026-09-10T15:00:00Z",
+  });
+});

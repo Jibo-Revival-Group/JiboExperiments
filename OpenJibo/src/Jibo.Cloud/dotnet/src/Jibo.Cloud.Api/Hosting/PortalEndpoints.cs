@@ -1640,17 +1640,30 @@ internal static class PortalEndpoints
 
             var liveSession = cloudStateStore.GetSessions().FirstOrDefault(candidate =>
                 candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
-            if (liveSession is null)
-                return Results.NotFound(new { error = "Live session was not found." });
-            if (DateTimeOffset.UtcNow - liveSession.LastSeenUtc > StatusHeartbeatWindow)
+            var observedDeviceId = liveSession?.DeviceId ?? request.ObservedDeviceId;
+            var lastSeenUtc = liveSession?.LastSeenUtc ?? request.LastSeenUtc;
+            if (string.IsNullOrWhiteSpace(observedDeviceId) || lastSeenUtc is null)
+                return Results.NotFound(new { error = "Live session was not found on this replica and its observed identity was not supplied." });
+            if (DateTimeOffset.UtcNow - lastSeenUtc.Value > StatusHeartbeatWindow ||
+                lastSeenUtc.Value > DateTimeOffset.UtcNow.AddMinutes(1))
                 return Results.BadRequest(new { error = "Only a currently live session can be linked." });
             if (string.IsNullOrWhiteSpace(request.DeviceId) ||
                 cloudStateStore.FindDeviceByFriendlyId(request.DeviceId) is null)
                 return Results.BadRequest(new { error = "Choose a registered robot record." });
 
-            return cloudStateStore.BindSessionToDevice(sessionId, request.DeviceId)
-                ? Results.Json(new { ok = true, sessionId, deviceId = request.DeviceId })
-                : Results.NotFound(new { error = "Live session or robot record was not found." });
+            var linked = liveSession is not null
+                ? cloudStateStore.BindSessionToDevice(sessionId, request.DeviceId)
+                : cloudStateStore.BindObservedIdentityToDevice(observedDeviceId, request.DeviceId);
+            return linked
+                ? Results.Json(new
+                {
+                    ok = true,
+                    sessionId,
+                    observedDeviceId,
+                    deviceId = request.DeviceId,
+                    linkedAcrossReplica = liveSession is null
+                })
+                : Results.NotFound(new { error = "Observed identity or robot record was not found." });
         });
 
         app.MapDelete("/api/portal/status/sessions/{sessionId}/link", (
@@ -3475,7 +3488,11 @@ internal static class PortalEndpoints
     private sealed record ArchiveStatusRobotRequest(string? PortalSessionToken, bool Hidden);
     private sealed record ResetRobotIdentityAssociationsRequest(string? PortalSessionToken, bool Confirmed);
     private sealed record RestoreRobotIdentityRequest(string? PortalSessionToken, bool Confirmed);
-    private sealed record LinkStatusSessionRequest(string? PortalSessionToken, string? DeviceId);
+    private sealed record LinkStatusSessionRequest(
+        string? PortalSessionToken,
+        string? DeviceId,
+        string? ObservedDeviceId,
+        DateTimeOffset? LastSeenUtc);
     private sealed record BindRobotCredentialRequest(string? PortalSessionToken, string? AccessKeyFingerprint);
     private sealed record SwapRobotCredentialBindingsRequest(string? PortalSessionToken,
         string? FirstAccessKeyFingerprint, string? SecondAccessKeyFingerprint, bool Confirmed);

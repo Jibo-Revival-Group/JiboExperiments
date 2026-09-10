@@ -1129,6 +1129,17 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             _sessions.RegisterActive(token, session);
 
         InheritDialogMetadataFromDevice(session);
+        if (durableToken is not null &&
+            !session.Metadata.ContainsKey("registeredDeviceId") &&
+            !string.IsNullOrWhiteSpace(resolvedDeviceId))
+        {
+            var registered = FindDeviceByFriendlyId(resolvedDeviceId);
+            if (registered is not null && !registered.IsHidden && registered.ArchivedUtc is null)
+            {
+                session.Metadata["registeredDeviceId"] = registered.DeviceId;
+                session.Metadata["registeredRobotId"] = registered.RobotId;
+            }
+        }
         TouchState();
 
         return session;
@@ -1270,6 +1281,30 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             {
                 observed.HostMappings["openjibo.boundRegisteredDeviceId"] = device.DeviceId;
                 observed.HostMappings["openjibo.boundRegisteredRobotId"] = device.RobotId;
+            }
+        }
+
+        TouchState();
+        return true;
+    }
+
+    public bool BindObservedIdentityToDevice(string observedDeviceId, string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(observedDeviceId) || string.IsNullOrWhiteSpace(deviceId)) return false;
+
+        lock (_syncRoot)
+        {
+            var device = FindDeviceByFriendlyId(deviceId);
+            var observed = _devices.GetValueOrDefault(observedDeviceId.Trim());
+            if (device is null || device.IsHidden || device.ArchivedUtc is not null || observed is null) return false;
+
+            observed.HostMappings["openjibo.boundRegisteredDeviceId"] = device.DeviceId;
+            observed.HostMappings["openjibo.boundRegisteredRobotId"] = device.RobotId;
+            foreach (var session in _sessions.Values.Where(candidate =>
+                         string.Equals(candidate.DeviceId, observed.DeviceId, StringComparison.OrdinalIgnoreCase)))
+            {
+                session.Metadata["registeredDeviceId"] = device.DeviceId;
+                session.Metadata["registeredRobotId"] = device.RobotId;
             }
         }
 

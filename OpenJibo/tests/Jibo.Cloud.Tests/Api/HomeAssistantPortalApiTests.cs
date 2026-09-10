@@ -1494,6 +1494,41 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
+    public async Task LinkLiveSession_UsesObservedIdentityWhenSessionLivesOnAnotherReplica()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "cross-replica-observed", RobotId = "robot-cross-replica-observed",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        var target = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "cross-replica-target", RobotId = "robot-cross-replica-target",
+            FriendlyName = "Cross Replica Target"
+        });
+        var remoteSessionId = Guid.NewGuid().ToString("N");
+        var lastSeenUtc = DateTimeOffset.UtcNow;
+
+        await AuthenticateAdminAsync(client);
+        var response = await client.PostAsJsonAsync(
+            $"/api/portal/status/sessions/{remoteSessionId}/link",
+            new
+            {
+                deviceId = target.DeviceId,
+                observedDeviceId = "cross-replica-observed",
+                lastSeenUtc
+            });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var reconnect = store.OpenSession("neo-hub-proactive", "cross-replica-observed",
+            "proactive", "neo-hub", "/v1/proactive");
+        Assert.Equal(target.DeviceId, reconnect.Metadata["registeredDeviceId"]?.ToString());
+    }
+
+    [Fact]
     public async Task FleetPresence_WhenPeerSyncIsDisabled_FailsClosed()
     {
         await using var factory = CreateFactory(peerSyncEnabled: false);

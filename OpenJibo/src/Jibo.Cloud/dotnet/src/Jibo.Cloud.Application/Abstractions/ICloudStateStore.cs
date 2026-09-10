@@ -56,6 +56,7 @@ public interface ICloudStateStore
     CloudSession? FindActiveSessionByToken(string token);
     CloudSession? FindSessionByToken(string token);
     bool BindSessionToDevice(string sessionId, string deviceId);
+    bool BindObservedIdentityToDevice(string observedDeviceId, string deviceId);
     bool ClearSessionDeviceBinding(string sessionId);
     /// <summary>
     /// Copies dialog-continuation metadata from other sessions that share this session's DeviceId

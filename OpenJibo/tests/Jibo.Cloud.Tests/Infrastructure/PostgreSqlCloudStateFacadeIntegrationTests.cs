@@ -336,6 +336,11 @@ public sealed class PostgreSqlCloudStateFacadeIntegrationTests
             "SELECT COUNT(*) FROM AccountDevices WHERE DeviceId='single-source' AND AccountId='other-account'"));
         Assert.Equal(1, await database.ExecuteScalarAsync<long>(
             "SELECT COUNT(*) FROM RobotIdentityLinks WHERE ObservedDeviceId='single-source' AND InventoryDeviceId='single-target'"));
+        Assert.True(store.BindObservedIdentityToDevice("peer-replica-observed", "single-target"));
+        var peerStore = new PostgreSqlCloudStateStore(source, new PlaintextTestProtector());
+        var peerSession = peerStore.OpenSession("neo-hub-proactive", "peer-replica-observed",
+            "peer-replica-token", "neo-hub", "/v1/proactive");
+        Assert.Equal("single-target", peerSession.Metadata["registeredDeviceId"]?.ToString());
 
         Assert.Throws<InvalidOperationException>(() => store.MergeRobotRecordsForAdministration(
             "multi-source", "multi-target", new RobotMergePrecondition([], [])));

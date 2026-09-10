@@ -162,6 +162,24 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void AuthenticatedIssuedToken_AutomaticallyAttachesItsRegisteredRobot()
+    {
+        var store = new InMemoryCloudStateStore();
+        var robot = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "authenticated-robot", RobotId = "robot-authenticated-robot",
+            FriendlyName = "Authenticated Robot", RegistrationSource = RobotRegistrationSources.Physical
+        });
+        var token = store.IssueHubToken(robot.DeviceId);
+
+        var session = store.OpenSession("neo-hub-listen", null, token, "neo-hub", "/v1/listen");
+
+        Assert.Equal(robot.DeviceId, session.DeviceId);
+        Assert.Equal(robot.DeviceId, session.Metadata["registeredDeviceId"]?.ToString());
+        Assert.Equal(robot.RobotId, session.Metadata["registeredRobotId"]?.ToString());
+    }
+
+    [Fact]
     public void BindSessionToDevice_PersistsExplicitInventoryIdentityWithoutReplacingRuntimeIdentity()
     {
         var store = new InMemoryCloudStateStore();

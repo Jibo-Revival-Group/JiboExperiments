@@ -137,6 +137,8 @@ public sealed class JiboWebSocketService(
                         session,
                         envelope,
                         cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(session.DeviceId))
+                        stateStore.ReinheritDialogMetadata(session);
                     await telemetrySink.RecordTurnEventAsync(envelope, session, "proactive_context_completed",
                         new Dictionary<string, object?>
                         {

@@ -525,6 +525,7 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
                 stored.IssuedUtc, stored.ExpiresUtc);
             foreach (var pair in stored.Metadata) durable.Metadata[pair.Key] = pair.Value;
             _sessions.RegisterDurableToken(key, durable);
+            ReinheritDialogMetadata(durable);
         }
 
         return durable;
@@ -579,13 +580,13 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         ArgumentNullException.ThrowIfNull(session);
         if (string.IsNullOrWhiteSpace(session.DeviceId)) return;
 
-        var link = Sync(_identityLinks.FindAsync(session.DeviceId));
-        if (link is not null)
-        {
-            var linkedDevice = Sync(_devices.GetByDeviceIdAsync(link.InventoryDeviceId));
-            if (linkedDevice is not null && !linkedDevice.IsHidden && linkedDevice.ArchivedUtc is null)
-                ApplyRegisteredDeviceMetadata(session, linkedDevice);
-        }
+        // The relational identity link is authoritative across replicas. Clear
+        // cached identity fields first so a revoked/reassigned link cannot be
+        // resurrected from token metadata or a stale in-process donor session.
+        session.Metadata.Remove("registeredDeviceId");
+        session.Metadata.Remove("registeredRobotId");
+        var registered = ResolveRegisteredDevice(session.DeviceId);
+        if (registered is not null) ApplyRegisteredDeviceMetadata(session, registered);
 
         var donor = _sessions.Values
             .Where(candidate => candidate.SessionId != session.SessionId &&
@@ -595,7 +596,12 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
             .FirstOrDefault();
         if (donor is null) return;
         foreach (var pair in donor.Metadata.Where(pair => ShouldInheritDialogMetadataKey(pair.Key)))
+        {
+            if (pair.Key.Equals("registeredDeviceId", StringComparison.OrdinalIgnoreCase) ||
+                pair.Key.Equals("registeredRobotId", StringComparison.OrdinalIgnoreCase))
+                continue;
             if (!session.Metadata.ContainsKey(pair.Key)) session.Metadata[pair.Key] = pair.Value;
+        }
     }
 
     public void UpdateRobot(DeviceRegistration registration)
@@ -610,10 +616,37 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
     {
         var expiresUtc = DateTimeOffset.UtcNow.Add(lifetime);
         var metadata = BuildSessionMetadata(accountId, deviceId);
+        var registered = ResolveRegisteredDevice(deviceId);
+        if (registered is not null)
+        {
+            metadata["registeredDeviceId"] = registered.DeviceId;
+            metadata["registeredRobotId"] = registered.RobotId;
+        }
         var stored = Sync(_authTokens.IssueAsync(token, kind, accountId, deviceId, expiresUtc, metadata));
-        _sessions.RegisterDurableToken(token,
-            CreateSession(stored.TokenKind, stored.AccountId, stored.DeviceId, token, null, null, stored.IssuedUtc,
-                stored.ExpiresUtc));
+        var session = CreateSession(stored.TokenKind, stored.AccountId, stored.DeviceId, token, null, null,
+            stored.IssuedUtc, stored.ExpiresUtc);
+        // NewRobotToken requests are represented in the status portal before a
+        // WebSocket necessarily opens. Resolve the durable observed-identity link
+        // now so a client that repeatedly requests tokens does not produce a stream
+        // of apparently unclaimed sessions.
+        foreach (var pair in stored.Metadata) session.Metadata[pair.Key] = pair.Value;
+        _sessions.RegisterDurableToken(token, session);
+        // Reconcile after registration so a concurrent link/unlink operation either
+        // updates this row directly or is observed from PostgreSQL here.
+        ReinheritDialogMetadata(session);
+    }
+
+    private DeviceRegistration? ResolveRegisteredDevice(string? observedDeviceId)
+    {
+        if (string.IsNullOrWhiteSpace(observedDeviceId)) return null;
+        var observed = observedDeviceId.Trim();
+        var link = Sync(_identityLinks.FindAsync(observed));
+        var registered = link is null
+            ? Sync(_devices.GetByDeviceIdAsync(observed))
+            : Sync(_devices.GetByDeviceIdAsync(link.InventoryDeviceId));
+        return registered is not null && !registered.IsHidden && registered.ArchivedUtc is null
+            ? registered
+            : null;
     }
 
     private static CloudSession CreateSession(string kind, string? accountId, string? deviceId, string token,

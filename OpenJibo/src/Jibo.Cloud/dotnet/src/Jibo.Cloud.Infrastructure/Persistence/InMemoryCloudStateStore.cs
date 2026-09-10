@@ -1013,7 +1013,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 ? _robot.DeviceId
                 : null;
         var token = $"hub-{_account.AccountId}-{Guid.NewGuid():N}";
-        _sessions.RegisterDurableToken(token, new CloudSession
+        RegisterIssuedSession(token, new CloudSession
         {
             Kind = "hub",
             AccountId = _account.AccountId,
@@ -1030,7 +1030,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     public string IssueRobotToken(string deviceId)
     {
         var token = $"token-{deviceId}-{Guid.NewGuid():N}";
-        _sessions.RegisterDurableToken(token, new CloudSession
+        RegisterIssuedSession(token, new CloudSession
         {
             Kind = "robot",
             AccountId = _account.AccountId,
@@ -1054,7 +1054,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             throw new InvalidOperationException("Deployment-smoke token device is not classified as deployment-smoke.");
         _sessions.RemoveDurableForDevice(normalizedDeviceId, "robot");
         var token = $"token-{normalizedDeviceId}-{Guid.NewGuid():N}";
-        _sessions.RegisterDurableToken(token, new CloudSession
+        RegisterIssuedSession(token, new CloudSession
         {
             Kind = "robot",
             AccountId = _account.AccountId,
@@ -1076,7 +1076,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             throw new InvalidOperationException("Deployment-smoke token device is not classified as deployment-smoke.");
         _sessions.RemoveDurableForDevice(normalizedDeviceId, "hub");
         var token = $"hub-{_account.AccountId}-{Guid.NewGuid():N}";
-        _sessions.RegisterDurableToken(token, new CloudSession
+        RegisterIssuedSession(token, new CloudSession
         {
             Kind = "hub",
             AccountId = _account.AccountId,
@@ -1094,6 +1094,26 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         if (string.IsNullOrWhiteSpace(deviceId) ||
             !deviceId.Trim().StartsWith("open-jibo-smoke-staging-", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Deployment-smoke tokens require the fixed staging smoke namespace.");
+    }
+
+    private void RegisterIssuedSession(string token, CloudSession session)
+    {
+        // Token issuance is itself visible in the status portal, even when the
+        // client never reaches the WebSocket handshake. Serialize registration
+        // with link/unlink so the issued row cannot miss a concurrent binding.
+        lock (_syncRoot)
+        {
+            _sessions.RegisterDurableToken(token, session);
+            InheritDialogMetadataFromDevice(session);
+            if (!session.Metadata.ContainsKey("registeredDeviceId") &&
+                !string.IsNullOrWhiteSpace(session.DeviceId) &&
+                _devices.TryGetValue(session.DeviceId, out var registered) &&
+                !registered.IsHidden && registered.ArchivedUtc is null)
+            {
+                session.Metadata["registeredDeviceId"] = registered.DeviceId;
+                session.Metadata["registeredRobotId"] = registered.RobotId;
+            }
+        }
     }
 
     public CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path)

@@ -1985,11 +1985,19 @@ internal static class PortalEndpoints
         var processStartUtc = process.StartTime.ToUniversalTime();
         var allDevices = cloudStateStore.GetDevicesForAdministration();
         var sessions = cloudStateStore.GetSessions();
-        var recentSessions = sessions
+        // GetSessions intentionally includes durable issued-token records. Those
+        // records are authentication history, not live WebSocket sessions, and a
+        // client retrying token issuance must not flood or distort fleet presence.
+        var activeSessions = sessions
+            .Where(session => !string.IsNullOrWhiteSpace(session.Token) &&
+                              cloudStateStore.FindActiveSessionByToken(session.Token)?.SessionId
+                                  .Equals(session.SessionId, StringComparison.OrdinalIgnoreCase) == true)
+            .ToArray();
+        var recentSessions = activeSessions
             .Where(session => now - session.LastSeenUtc <= StatusHeartbeatWindow)
             .ToArray();
         var liveConnections = robotPresenceRegistry.GetLiveConnections();
-        var robots = BuildReconciledRobotStatuses(allDevices, sessions, recentSessions, liveConnections, now, includeHidden)
+        var robots = BuildReconciledRobotStatuses(allDevices, activeSessions, recentSessions, liveConnections, now, includeHidden)
             .Select(robot => robot with
             {
                 IdentitySuggestion = identitySuggestionStore.GetSuggestion(robot.DeviceId, allDevices)
@@ -2068,9 +2076,9 @@ internal static class PortalEndpoints
                 connectedRobots = robots.Count(robot => robot.Connected),
                 sleepingRobots = robots.Count(robot => robot.Presence == "sleeping"),
                 recentlySeenRobots = robots.Count(robot => robot.Presence == "recently-seen"),
-                totalSessions = sessions.Count,
+                totalSessions = activeSessions.Length,
                 liveSessions = recentSessions.Length,
-                staleSessions = sessions.Count(session => now - session.LastSeenUtc > StatusHeartbeatWindow),
+                staleSessions = activeSessions.Count(session => now - session.LastSeenUtc > StatusHeartbeatWindow),
                 latestSeenUtc,
                 oldestLiveSessionCreatedUtc,
                 averageHeartbeatAgeSeconds = recentSessions.Length > 0

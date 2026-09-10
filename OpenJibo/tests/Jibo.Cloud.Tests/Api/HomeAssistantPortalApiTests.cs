@@ -373,6 +373,9 @@ public sealed class HomeAssistantPortalApiTests
         Assert.DoesNotContain("\"token\":", summaryText, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("test-admin-password", summaryText, StringComparison.Ordinal);
         Assert.True(summary.GetProperty("fleet").GetProperty("registeredRobots").GetInt32() >= 1);
+        Assert.Equal(0, summary.GetProperty("fleet").GetProperty("totalSessions").GetInt32());
+        Assert.Equal(0, summary.GetProperty("fleet").GetProperty("liveSessions").GetInt32());
+        Assert.Empty(summary.GetProperty("recentSessions").EnumerateArray());
         Assert.Equal(2, summary.GetProperty("fleet").GetProperty("hiddenRobots").GetInt32());
         Assert.True(summary.GetProperty("service").GetProperty("uptimeSeconds").GetInt64() >= 0);
         Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>

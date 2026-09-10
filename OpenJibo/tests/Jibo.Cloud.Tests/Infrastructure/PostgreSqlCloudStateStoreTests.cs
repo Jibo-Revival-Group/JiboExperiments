@@ -14,9 +14,43 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         var token = store.IssueRobotToken("device-1");
 
         Assert.Null(store.FindActiveSessionByToken(token));
-        Assert.NotNull(store.FindSessionByToken(token));
+        var issued = Assert.IsType<CloudSession>(store.FindSessionByToken(token));
+        Assert.Equal("device-1", issued.Metadata["registeredDeviceId"]?.ToString());
+        Assert.Equal("robot-1", issued.Metadata["registeredRobotId"]?.ToString());
         Assert.NotNull(tokens.Issued);
         Assert.True(tokens.Issued!.ExpiresUtc - tokens.Issued.IssuedUtc >= TimeSpan.FromDays(44));
+    }
+
+    [Fact]
+    public void RobotToken_ExplicitIdentityLinkIsPersistedAndRehydratedAcrossStoreInstances()
+    {
+        var tokens = new FakeTokenRepository();
+        var links = new FakeIdentityLinkRepository();
+        links.Link("observed-runtime-id", "device-1");
+        var devices = new FakeDeviceRepository(
+            new DeviceRegistration
+            {
+                DeviceId = "observed-runtime-id",
+                RobotId = "observed-runtime-id",
+                FriendlyName = "Observed runtime"
+            },
+            new DeviceRegistration
+            {
+                DeviceId = "device-1",
+                RobotId = "robot-1",
+                FriendlyName = "Kitchen Jibo"
+            });
+        var firstStore = CreateStore(tokens, identityLinks: links, deviceRepository: devices);
+
+        var token = firstStore.IssueRobotToken("observed-runtime-id");
+
+        Assert.Equal("device-1", tokens.Issued!.Metadata["registeredDeviceId"]?.ToString());
+        Assert.Equal("robot-1", tokens.Issued.Metadata["registeredRobotId"]?.ToString());
+
+        var rehydratedStore = CreateStore(tokens, identityLinks: links, deviceRepository: devices);
+        var rehydrated = Assert.IsType<CloudSession>(rehydratedStore.FindSessionByToken(token));
+        Assert.Equal("device-1", rehydrated.Metadata["registeredDeviceId"]?.ToString());
+        Assert.Equal("robot-1", rehydrated.Metadata["registeredRobotId"]?.ToString());
     }
 
     [Fact]
@@ -236,7 +270,8 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         ICommuteProfileRepository? commutes = null, ICalendarEventRepository? calendar = null,
         IGreetingPresenceRepository? greetings = null, IAtomicLoopBackupRestorer? atomicBackupRestorer = null,
         ICloudStateSecretProtector? secretProtector = null, DeviceRegistration? device = null,
-        ICloudDeviceRepository? deviceRepository = null)
+        ICloudDeviceRepository? deviceRepository = null,
+        IRobotIdentityLinkRepository? identityLinks = null)
     {
         var account = new AccountProfile { AccountId = "account-1", Email = "owner@example.com" };
         device ??= new DeviceRegistration
@@ -251,7 +286,7 @@ public sealed partial class PostgreSqlCloudStateStoreTests
             new FakeAccountRepository(account),
             deviceRepository ?? new FakeDeviceRepository(device),
             tokens,
-            new FakeIdentityLinkRepository(),
+            identityLinks ?? new FakeIdentityLinkRepository(),
             new BoundedCloudSessionRegistry(4, 4),
             robotTokenLifetime: robotTokenLifetime,
             users: users ?? new FakeUserRepository(),
@@ -342,16 +377,22 @@ public sealed partial class PostgreSqlCloudStateStoreTests
             CancellationToken cancellationToken = default) => Task.FromResult(value);
     }
 
-    private sealed class FakeDeviceRepository(DeviceRegistration device) : ICloudDeviceRepository
+    private sealed class FakeDeviceRepository(params DeviceRegistration[] devices) : ICloudDeviceRepository
     {
+        private DeviceRegistration DefaultDevice => devices[0];
         internal string? LastIdentityAccountId { get; private set; }
         internal string? LastIdentity { get; private set; }
 
         public Task<DeviceRegistration?> GetByDeviceIdAsync(string deviceId,
             CancellationToken cancellationToken = default) =>
-            Task.FromResult<DeviceRegistration?>(deviceId == device.DeviceId ? device : null);
+            Task.FromResult(devices.FirstOrDefault(candidate =>
+                candidate.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase)));
         public Task<DeviceRegistration?> FindByFriendlyIdAsync(string friendlyId,
-            CancellationToken cancellationToken = default) => Task.FromResult<DeviceRegistration?>(device);
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(devices.FirstOrDefault(candidate =>
+                candidate.DeviceId.Equals(friendlyId, StringComparison.OrdinalIgnoreCase) ||
+                candidate.RobotId.Equals(friendlyId, StringComparison.OrdinalIgnoreCase) ||
+                candidate.FriendlyName.Equals(friendlyId, StringComparison.OrdinalIgnoreCase)));
         public Task<IReadOnlyList<DeviceRegistration>> FindVisibleIdentityCandidatesAsync(string accountId,
             string identity, CancellationToken cancellationToken = default) =>
             RecordIdentityQuery(accountId, identity);
@@ -360,16 +401,16 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         {
             LastIdentityAccountId = accountId;
             LastIdentity = identity;
-            return Task.FromResult<IReadOnlyList<DeviceRegistration>>(device.IsHidden || device.ArchivedUtc is not null ? [] : [device]);
+            return Task.FromResult<IReadOnlyList<DeviceRegistration>>(devices.Where(device => !device.IsHidden && device.ArchivedUtc is null).ToArray());
         }
         public Task<DeviceRegistration?> GetDefaultAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult<DeviceRegistration?>(device);
+            Task.FromResult<DeviceRegistration?>(DefaultDevice);
         public Task<IReadOnlyList<DeviceRegistration>> ListForAccountAsync(string accountId,
             bool includeArchived = false, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyList<DeviceRegistration>>([device]);
+            Task.FromResult<IReadOnlyList<DeviceRegistration>>(devices);
         public Task<IReadOnlyList<DeviceRegistration>> ListAllAsync(bool includeArchived = true,
             CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyList<DeviceRegistration>>([device]);
+            Task.FromResult<IReadOnlyList<DeviceRegistration>>(devices);
         public Task<IReadOnlyList<string>> ListAccountIdsAsync(string deviceId,
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<string>>(["test-account"]);
@@ -427,16 +468,31 @@ public sealed partial class PostgreSqlCloudStateStoreTests
 
     private sealed class FakeIdentityLinkRepository : IRobotIdentityLinkRepository
     {
+        private readonly Dictionary<string, RobotIdentityLinkRecord> _links =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        internal void Link(string observedDeviceId, string inventoryDeviceId)
+        {
+            var now = DateTimeOffset.UtcNow;
+            _links[observedDeviceId] = new RobotIdentityLinkRecord(
+                observedDeviceId, inventoryDeviceId, "test", now, now, null, []);
+        }
+
         public Task<IReadOnlyList<RobotIdentityLinkRecord>> ListForAccountAsync(string accountId,
             CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyList<RobotIdentityLinkRecord>>([]);
+            Task.FromResult<IReadOnlyList<RobotIdentityLinkRecord>>(_links.Values.ToArray());
         public Task<RobotIdentityLinkRecord?> FindAsync(string observedDeviceId,
-            CancellationToken cancellationToken = default) => Task.FromResult<RobotIdentityLinkRecord?>(null);
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(_links.GetValueOrDefault(observedDeviceId));
         public Task<RobotIdentityLinkRecord> UpsertAsync(string observedDeviceId, string inventoryDeviceId,
             string claimSource, IReadOnlyList<RobotIdentityLinkAuditEntry>? audit = null,
-            CancellationToken cancellationToken = default) => throw new NotSupportedException();
+            CancellationToken cancellationToken = default)
+        {
+            Link(observedDeviceId, inventoryDeviceId);
+            return Task.FromResult(_links[observedDeviceId]);
+        }
         public Task<bool> RevokeAsync(string observedDeviceId, CancellationToken cancellationToken = default) =>
-            Task.FromResult(false);
+            Task.FromResult(_links.Remove(observedDeviceId));
     }
 
     private sealed class FakeUserRepository : ICloudUserRepository

@@ -449,11 +449,22 @@ async function suggestRobotIdentity(deviceId) {
     setStatusBanner(unassignedNote || "Identity evidence scan complete.", "success");
     if (latestSummary) renderStatusView(latestSummary);
     const evidence = (suggestion.evidence || []).slice(0, 3).map(item => `${item.field}: ${item.value}`).join("\n");
+    if (suggestion.action === "ambiguous") {
+      const candidates = (suggestion.candidateTargetDeviceIds || []).join(", ");
+      setStatusBanner(
+        `Multiple active robot records match ${suggestion.proposedRobotId}${candidates ? `: ${candidates}` : ""}. Review the inventory and merge the correct records manually.`,
+        "error");
+      return;
+    }
     const action = suggestion.action === "merge" ? "merge this record into" : "rename this record to";
     if (!window.confirm(`Evidence suggests ${suggestion.proposedRobotId}.\n\n${evidence}\n\nDo you want to ${action} ${suggestion.proposedRobotId}?`)) return;
     const result = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/identity-suggestion/apply`, {
       method: "POST",
-      body: JSON.stringify({ proposedRobotId: suggestion.proposedRobotId }),
+      body: JSON.stringify({
+        proposedRobotId: suggestion.proposedRobotId,
+        expectedAction: suggestion.action,
+        expectedTargetDeviceId: suggestion.targetDeviceId || null,
+      }),
     });
     await refreshStatus(result.action === "merge" ? "Identity suggestion applied by merge." : "Robot identity renamed.", "success", { force: true });
   } catch (error) {

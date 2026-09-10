@@ -6,27 +6,31 @@ import test from "node:test";
 const source = readFileSync(new URL("../../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/wwwroot/portal/status/status.js", import.meta.url), "utf8")
   .replace(/^bootstrap\(\);\s*$/m, "");
 
-function harness() {
+function harness(confirmResult = false) {
   const progress = { textContent: "" };
   let tick;
   let cleared = 0;
+  let confirmations = 0;
   const context = createContext({
     document: { getElementById: () => progress },
     window: {
       setInterval: callback => { tick = callback; return 1; },
       clearInterval: () => { cleared++; },
-      confirm: () => false,
+      confirm: () => { confirmations++; return confirmResult; },
     },
   });
   runInContext(source, context);
   runInContext(`
     let requestCount = 0;
+    let requests = [];
     let finishRequest;
     let failRequest;
-    apiFetch = () => { requestCount++; return new Promise((resolve, reject) => { finishRequest = resolve; failRequest = reject; }); };
+    apiFetch = (...args) => { requests.push(args); requestCount++; return new Promise((resolve, reject) => { finishRequest = resolve; failRequest = reject; }); };
     renderStatusView = () => {};
+    refreshStatus = () => Promise.resolve();
   `, context);
   return { context, progress, tick: () => tick(), cleared: () => cleared,
+    confirmations: () => confirmations,
     read: expression => runInContext(expression, context) };
 }
 
@@ -60,4 +64,46 @@ test("failed identity scan clears busy state and allows a retry", async () => {
   assert.equal(view.read("requestCount"), 2);
   view.read("finishRequest({ suggested: false })");
   await retry;
+});
+
+test("ambiguous identity scan requires manual review and never applies", async () => {
+  const view = harness();
+  const pending = view.read('suggestRobotIdentity("robot-one")');
+  view.read(`finishRequest({
+    suggested: true,
+    proposedRobotId: "Alpha-Beta-Dodger-Quirk",
+    action: "ambiguous",
+    candidateTargetDeviceIds: ["canonical-a", "canonical-b"],
+    evidence: []
+  })`);
+  await pending;
+
+  assert.equal(view.read("requestCount"), 1);
+  assert.equal(view.confirmations(), 0);
+  assert.equal(view.read("bannerTone"), "error");
+  assert.match(view.read("bannerMessage"), /Multiple active robot records/);
+  assert.match(view.read("bannerMessage"), /canonical-a, canonical-b/);
+});
+
+test("identity apply is bound to the reviewed action and target", async () => {
+  const view = harness(true);
+  const pending = view.read('suggestRobotIdentity("robot-one")');
+  view.read(`finishRequest({
+    suggested: true,
+    proposedRobotId: "Alpha-Beta-Dodger-Quirk",
+    action: "merge",
+    targetDeviceId: "canonical-a",
+    evidence: []
+  })`);
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(view.read("requestCount"), 2);
+  const body = JSON.parse(view.read("requests[1][1].body"));
+  assert.deepEqual(body, {
+    proposedRobotId: "Alpha-Beta-Dodger-Quirk",
+    expectedAction: "merge",
+    expectedTargetDeviceId: "canonical-a",
+  });
+  view.read("finishRequest({ ok: true })");
+  await pending;
 });

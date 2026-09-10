@@ -121,3 +121,39 @@ samples so a wait can be attributed to connection/token ramp or turn processing.
 three maximum replicas also needs correlation with revision lifecycle events because every point-in-time probe saw
 the required two replicas. Physical Ogg/Opus audio, STT-provider load, reconnect storms, and sustained memory slope
 remain outside this matrix.
+
+## Guarded Short Matrix Repeat (`2026-09-10`)
+
+Runs [`34477940754`](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/34477940754),
+[`34479120393`](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/34479120393), and
+[`34480066458`](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/34480066458) repeated the
+10%, 25%, and 50% cases on commit `c517f97c23ab460ea7d4b771185797edc2e074df`. All used unchanged image
+`sha-3773955b69c6`, observed exactly two serving replicas, proved a cross-replica committed read, retained complete
+per-tier connection/executing-command samples, inferred `pendingRequestMax: 0`, and passed cleanup restoration.
+
+| Turn share | Robots | Active turns/round | Completed | P50 | P95 | Maximum |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10% | 6 | 1 | 10 | 381 ms | 2,483 ms | 2,483 ms |
+| 10% | 10 | 1 | 10 | 381 ms | 1,952 ms | 1,952 ms |
+| 10% | 15 | 2 | 20 | 375 ms | 2,995 ms | 3,033 ms |
+| 10% | 20 | 2 | 20 | 372 ms | 1,244 ms | 1,259 ms |
+| 25% | 6 | 2 | 20 | 381 ms | 3,166 ms | 3,201 ms |
+| 25% | 10 | 3 | 30 | 348 ms | 1,238 ms | 1,239 ms |
+| 25% | 15 | 4 | 40 | 375 ms | 3,959 ms | 4,006 ms |
+| 25% | 20 | 5 | 50 | 316 ms | 520 ms | 1,972 ms |
+| 50% | 6 | 3 | 30 | 314 ms | 2,477 ms | 2,480 ms |
+| 50% | 10 | 5 | 50 | 349 ms | 3,856 ms | 3,883 ms |
+| 50% | 15 | 8 | 80 | 311 ms | 4,956 ms | 4,999 ms |
+| 50% | 20 | 10 | 100 | 322 ms | 4,241 ms | 5,884 ms |
+
+The guarded matrix completed all `460/460` requested turns without an incorrect reply, socket loss, or timeout.
+Across the three exact probe revisions, application memory maxima were 201-217 MiB of 2 GiB, platform memory
+maxima were 167-179 MiB, highest hourly-average CPU was 7.2% of one core, PostgreSQL connections peaked at 9 of
+50, and aggregate cache hit ratios remained 95.31-95.69%. The previous two-pending-request observation did not
+recur.
+
+This closes the guarded short-matrix repeat, but does not yet certify a sustained tier. Latency remains strongly
+non-monotonic: the 15-robot tail recurred and the 20-robot/50% maximum reached 5,884 ms against the 6,000 ms client
+timeout. The aggregate windows remain only about five minutes and cannot establish memory slope, physical
+Ogg/Opus behavior, Azure Speech capacity, or a 25% headroom claim. Before a 60-minute step, investigate the tail
+and define the pilot latency/headroom threshold; use a lower bounded tier if 20 robots cannot retain that margin.

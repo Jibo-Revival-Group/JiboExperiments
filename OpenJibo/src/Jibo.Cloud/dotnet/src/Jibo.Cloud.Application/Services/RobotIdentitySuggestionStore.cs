@@ -96,10 +96,14 @@ public sealed class RobotIdentitySuggestionStore
         }
     }
 
-    public RobotIdentitySuggestion? GetSuggestion(string? deviceId)
+    public RobotIdentitySuggestion? GetSuggestion(
+        string? deviceId,
+        IReadOnlyList<DeviceRegistration>? identityInventory = null)
     {
         if (string.IsNullOrWhiteSpace(deviceId)) return null;
-        var device = ResolveDevice(deviceId);
+        var device = identityInventory?.FirstOrDefault(item =>
+                         item.DeviceId.Equals(deviceId.Trim(), StringComparison.OrdinalIgnoreCase))
+                     ?? ResolveDevice(deviceId);
         if (device is null) return null;
 
         RobotIdentitySuggestionCandidate? best;
@@ -135,19 +139,28 @@ public sealed class RobotIdentitySuggestionStore
             return null;
         }
 
-        var target = cloudStateStore.FindDeviceByFriendlyId(best.ProposedRobotId);
+        var targets = identityInventory is null
+            ? cloudStateStore.FindVisibleIdentityCandidates(best.ProposedRobotId)
+            : FindVisibleIdentityCandidates(identityInventory, best.ProposedRobotId);
+        var action = targets.Count switch
+        {
+            0 => "rename",
+            1 => "merge",
+            _ => "ambiguous"
+        };
         return new RobotIdentitySuggestion(
             device.DeviceId,
             device.RobotId,
             best.ProposedRobotId,
-            target is null || target.DeviceId.Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase)
-                ? "rename"
-                : "merge",
-            target?.DeviceId,
+            action,
+            targets.Count == 1 ? targets[0].DeviceId : null,
             best.ObservationCount,
             best.FirstObservedUtc,
             best.LastObservedUtc,
-            best.Evidence);
+            best.Evidence)
+        {
+            CandidateTargetDeviceIds = targets.Select(target => target.DeviceId).ToArray()
+        };
     }
 
     public void Dismiss(string? deviceId, string? proposedRobotId = null)
@@ -189,6 +202,36 @@ public sealed class RobotIdentitySuggestionStore
         return new[] { device.DeviceId, device.RobotId, device.FriendlyName, device.VerifiedSerialNumber }
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Any(value => value!.Equals(normalized, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static IReadOnlyList<DeviceRegistration> FindVisibleIdentityCandidates(
+        IReadOnlyList<DeviceRegistration> inventory,
+        string identity)
+    {
+        var normalized = identity.Trim();
+        var candidates = inventory
+            .Where(device => !device.IsHidden && device.ArchivedUtc is null)
+            .Select(device => (Device: device, Priority: IdentityPriority(device, normalized)))
+            .Where(candidate => candidate.Priority >= 0)
+            .ToArray();
+        if (candidates.Length == 0) return [];
+
+        var minimumPriority = candidates.Min(candidate => candidate.Priority);
+        return candidates
+            .Where(candidate => candidate.Priority == minimumPriority)
+            .OrderBy(candidate => candidate.Device.DeviceId, StringComparer.OrdinalIgnoreCase)
+            .Take(2)
+            .Select(candidate => candidate.Device)
+            .ToArray();
+    }
+
+    private static int IdentityPriority(DeviceRegistration device, string identity)
+    {
+        if (string.Equals(device.DeviceId, identity, StringComparison.OrdinalIgnoreCase)) return 0;
+        if (string.Equals(device.VerifiedSerialNumber, identity, StringComparison.OrdinalIgnoreCase)) return 1;
+        if (string.Equals(device.RobotId, identity, StringComparison.OrdinalIgnoreCase)) return 2;
+        if (string.Equals(device.FriendlyName, identity, StringComparison.OrdinalIgnoreCase)) return 3;
+        return -1;
     }
 
     private void PurgeExpiredLocked(DateTimeOffset now)
@@ -238,7 +281,10 @@ public sealed record RobotIdentitySuggestion(
     int ObservationCount,
     DateTimeOffset FirstObservedUtc,
     DateTimeOffset LastObservedUtc,
-    IReadOnlyList<RobotIdentitySuggestionEvidence> Evidence);
+    IReadOnlyList<RobotIdentitySuggestionEvidence> Evidence)
+{
+    public IReadOnlyList<string> CandidateTargetDeviceIds { get; init; } = [];
+}
 
 public sealed record RobotIdentitySuggestionEvidence(
     string Source,

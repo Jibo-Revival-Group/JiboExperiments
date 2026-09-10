@@ -1499,7 +1499,7 @@ internal static class PortalEndpoints
                     unassignedEvidence.Add(new { path = item.artifact.Path, field = "serialNumber", value = observed.SerialNumber, storedUtc = ReadArtifactMeta(item.artifact.Meta, "storedUtc") });
             }
 
-            var suggestion = identitySuggestionStore.GetSuggestion(device.DeviceId);
+            var suggestion = identitySuggestionStore.GetSuggestion(device.DeviceId, inventory);
             if (suggestion is null)
                 return Results.Json(new { suggested = false, currentRobotId = device.RobotId, evidence = Array.Empty<object>(), unassignedEvidence });
 
@@ -1510,6 +1510,7 @@ internal static class PortalEndpoints
                 currentRobotId = device.RobotId,
                 suggestion.Action,
                 suggestion.TargetDeviceId,
+                suggestion.CandidateTargetDeviceIds,
                 suggestion.ObservationCount,
                 suggestion.FirstObservedUtc,
                 suggestion.LastObservedUtc,
@@ -1555,23 +1556,48 @@ internal static class PortalEndpoints
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
             if (!IsSafeIdentityName(request.ProposedRobotId))
                 return Results.BadRequest(new { error = "Provide a valid robot ID." });
-            var source = cloudStateStore.GetDevicesForAdministration().FirstOrDefault(item =>
+            var inventory = cloudStateStore.GetDevicesForAdministration();
+            var source = inventory.FirstOrDefault(item =>
                 item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (source is null) return Results.NotFound(new { error = "Robot record was not found." });
             var proposedRobotId = request.ProposedRobotId!.Trim();
-            var pendingSuggestion = identitySuggestionStore.GetSuggestion(source.DeviceId);
+            var pendingSuggestion = identitySuggestionStore.GetSuggestion(source.DeviceId, inventory);
             if (pendingSuggestion is null ||
                 !pendingSuggestion.ProposedRobotId.Equals(proposedRobotId, StringComparison.OrdinalIgnoreCase))
                 return Results.BadRequest(new { error = "That identity suggestion is no longer pending." });
-            var target = cloudStateStore.FindDeviceByFriendlyId(proposedRobotId);
-            if (target is not null && !target.DeviceId.Equals(source.DeviceId, StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(request.ExpectedAction) ||
+                !pendingSuggestion.Action.Equals(request.ExpectedAction.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(pendingSuggestion.TargetDeviceId, request.ExpectedTargetDeviceId,
+                    StringComparison.OrdinalIgnoreCase))
+                return Results.Conflict(new
+                {
+                    error = "The identity suggestion changed after it was reviewed. Scan again before applying it."
+                });
+            if (pendingSuggestion.Action.Equals("ambiguous", StringComparison.OrdinalIgnoreCase))
+                return Results.Conflict(new
+                {
+                    error = "Multiple active robot records match this identity. Review and merge the records manually."
+                });
+            if (pendingSuggestion.Action.Equals("merge", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(pendingSuggestion.TargetDeviceId))
             {
-                var result = cloudStateStore.MergeRobotRecordsForAdministration(source.DeviceId, target.DeviceId);
+                RobotMergeResult result;
+                try
+                {
+                    result = cloudStateStore.MergeRobotRecordsForAdministration(
+                        source.DeviceId, pendingSuggestion.TargetDeviceId);
+                }
+                catch (InvalidOperationException exception)
+                {
+                    return Results.Conflict(new { error = exception.Message });
+                }
                 var migratedArtifacts = await ReassignArtifactsAsync(mediaContentStore, result.SourceDeviceId,
                     result.TargetDeviceId, "robot-identity-suggestion-merge", cancellationToken);
                 identitySuggestionStore.Dismiss(source.DeviceId, proposedRobotId);
                 return Results.Json(new { ok = true, action = "merge", result, migratedArtifacts });
             }
+            if (!pendingSuggestion.Action.Equals("rename", StringComparison.OrdinalIgnoreCase))
+                return Results.Conflict(new { error = "The identity suggestion cannot be applied automatically." });
             var renamed = cloudStateStore.RenameDeviceForAdministration(source.DeviceId, proposedRobotId);
             identitySuggestionStore.Dismiss(source.DeviceId, proposedRobotId);
             return Results.Json(new { ok = true, action = "rename", device = renamed });
@@ -1927,7 +1953,10 @@ internal static class PortalEndpoints
             .ToArray();
         var liveConnections = robotPresenceRegistry.GetLiveConnections();
         var robots = BuildReconciledRobotStatuses(allDevices, sessions, recentSessions, liveConnections, now, includeHidden)
-            .Select(robot => robot with { IdentitySuggestion = identitySuggestionStore.GetSuggestion(robot.DeviceId) })
+            .Select(robot => robot with
+            {
+                IdentitySuggestion = identitySuggestionStore.GetSuggestion(robot.DeviceId, allDevices)
+            })
             .ToArray();
 
         var localConnectedRobotIds = robots
@@ -3312,7 +3341,11 @@ internal static class PortalEndpoints
     private sealed record SwapRobotCredentialBindingsRequest(string? PortalSessionToken,
         string? FirstAccessKeyFingerprint, string? SecondAccessKeyFingerprint, bool Confirmed);
     private sealed record MergeRobotRequest(string? PortalSessionToken, string? TargetDeviceId);
-    private sealed record ApplyIdentitySuggestionRequest(string? PortalSessionToken, string? ProposedRobotId);
+    private sealed record ApplyIdentitySuggestionRequest(
+        string? PortalSessionToken,
+        string? ProposedRobotId,
+        string? ExpectedAction,
+        string? ExpectedTargetDeviceId);
 
     private sealed record FleetServerPresenceReportRequest(
         string? PortalSessionToken,

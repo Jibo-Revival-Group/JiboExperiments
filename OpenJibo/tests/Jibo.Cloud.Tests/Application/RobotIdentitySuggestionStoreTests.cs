@@ -107,6 +107,37 @@ public sealed class RobotIdentitySuggestionStoreTests
     }
 
     [Fact]
+    public void GetSuggestion_ReportsAmbiguousWhenMultipleVisibleRobotsMatchCandidate()
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "observed-device-001",
+            RobotId = "robot-observed-device-001",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        foreach (var targetDeviceId in new[] { "canonical-device-b", "canonical-device-a" })
+        {
+            stateStore.UpsertDevice(new DeviceRegistration
+            {
+                DeviceId = targetDeviceId,
+                RobotId = "Alpha-Beta-Dodger-Quirk",
+                FriendlyName = "Alpha-Beta-Dodger-Quirk"
+            });
+        }
+        var suggestions = new RobotIdentitySuggestionStore(stateStore);
+        suggestions.Observe("observed-device-001", "Alpha-Beta-Dodger-Quirk",
+            "websocket-context", "data.runtime.loop.jibo.id");
+
+        var suggestion = Assert.IsType<RobotIdentitySuggestion>(
+            suggestions.GetSuggestion("observed-device-001"));
+
+        Assert.Equal("ambiguous", suggestion.Action);
+        Assert.Null(suggestion.TargetDeviceId);
+        Assert.Equal(["canonical-device-a", "canonical-device-b"], suggestion.CandidateTargetDeviceIds);
+    }
+
+    [Fact]
     public void GetSuggestion_BreaksExactTiesByProposedRobotIdRegardlessOfInsertionOrder()
     {
         var now = new DateTimeOffset(2026, 9, 10, 0, 0, 0, TimeSpan.Zero);

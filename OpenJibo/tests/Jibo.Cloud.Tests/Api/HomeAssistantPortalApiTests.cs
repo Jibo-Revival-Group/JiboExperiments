@@ -781,9 +781,11 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal(1, preview.GetProperty("sessionCount").GetInt32());
         Assert.Equal(1, preview.GetProperty("credentialBindingCount").GetInt32());
         Assert.Equal(1, preview.GetProperty("artifactCount").GetInt32());
+        var previewToken = preview.GetProperty("previewToken").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(previewToken));
 
         var mergeResponse = await client.PostAsJsonAsync(
-            $"/api/portal/status/robots/{sourceDeviceId}/merge", new { targetDeviceId });
+            $"/api/portal/status/robots/{sourceDeviceId}/merge", new { targetDeviceId, previewToken });
         mergeResponse.EnsureSuccessStatusCode();
         var merge = await mergeResponse.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(merge.GetProperty("ok").GetBoolean());
@@ -800,6 +802,91 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal(sourceDeviceId, artifact.Meta["mergedFromDeviceId"]?.ToString());
         Assert.Equal(loopIdsBefore, stateStore.GetLoops().Select(loop => loop.LoopId));
         Assert.Equal(peopleBefore, stateStore.GetPeople().Select(person => person.PersonId));
+    }
+
+    [Fact]
+    public async Task RobotMerge_RejectsMissingOrCrossTargetPreviewWithoutMutation()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var stateStore = factory.Services.GetRequiredService<ICloudStateStore>();
+        const string sourceDeviceId = "duplicate-robot";
+        const string reviewedTargetDeviceId = "canonical-a";
+        const string otherTargetDeviceId = "canonical-b";
+        foreach (var deviceId in new[] { sourceDeviceId, reviewedTargetDeviceId, otherTargetDeviceId })
+        {
+            stateStore.UpsertDevice(new DeviceRegistration
+            {
+                DeviceId = deviceId,
+                RobotId = deviceId,
+                FriendlyName = deviceId,
+                RegistrationSource = RobotRegistrationSources.Physical
+            });
+        }
+        await AuthenticateAdminAsync(client);
+
+        var missingPreview = await client.PostAsJsonAsync(
+            $"/api/portal/status/robots/{sourceDeviceId}/merge",
+            new { targetDeviceId = reviewedTargetDeviceId });
+        Assert.Equal(HttpStatusCode.Conflict, missingPreview.StatusCode);
+
+        var preview = await (await client.GetAsync(
+                $"/api/portal/status/robots/{sourceDeviceId}/merge-preview?targetDeviceId={reviewedTargetDeviceId}"))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var crossTarget = await client.PostAsJsonAsync(
+            $"/api/portal/status/robots/{sourceDeviceId}/merge",
+            new
+            {
+                targetDeviceId = otherTargetDeviceId,
+                previewToken = preview.GetProperty("previewToken").GetString()
+            });
+
+        Assert.Equal(HttpStatusCode.Conflict, crossTarget.StatusCode);
+        Assert.False(stateStore.GetDevicesForAdministration()
+            .Single(device => device.DeviceId == sourceDeviceId).IsHidden);
+    }
+
+    [Fact]
+    public async Task RobotMerge_RejectsArtifactChangedAfterPreviewWithoutMutation()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var stateStore = factory.Services.GetRequiredService<ICloudStateStore>();
+        var mediaStore = factory.Services.GetRequiredService<IMediaContentStore>();
+        const string sourceDeviceId = "duplicate-robot";
+        const string targetDeviceId = "canonical-robot";
+        foreach (var deviceId in new[] { sourceDeviceId, targetDeviceId })
+        {
+            stateStore.UpsertDevice(new DeviceRegistration
+            {
+                DeviceId = deviceId,
+                RobotId = deviceId,
+                FriendlyName = deviceId,
+                RegistrationSource = RobotRegistrationSources.Physical
+            });
+        }
+        await mediaStore.StoreAsync("logs/merge-race.txt", "text/plain", Encoding.UTF8.GetBytes("reviewed"),
+            new Dictionary<string, object?> { ["deviceId"] = sourceDeviceId });
+        await AuthenticateAdminAsync(client);
+
+        var preview = await (await client.GetAsync(
+                $"/api/portal/status/robots/{sourceDeviceId}/merge-preview?targetDeviceId={targetDeviceId}"))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        await mediaStore.StoreAsync("logs/merge-race.txt", "text/plain", Encoding.UTF8.GetBytes("changed"),
+            new Dictionary<string, object?> { ["deviceId"] = sourceDeviceId });
+        var merge = await client.PostAsJsonAsync(
+            $"/api/portal/status/robots/{sourceDeviceId}/merge",
+            new
+            {
+                targetDeviceId,
+                previewToken = preview.GetProperty("previewToken").GetString()
+            });
+
+        Assert.Equal(HttpStatusCode.Conflict, merge.StatusCode);
+        Assert.False(stateStore.GetDevicesForAdministration()
+            .Single(device => device.DeviceId == sourceDeviceId).IsHidden);
+        Assert.Equal(sourceDeviceId,
+            (await mediaStore.LoadAsync("logs/merge-race.txt"))!.Meta["deviceId"]?.ToString());
     }
 
     [Fact]

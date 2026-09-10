@@ -586,9 +586,15 @@ async function mergeRobotFromArtifactViewer() {
     if (!window.confirm(`Merge ${sourceDeviceId} into ${targetDeviceId}?\n\nMoves ${preview.sessionCount} session(s), ${preview.credentialBindingCount} credential binding(s), and ${preview.artifactCount} artifact(s). The source is archived. Household loops are not merged.`)) return;
     const result = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(sourceDeviceId)}/merge`, {
       method: "POST",
-      body: JSON.stringify({ targetDeviceId }),
+      body: JSON.stringify({ targetDeviceId, previewToken: preview.previewToken }),
     });
-    await refreshStatus(`Robot merged; ${result.migratedArtifacts || 0} artifact(s) reassigned.`, "success", { force: true });
+    const skipped = result.skippedArtifacts?.length || 0;
+    await refreshStatus(
+      result.partial
+        ? `Robot records merged, but ${skipped} changed artifact(s) were skipped. Review the archived source before cleanup.`
+        : `Robot merged; ${result.migratedArtifacts || 0} artifact(s) reassigned.`,
+      result.partial ? "error" : "success",
+      { force: true });
     await openRobotArtifacts(targetDeviceId, activeLogViewer.robotName);
   } catch (error) {
     activeLogViewer = { ...activeLogViewer, error: error.message };

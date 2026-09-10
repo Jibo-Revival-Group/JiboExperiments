@@ -21,6 +21,8 @@ public sealed partial class PostgreSqlCloudStateStore
                      throw new KeyNotFoundException("Source robot record was not found.");
         var target = Sync(_devices.GetByDeviceIdAsync(targetDeviceId)) ??
                       throw new KeyNotFoundException("Target robot record was not found.");
+        if (source.IsHidden || source.ArchivedUtc is not null || target.IsHidden || target.ArchivedUtc is not null)
+            throw new InvalidOperationException("Robot merge requires two visible, unarchived records.");
         if (administration)
         {
             var sourceAccounts = Sync(_devices.ListAccountIdsAsync(source.DeviceId));

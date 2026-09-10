@@ -80,6 +80,32 @@ public sealed class AzureBlobMediaContentStoreTests
         Assert.Equal(8, peak);
     }
 
+    [Fact]
+    public async Task EnumerateAsync_FollowsEveryBlobListingPage()
+    {
+        var container = new Mock<BlobContainerClient>();
+        var firstPage = Enumerable.Range(0, 2).Select(index => Item($"logs/{index}.json", $"v{index}")).ToArray();
+        var secondPage = Enumerable.Range(2, 2).Select(index => Item($"logs/{index}.json", $"v{index}")).ToArray();
+        container.Setup(client => client.GetBlobsAsync(BlobTraits.None, BlobStates.None,
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(AsyncPageable<BlobItem>.FromPages([
+                Page<BlobItem>.FromValues(firstPage, "page-2", Mock.Of<Response>()),
+                Page<BlobItem>.FromValues(secondPage, null, Mock.Of<Response>())]));
+        foreach (var manifest in firstPage.Concat(secondPage))
+        {
+            var blob = new Mock<BlobClient>();
+            blob.Setup(client => client.DownloadContentAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Download(manifest.Name[..^5], "2026-09-08T00:00:00Z"));
+            container.Setup(client => client.GetBlobClient(manifest.Name)).Returns(blob.Object);
+        }
+
+        var store = new AzureBlobMediaContentStore(container.Object);
+        var paths = new List<string>();
+        await foreach (var item in store.EnumerateAsync("logs")) paths.Add(item.Path);
+
+        Assert.Equal(["logs/0", "logs/1", "logs/2", "logs/3"], paths);
+    }
+
     private static BlobItem Item(string name, string etag) => BlobsModelFactory.BlobItem(
         name: name, properties: BlobsModelFactory.BlobItemProperties(accessTierInferred: false, eTag: new ETag(etag)));
 

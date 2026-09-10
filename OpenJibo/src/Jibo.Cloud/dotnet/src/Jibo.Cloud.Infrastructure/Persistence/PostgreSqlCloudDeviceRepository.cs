@@ -381,14 +381,26 @@ public sealed class PostgreSqlCloudDeviceRepository : ICloudDeviceRepository
     public async Task<RobotCredentialBinding> BindCredentialAsync(string deviceId, string accessKeyFingerprint,
         string claimSource, CancellationToken cancellationToken = default)
     {
-        var device = await GetByDeviceIdAsync(deviceId, cancellationToken)
-                     ?? throw new KeyNotFoundException("Robot record was not found.");
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
         if (string.IsNullOrWhiteSpace(accessKeyFingerprint))
             throw new ArgumentException("Credential fingerprint is required.", nameof(accessKeyFingerprint));
 
+        var normalizedDeviceId = deviceId.Trim();
         var fingerprint = accessKeyFingerprint.Trim();
         await using var connection = await _dataSource.Value.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using (var lockDevice = new NpgsqlCommand("""
+                                                        SELECT DeviceId
+                                                        FROM Devices
+                                                        WHERE LOWER(DeviceId) = LOWER(@deviceId)
+                                                          AND NOT IsHidden AND ArchivedUtc IS NULL
+                                                        FOR UPDATE
+                                                        """, connection, transaction))
+        {
+            lockDevice.Parameters.AddWithValue("deviceId", normalizedDeviceId);
+            normalizedDeviceId = (string?)(await lockDevice.ExecuteScalarAsync(cancellationToken)) ??
+                                 throw new KeyNotFoundException("Visible robot record was not found.");
+        }
         await using (var insert = new NpgsqlCommand("""
                                                     INSERT INTO RobotCredentialBindings
                                                         (AccessKeyFingerprint, DeviceId, ClaimedUtc, ClaimSource)
@@ -397,7 +409,7 @@ public sealed class PostgreSqlCloudDeviceRepository : ICloudDeviceRepository
                                                     """, connection, transaction))
         {
             insert.Parameters.AddWithValue("fingerprint", fingerprint);
-            insert.Parameters.AddWithValue("deviceId", device.DeviceId);
+            insert.Parameters.AddWithValue("deviceId", normalizedDeviceId);
             insert.Parameters.AddWithValue("claimSource",
                 string.IsNullOrWhiteSpace(claimSource) ? "admin-claim" : claimSource.Trim());
             await insert.ExecuteNonQueryAsync(cancellationToken);
@@ -418,7 +430,7 @@ public sealed class PostgreSqlCloudDeviceRepository : ICloudDeviceRepository
             binding = MapBinding(reader);
         }
 
-        if (!string.Equals(binding.DeviceId, device.DeviceId, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(binding.DeviceId, normalizedDeviceId, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Credential fingerprint is already claimed by another robot.");
 
         await CloudStateRevision.BumpAsync(connection, transaction, cancellationToken);
@@ -519,6 +531,146 @@ public sealed class PostgreSqlCloudDeviceRepository : ICloudDeviceRepository
         await transaction.CommitAsync(cancellationToken);
         return affected;
     }
+
+    public async Task<int> MergeForAdministrationAsync(string sourceDeviceId, string targetDeviceId,
+        IReadOnlyList<string> expectedCredentialFingerprints, string claimSource,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceDeviceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetDeviceId);
+        ArgumentNullException.ThrowIfNull(expectedCredentialFingerprints);
+        if (sourceDeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Choose two different robot records.");
+
+        await using var connection = await _dataSource.Value.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.Serializable,
+            cancellationToken);
+        var devices = new Dictionary<string, (bool Hidden, DateTimeOffset? Archived)>(StringComparer.OrdinalIgnoreCase);
+        await using (var lockDevices = new NpgsqlCommand("""
+                                                         SELECT DeviceId, IsHidden, ArchivedUtc
+                                                         FROM Devices
+                                                         WHERE LOWER(DeviceId) = LOWER(@source)
+                                                            OR LOWER(DeviceId) = LOWER(@target)
+                                                         ORDER BY DeviceId
+                                                         FOR UPDATE
+                                                         """, connection, transaction))
+        {
+            lockDevices.Parameters.AddWithValue("source", sourceDeviceId.Trim());
+            lockDevices.Parameters.AddWithValue("target", targetDeviceId.Trim());
+            await using var reader = await lockDevices.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+                devices[reader.GetString(0)] = (reader.GetBoolean(1),
+                    reader.IsDBNull(2) ? null : reader.GetFieldValue<DateTimeOffset>(2));
+        }
+
+        var source = devices.Keys.FirstOrDefault(id => id.Equals(sourceDeviceId.Trim(), StringComparison.OrdinalIgnoreCase));
+        var target = devices.Keys.FirstOrDefault(id => id.Equals(targetDeviceId.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (source is null || target is null) throw new KeyNotFoundException("Robot record was not found.");
+        if (devices[source].Hidden || devices[source].Archived is not null ||
+            devices[target].Hidden || devices[target].Archived is not null)
+            throw new InvalidOperationException("Robot merge requires two visible, unarchived records.");
+
+        var accountAssociations = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            [source] = new(StringComparer.OrdinalIgnoreCase),
+            [target] = new(StringComparer.OrdinalIgnoreCase)
+        };
+        await using (var readAccounts = new NpgsqlCommand("""
+                                                          SELECT DeviceId, AccountId
+                                                          FROM AccountDevices
+                                                          WHERE DeviceId = @source OR DeviceId = @target
+                                                          ORDER BY DeviceId, AccountId
+                                                          FOR SHARE
+                                                          """, connection, transaction))
+        {
+            readAccounts.Parameters.AddWithValue("source", source);
+            readAccounts.Parameters.AddWithValue("target", target);
+            await using var reader = await readAccounts.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+                accountAssociations[reader.GetString(0)].Add(reader.GetString(1));
+        }
+        if (!accountAssociations[source].SetEquals(accountAssociations[target]))
+            throw new InvalidOperationException("Admin merge requires identical account associations.");
+
+        var currentFingerprints = new List<string>();
+        await using (var readBindings = new NpgsqlCommand("""
+                                                          SELECT AccessKeyFingerprint
+                                                          FROM RobotCredentialBindings
+                                                          WHERE DeviceId = @source
+                                                          ORDER BY AccessKeyFingerprint
+                                                          FOR UPDATE
+                                                          """, connection, transaction))
+        {
+            readBindings.Parameters.AddWithValue("source", source);
+            await using var reader = await readBindings.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken)) currentFingerprints.Add(reader.GetString(0));
+        }
+        if (!SameValues(currentFingerprints, expectedCredentialFingerprints))
+            throw new InvalidOperationException("Robot merge state changed after preview. Review the merge again.");
+
+        var normalizedSource = string.IsNullOrWhiteSpace(claimSource) ? "robot-merge" : claimSource.Trim();
+        int migratedBindings;
+        await using (var moveBindings = new NpgsqlCommand("""
+                                                          UPDATE RobotCredentialBindings
+                                                          SET DeviceId = @target, ClaimedUtc = NOW(), ClaimSource = @claimSource
+                                                          WHERE DeviceId = @source
+                                                          """, connection, transaction))
+        {
+            moveBindings.Parameters.AddWithValue("source", source);
+            moveBindings.Parameters.AddWithValue("target", target);
+            moveBindings.Parameters.AddWithValue("claimSource", normalizedSource);
+            migratedBindings = await moveBindings.ExecuteNonQueryAsync(cancellationToken);
+        }
+        await using (var archiveSource = new NpgsqlCommand("""
+                                                           UPDATE Devices
+                                                           SET IsActive = FALSE, IsHidden = TRUE, ArchivedUtc = NOW(), UpdatedUtc = NOW()
+                                                           WHERE DeviceId = @source
+                                                           """, connection, transaction))
+        {
+            archiveSource.Parameters.AddWithValue("source", source);
+            await archiveSource.ExecuteNonQueryAsync(cancellationToken);
+        }
+        await using (var mapping = new NpgsqlCommand("""
+                                                     INSERT INTO DeviceHostMappings (DeviceId, MappingKey, MappingValue, UpdatedUtc)
+                                                     VALUES (@source, 'openjibo.mergedIntoDeviceId', @target, NOW())
+                                                     ON CONFLICT (DeviceId, MappingKey) DO UPDATE SET
+                                                         MappingValue = EXCLUDED.MappingValue, UpdatedUtc = NOW()
+                                                     """, connection, transaction))
+        {
+            mapping.Parameters.AddWithValue("source", source);
+            mapping.Parameters.AddWithValue("target", target);
+            await mapping.ExecuteNonQueryAsync(cancellationToken);
+        }
+        await using (var identityLink = new NpgsqlCommand("""
+                                                          INSERT INTO RobotIdentityLinks
+                                                              (ObservedDeviceId, InventoryDeviceId, ClaimSource, Audit)
+                                                          VALUES (@source, @target, @claimSource,
+                                                              jsonb_build_array(jsonb_build_object(
+                                                                  'action', 'manual-merge',
+                                                                  'source', @claimSource,
+                                                                  'utc', NOW())))
+                                                          ON CONFLICT ((LOWER(ObservedDeviceId))) DO UPDATE SET
+                                                              InventoryDeviceId = EXCLUDED.InventoryDeviceId,
+                                                              ClaimSource = EXCLUDED.ClaimSource,
+                                                              UpdatedUtc = NOW(), RevokedUtc = NULL,
+                                                              Audit = RobotIdentityLinks.Audit || EXCLUDED.Audit
+                                                          """, connection, transaction))
+        {
+            identityLink.Parameters.AddWithValue("source", source);
+            identityLink.Parameters.AddWithValue("target", target);
+            identityLink.Parameters.AddWithValue("claimSource", normalizedSource);
+            await identityLink.ExecuteNonQueryAsync(cancellationToken);
+        }
+        await CloudStateRevision.BumpAsync(connection, transaction, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        _cache.Clear();
+        return migratedBindings;
+    }
+
+    private static bool SameValues(IEnumerable<string> current, IEnumerable<string> expected) =>
+        current.OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .SequenceEqual(expected.OrderBy(value => value, StringComparer.OrdinalIgnoreCase),
+                StringComparer.OrdinalIgnoreCase);
 
     private async Task<DeviceRegistration?> ReadOneAsync(string predicate, string value,
         CancellationToken cancellationToken)

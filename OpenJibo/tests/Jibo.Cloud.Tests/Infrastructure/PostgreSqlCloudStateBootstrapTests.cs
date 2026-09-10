@@ -82,6 +82,9 @@ public sealed class PostgreSqlCloudStateBootstrapTests
         public Task<IReadOnlyList<RobotCredentialBinding>> SwapCredentialBindingsAsync(string firstAccessKeyFingerprint, string secondAccessKeyFingerprint, string claimSource, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<DeviceRegistration?> FindByCredentialFingerprintAsync(string accessKeyFingerprint, CancellationToken cancellationToken = default) => Task.FromResult<DeviceRegistration?>(null);
         public Task<int> MoveCredentialBindingsAsync(string sourceDeviceId, string targetDeviceId, string claimSource, CancellationToken cancellationToken = default) => Task.FromResult(0);
+        public Task<int> MergeForAdministrationAsync(string sourceDeviceId, string targetDeviceId,
+            IReadOnlyList<string> expectedCredentialFingerprints, string claimSource,
+            CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
     private sealed class CollectingLoopRepository : ILoopTopologyRepository

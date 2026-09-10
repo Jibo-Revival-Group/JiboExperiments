@@ -278,6 +278,46 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void MergeRobotRecordsForAdministration_RejectsStaleSessionPreconditionWithoutMutation()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration { DeviceId = "stale-session-source", RobotId = "stale-session-source" });
+        store.UpsertDevice(new DeviceRegistration { DeviceId = "stale-session-target", RobotId = "stale-session-target" });
+        var session = store.OpenSession("hub", "stale-session-source", "conn:stale-session", "neohub", "/v1/listen");
+
+        Assert.Throws<InvalidOperationException>(() => store.MergeRobotRecordsForAdministration(
+            "stale-session-source", "stale-session-target",
+            new RobotMergePrecondition([], [])));
+
+        var source = store.GetDevicesForAdministration().Single(device => device.DeviceId == "stale-session-source");
+        Assert.False(source.IsHidden);
+        Assert.Null(source.ArchivedUtc);
+        Assert.False(source.HostMappings.ContainsKey("openjibo.mergedIntoDeviceId"));
+        Assert.Equal("stale-session-source", session.DeviceId);
+        Assert.Equal("stale-session-source", store.GetSessions()
+            .Single(item => item.SessionId == session.SessionId).DeviceId);
+    }
+
+    [Fact]
+    public void MergeRobotRecordsForAdministration_RejectsStaleCredentialPreconditionWithoutMutation()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration { DeviceId = "stale-credential-source", RobotId = "stale-credential-source" });
+        store.UpsertDevice(new DeviceRegistration { DeviceId = "stale-credential-target", RobotId = "stale-credential-target" });
+        store.BindAwsCredentialFingerprint("stale-credential-source", "0123456789abcdef", "test");
+
+        Assert.Throws<InvalidOperationException>(() => store.MergeRobotRecordsForAdministration(
+            "stale-credential-source", "stale-credential-target",
+            new RobotMergePrecondition([], ["fedcba9876543210"])));
+
+        var source = store.GetDevicesForAdministration().Single(device => device.DeviceId == "stale-credential-source");
+        Assert.False(source.IsHidden);
+        Assert.Null(source.ArchivedUtc);
+        Assert.False(source.HostMappings.ContainsKey("openjibo.mergedIntoDeviceId"));
+        Assert.Equal("stale-credential-source", store.FindDeviceByAwsCredentialFingerprint("0123456789abcdef")!.DeviceId);
+    }
+
+    [Fact]
     public void Reconnect_ReinheritsExplicitSessionBindingForSameRuntimeIdentity()
     {
         var store = new InMemoryCloudStateStore();

@@ -1413,7 +1413,8 @@ internal static class PortalEndpoints
                         error = "The merge preview is missing, expired, or stale. Review the merge again before applying it."
                     });
                 var result = cloudStateStore.MergeRobotRecordsForAdministration(
-                    preview.SourceDeviceId, preview.TargetDeviceId);
+                    preview.SourceDeviceId, preview.TargetDeviceId,
+                    new RobotMergePrecondition(preview.SessionIds, preview.CredentialFingerprints));
                 var artifactResult = await ReassignReviewedArtifactsAsync(mediaContentStore,
                     result.SourceDeviceId, result.TargetDeviceId, preview.Artifacts, cancellationToken);
                 return Results.Json(new
@@ -2166,13 +2167,13 @@ internal static class PortalEndpoints
     private static async Task<int> BackfillArtifactsForCredentialAsync(IMediaContentStore mediaContentStore,
         string accessKeyFingerprint, string deviceId, CancellationToken cancellationToken)
     {
-        var artifacts = await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken);
         var updated = 0;
-        foreach (var artifact in artifacts.Where(item =>
-                     string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")) &&
-                     ReadArtifactMeta(item.Meta, "awsAccessKeyFingerprint")
-                         .Equals(accessKeyFingerprint, StringComparison.OrdinalIgnoreCase)))
+        await foreach (var artifact in mediaContentStore.EnumerateAsync(string.Empty, cancellationToken))
         {
+            if (!string.IsNullOrWhiteSpace(ReadArtifactMeta(artifact.Meta, "deviceId")) ||
+                !ReadArtifactMeta(artifact.Meta, "awsAccessKeyFingerprint")
+                    .Equals(accessKeyFingerprint, StringComparison.OrdinalIgnoreCase))
+                continue;
             var content = await mediaContentStore.LoadAsync(artifact.Path, cancellationToken);
             if (content is null) continue;
             var meta = new Dictionary<string, object?>(content.Meta, StringComparer.OrdinalIgnoreCase)
@@ -2191,9 +2192,11 @@ internal static class PortalEndpoints
         string targetDeviceId, string identitySource, CancellationToken cancellationToken)
     {
         var updated = 0;
-        foreach (var artifact in (await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken)).Where(item =>
-                     ReadArtifactMeta(item.Meta, "deviceId").Equals(sourceDeviceId, StringComparison.OrdinalIgnoreCase)))
+        await foreach (var artifact in mediaContentStore.EnumerateAsync(string.Empty, cancellationToken))
         {
+            if (!ReadArtifactMeta(artifact.Meta, "deviceId").Equals(sourceDeviceId,
+                    StringComparison.OrdinalIgnoreCase))
+                continue;
             var content = await mediaContentStore.LoadAsync(artifact.Path, cancellationToken);
             if (content is null) continue;
             var meta = new Dictionary<string, object?>(content.Meta, StringComparer.OrdinalIgnoreCase)
@@ -2242,19 +2245,18 @@ internal static class PortalEndpoints
             .Select(item => item.AccessKeyFingerprint)
             .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
             .ToArray();
-        var artifactItems = (await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken))
-            .Where(item => ReadArtifactMeta(item.Meta, "deviceId")
-                .Equals(source.DeviceId, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(item => item.Path, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        var artifacts = new List<RobotMergeArtifactReference>(artifactItems.Length);
-        foreach (var item in artifactItems)
+        var artifacts = new List<RobotMergeArtifactReference>();
+        await foreach (var item in mediaContentStore.EnumerateAsync(string.Empty, cancellationToken))
         {
+            if (!ReadArtifactMeta(item.Meta, "deviceId")
+                    .Equals(source.DeviceId, StringComparison.OrdinalIgnoreCase))
+                continue;
             var content = await mediaContentStore.LoadAsync(item.Path, cancellationToken);
             if (content is not null)
                 artifacts.Add(new RobotMergeArtifactReference(item.Path,
                     Convert.ToHexString(SHA256.HashData(content.Content)).ToLowerInvariant()));
         }
+        artifacts = artifacts.OrderBy(item => item.Path, StringComparer.OrdinalIgnoreCase).ToList();
 
         var snapshotJson = JsonSerializer.Serialize(new
         {
@@ -2326,12 +2328,13 @@ internal static class PortalEndpoints
         string accessKeyFingerprint, string deviceId, CancellationToken cancellationToken)
     {
         var updated = 0;
-        foreach (var artifact in (await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken)).Where(item =>
-                     ReadArtifactMeta(item.Meta, "awsAccessKeyFingerprint")
-                         .Equals(accessKeyFingerprint, StringComparison.OrdinalIgnoreCase) &&
-                     ReadArtifactMeta(item.Meta, "identitySource") is "aws-credential-binding-backfill" or
-                         "aws-credential-binding-swap"))
+        await foreach (var artifact in mediaContentStore.EnumerateAsync(string.Empty, cancellationToken))
         {
+            if (!ReadArtifactMeta(artifact.Meta, "awsAccessKeyFingerprint")
+                    .Equals(accessKeyFingerprint, StringComparison.OrdinalIgnoreCase) ||
+                ReadArtifactMeta(artifact.Meta, "identitySource") is not ("aws-credential-binding-backfill" or
+                    "aws-credential-binding-swap"))
+                continue;
             var content = await mediaContentStore.LoadAsync(artifact.Path, cancellationToken);
             if (content is null) continue;
             var meta = new Dictionary<string, object?>(content.Meta, StringComparer.OrdinalIgnoreCase)

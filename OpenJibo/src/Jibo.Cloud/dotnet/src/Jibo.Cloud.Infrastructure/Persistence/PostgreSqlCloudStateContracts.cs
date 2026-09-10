@@ -50,6 +50,9 @@ public interface ICloudDeviceRepository
         string secondAccessKeyFingerprint, string claimSource, CancellationToken cancellationToken = default);
     Task<int> MoveCredentialBindingsAsync(string sourceDeviceId, string targetDeviceId, string claimSource,
         CancellationToken cancellationToken = default);
+    Task<int> MergeForAdministrationAsync(string sourceDeviceId, string targetDeviceId,
+        IReadOnlyList<string> expectedCredentialFingerprints, string claimSource,
+        CancellationToken cancellationToken = default);
     Task<DeviceRegistration?> FindByCredentialFingerprintAsync(string accessKeyFingerprint,
         CancellationToken cancellationToken = default);
 }

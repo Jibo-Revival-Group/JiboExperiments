@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 
@@ -87,6 +88,47 @@ internal sealed class FileMediaContentStore(string? directoryPath) : IMediaConte
             Content = content,
             Meta = meta as IReadOnlyDictionary<string, object?> ?? new Dictionary<string, object?>(meta)
         };
+    }
+
+    public async IAsyncEnumerable<MediaContentItem> EnumerateAsync(string prefix,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(DirectoryPath) || !Directory.Exists(DirectoryPath)) yield break;
+
+        var normalizedPrefix = string.IsNullOrWhiteSpace(prefix)
+            ? string.Empty
+            : MediaPathHelper.GetRelativeStoragePath(prefix).Replace(Path.DirectorySeparatorChar, '/');
+        if (!string.IsNullOrWhiteSpace(normalizedPrefix)) normalizedPrefix += "/";
+        foreach (var metaPath in Directory.EnumerateFiles(DirectoryPath, "*.json", SearchOption.AllDirectories))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            MediaContentItem? item;
+            try
+            {
+                using var document = JsonDocument.Parse(await File.ReadAllTextAsync(metaPath, cancellationToken));
+                var root = document.RootElement;
+                var itemPath = root.TryGetProperty("path", out var pathElement) ? pathElement.GetString() : null;
+                if (string.IsNullOrWhiteSpace(itemPath) ||
+                    !MediaPathHelper.GetRelativeStoragePath(itemPath).Replace(Path.DirectorySeparatorChar, '/')
+                        .StartsWith(normalizedPrefix, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var contentType = root.TryGetProperty("contentType", out var typeElement)
+                    ? typeElement.GetString() ?? "application/octet-stream"
+                    : "application/octet-stream";
+                var meta = root.TryGetProperty("meta", out var metaElement) && metaElement.ValueKind == JsonValueKind.Object
+                    ? JsonSerializer.Deserialize<Dictionary<string, object?>>(metaElement.GetRawText(), JsonOptions) ?? []
+                    : new Dictionary<string, object?>();
+                item = new MediaContentItem { Path = itemPath, ContentType = contentType, Meta = meta };
+            }
+            catch (JsonException)
+            {
+                // Skip malformed manifests while keeping the remaining diagnostics visible.
+                continue;
+            }
+
+            yield return item;
+        }
     }
 
     public async Task<IReadOnlyList<MediaContentItem>> ListAsync(string prefix, int maxCount = 100,

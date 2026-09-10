@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Azure;
 using Azure.Storage.Blobs;
@@ -103,6 +104,43 @@ public sealed class AzureBlobMediaContentStore : IMediaContentStore
         };
     }
 
+    public async IAsyncEnumerable<MediaContentItem> EnumerateAsync(string prefix,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var normalizedPrefix = string.IsNullOrWhiteSpace(prefix)
+            ? string.Empty
+            : MediaPathHelper.GetRelativeStoragePath(prefix).Replace('\\', '/');
+        if (!string.IsNullOrWhiteSpace(normalizedPrefix)) normalizedPrefix += "/";
+
+        await _listingGate.WaitAsync(cancellationToken);
+        try
+        {
+            await using var enumerator = _containerClient.GetBlobsAsync(BlobTraits.None, BlobStates.None,
+                normalizedPrefix, cancellationToken).GetAsyncEnumerator(cancellationToken);
+            while (true)
+            {
+                BlobItem blob;
+                try
+                {
+                    if (!await enumerator.MoveNextAsync()) break;
+                    blob = enumerator.Current;
+                }
+                catch (RequestFailedException exception) when (exception.Status == 404)
+                {
+                    yield break;
+                }
+
+                if (!blob.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
+                var item = await ReadManifestAsync(blob, cancellationToken);
+                if (item is not null) yield return item;
+            }
+        }
+        finally
+        {
+            _listingGate.Release();
+        }
+    }
+
     public async Task<IReadOnlyList<MediaContentItem>> ListAsync(string prefix, int maxCount = 100,
         CancellationToken cancellationToken = default)
     {
@@ -187,6 +225,42 @@ public sealed class AzureBlobMediaContentStore : IMediaContentStore
     }
 
     private sealed record ManifestCacheEntry(ETag ETag, MediaContentItem Item);
+
+    private async Task<MediaContentItem?> ReadManifestAsync(BlobItem blob, CancellationToken cancellationToken)
+    {
+        var etag = blob.Properties.ETag;
+        if (etag.HasValue && _manifestCache.TryGetValue(blob.Name, out var cached) && cached.ETag == etag)
+            return cached.Item;
+
+        _manifestCache.TryRemove(blob.Name, out _);
+        try
+        {
+            var content = await _containerClient.GetBlobClient(blob.Name).DownloadContentAsync(cancellationToken);
+            using var document = JsonDocument.Parse(content.Value.Content.ToStream());
+            var root = document.RootElement;
+            var path = root.TryGetProperty("path", out var pathElement) ? pathElement.GetString() : null;
+            if (string.IsNullOrWhiteSpace(path)) return null;
+            var contentType = root.TryGetProperty("contentType", out var typeElement)
+                ? typeElement.GetString() ?? "application/octet-stream"
+                : "application/octet-stream";
+            var meta = root.TryGetProperty("meta", out var metaElement) && metaElement.ValueKind == JsonValueKind.Object
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(metaElement.GetRawText(), JsonOptions) ?? []
+                : new Dictionary<string, object?>();
+            var item = new MediaContentItem { Path = path, ContentType = contentType, Meta = meta };
+            if (etag.HasValue && _manifestCache.Count < MaxCachedManifests)
+                _manifestCache[blob.Name] = new ManifestCacheEntry(etag.Value, item);
+            return item;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+        catch (RequestFailedException exception) when (exception.Status == 404)
+        {
+            return null;
+        }
+    }
+
     private static DateTimeOffset ReadStoredUtc(IReadOnlyDictionary<string, object?> meta) =>
         meta.TryGetValue("storedUtc", out var value) &&
         DateTimeOffset.TryParse(value?.ToString(), out var parsed)

@@ -34,6 +34,8 @@ public interface ICloudStateStore
         string secondAccessKeyFingerprint, string claimSource);
     RobotMergeResult MergeRobotRecords(string sourceDeviceId, string targetDeviceId);
     RobotMergeResult MergeRobotRecordsForAdministration(string sourceDeviceId, string targetDeviceId);
+    RobotMergeResult MergeRobotRecordsForAdministration(string sourceDeviceId, string targetDeviceId,
+        RobotMergePrecondition precondition);
     RobotIdentityCleanupPreview PreviewRobotIdentityCleanup();
     RobotIdentityCleanupResult ResetRobotIdentityAssociations();
     UserRecord? CreateUser(string email, string password, string? firstName, string? lastName);

@@ -23,10 +23,11 @@ function harness(confirmResult = false) {
   runInContext(`
     let requestCount = 0;
     let requests = [];
+    let renderCount = 0;
     let finishRequest;
     let failRequest;
     apiFetch = (...args) => { requests.push(args); requestCount++; return new Promise((resolve, reject) => { finishRequest = resolve; failRequest = reject; }); };
-    renderStatusView = () => {};
+    renderStatusView = () => { renderCount++; };
     refreshStatus = () => Promise.resolve();
   `, context);
   return { context, progress, tick: () => tick(), cleared: () => cleared,
@@ -68,6 +69,7 @@ test("failed identity scan clears busy state and allows a retry", async () => {
 
 test("ambiguous identity scan requires manual review and never applies", async () => {
   const view = harness();
+  view.read("latestSummary = {};");
   const pending = view.read('suggestRobotIdentity("robot-one")');
   view.read(`finishRequest({
     suggested: true,
@@ -80,6 +82,7 @@ test("ambiguous identity scan requires manual review and never applies", async (
 
   assert.equal(view.read("requestCount"), 1);
   assert.equal(view.confirmations(), 0);
+  assert.equal(view.read("renderCount"), 3);
   assert.equal(view.read("bannerTone"), "error");
   assert.match(view.read("bannerMessage"), /Multiple active robot records/);
   assert.match(view.read("bannerMessage"), /canonical-a, canonical-b/);

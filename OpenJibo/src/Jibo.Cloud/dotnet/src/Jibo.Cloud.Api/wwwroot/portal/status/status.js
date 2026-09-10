@@ -454,6 +454,7 @@ async function suggestRobotIdentity(deviceId) {
       setStatusBanner(
         `Multiple active robot records match ${suggestion.proposedRobotId}${candidates ? `: ${candidates}` : ""}. Review the inventory and merge the correct records manually.`,
         "error");
+      if (latestSummary) renderStatusView(latestSummary);
       return;
     }
     const action = suggestion.action === "merge" ? "merge this record into" : "rename this record to";

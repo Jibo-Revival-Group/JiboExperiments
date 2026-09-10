@@ -275,6 +275,7 @@ jobs:
           node-version: 24
 
       - name: Azure login
+        id: azure_login
         uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -829,7 +830,7 @@ jobs:
             node ./scripts/cloud/invoke-release-smoke.mjs
 
       - name: Disable staging release smoke authorization
-        if: always() && inputs.deployment_target == 'staging'
+        if: always() && inputs.deployment_target == 'staging' && steps.azure_login.outcome == 'success'
         shell: bash
         run: |
           app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"

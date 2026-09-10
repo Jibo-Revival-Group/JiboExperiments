@@ -327,8 +327,8 @@ public sealed class PostgreSqlCloudStateFacadeIntegrationTests
             VALUES ('other-account','single-source'),('other-account','single-target'),
                    ('other-account','multi-source'),('other-account','multi-target'),
                    ('usr_openjibo_owner','multi-source'),('usr_openjibo_owner','multi-target');
-            INSERT INTO RobotCredentialBindings (AccessKeyFingerprint,DeviceId,ClaimSource)
-            VALUES ('0123456789abcdef','multi-source','integration-test');
+            INSERT INTO RobotCredentialBindings (AccessKeyFingerprint,DeviceId,ClaimedUtc,ClaimSource)
+            VALUES ('0123456789abcdef','multi-source',NOW(),'integration-test');
             """);
         store.MergeRobotRecordsForAdministration("single-source", "single-target",
             new RobotMergePrecondition([], []));

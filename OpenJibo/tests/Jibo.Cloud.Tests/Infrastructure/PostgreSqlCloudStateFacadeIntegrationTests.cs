@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Npgsql;
@@ -85,6 +86,92 @@ public sealed class PostgreSqlCloudStateFacadeIntegrationTests
         Assert.Equal("yes-a", bounded[0].HostMappings["selected"]);
         Assert.Equal("yes-b", bounded[1].HostMappings["selected"]);
         Assert.Empty(nullSerial);
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
+    public async Task IdentitySuggestions_BreakExactTiesByProposedRobotIdRegardlessOfInsertionOrder()
+    {
+        await using var database = await CloudStateTestDatabase.CreateAsync();
+        await using var source = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
+        var repository = new PostgreSqlRobotIdentitySuggestionRepository(source);
+
+        await database.ExecuteAsync("""
+            INSERT INTO Devices (DeviceId,RobotId,FriendlyName,RegistrationSource,IsDefault)
+            VALUES
+                ('tie-device-a','tie-robot-a','Tie Robot A','physical',FALSE),
+                ('tie-device-b','tie-robot-b','Tie Robot B','physical',FALSE);
+            INSERT INTO RobotIdentitySuggestions
+                (ObservedDeviceId,ProposedRobotId,ObservationCount,FirstObservedUtc,LastObservedUtc)
+            VALUES
+                ('tie-device-a','Zulu-Beta-Charlie-Delta',1,NOW(),NOW()),
+                ('tie-device-a','Alpha-Beta-Charlie-Delta',1,NOW(),NOW()),
+                ('tie-device-b','Alpha-Beta-Charlie-Delta',1,NOW(),NOW()),
+                ('tie-device-b','Zulu-Beta-Charlie-Delta',1,NOW(),NOW());
+            """);
+
+        Assert.Equal("Alpha-Beta-Charlie-Delta", repository.GetBest("tie-device-a")!.ProposedRobotId);
+        Assert.Equal("Alpha-Beta-Charlie-Delta", repository.GetBest("tie-device-b")!.ProposedRobotId);
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
+    public async Task IdentitySuggestions_WhenCandidatesTie_PrunesLexicallyLastCandidate()
+    {
+        await using var database = await CloudStateTestDatabase.CreateAsync();
+        await using var source = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
+        var repository = new PostgreSqlRobotIdentitySuggestionRepository(source);
+
+        await database.ExecuteAsync("""
+            INSERT INTO Devices (DeviceId,RobotId,FriendlyName,RegistrationSource,IsDefault)
+            VALUES
+                ('prune-device','prune-robot','Prune Robot','physical',FALSE),
+                ('dismissed-device','dismissed-robot','Dismissed Robot','physical',FALSE),
+                ('expired-device','expired-robot','Expired Robot','physical',FALSE),
+                ('trigger-device','trigger-robot','Trigger Robot','physical',FALSE);
+            INSERT INTO RobotIdentitySuggestions
+                (ObservedDeviceId,ProposedRobotId,ObservationCount,FirstObservedUtc,LastObservedUtc)
+            VALUES
+                ('prune-device','Zulu-Beta-Charlie-Delta',1,NOW(),NOW()),
+                ('prune-device','Yankee-Beta-Charlie-Delta',1,NOW(),NOW()),
+                ('prune-device','Xray-Beta-Charlie-Delta',1,NOW(),NOW()),
+                ('prune-device','Whiskey-Beta-Charlie-Delta',1,NOW(),NOW()),
+                ('prune-device','Alpha-Beta-Charlie-Delta',1,NOW(),NOW()),
+                ('dismissed-device','Dismissed-One-Robot-Identity',10,NOW(),NOW()),
+                ('dismissed-device','Dismissed-Two-Robot-Identity',10,NOW(),NOW()),
+                ('dismissed-device','Dismissed-Three-Robot-Identity',10,NOW(),NOW()),
+                ('dismissed-device','Dismissed-Four-Robot-Identity',10,NOW(),NOW()),
+                ('dismissed-device','Active-Robot-Identity-Candidate',1,NOW(),NOW()),
+                ('expired-device','Expired-One-Robot-Identity',10,NOW() - INTERVAL '31 days',NOW() - INTERVAL '31 days'),
+                ('expired-device','Expired-Two-Robot-Identity',10,NOW() - INTERVAL '31 days',NOW() - INTERVAL '31 days'),
+                ('expired-device','Expired-Three-Robot-Identity',10,NOW() - INTERVAL '31 days',NOW() - INTERVAL '31 days'),
+                ('expired-device','Expired-Four-Robot-Identity',10,NOW() - INTERVAL '31 days',NOW() - INTERVAL '31 days'),
+                ('expired-device','Fresh-Robot-Identity-Candidate',1,NOW(),NOW());
+            UPDATE RobotIdentitySuggestions
+            SET DismissedUtc=NOW()
+            WHERE ObservedDeviceId='dismissed-device'
+              AND ProposedRobotId LIKE 'Dismissed-%';
+            """);
+
+        repository.Observe(
+            "trigger-device",
+            "Trigger-Beta-Charlie-Delta",
+            new RobotIdentitySuggestionEvidence(
+                "test", "name", "Trigger-Beta-Charlie-Delta", DateTimeOffset.UtcNow));
+
+        Assert.Equal(
+            "Alpha-Beta-Charlie-Delta,Whiskey-Beta-Charlie-Delta,Xray-Beta-Charlie-Delta,Yankee-Beta-Charlie-Delta",
+            await database.ExecuteScalarAsync<string>("""
+                SELECT string_agg(ProposedRobotId, ',' ORDER BY LOWER(ProposedRobotId))
+                FROM RobotIdentitySuggestions
+                WHERE ObservedDeviceId='prune-device'
+                """));
+        Assert.Equal(
+            "Active-Robot-Identity-Candidate",
+            repository.GetBest("dismissed-device")!.ProposedRobotId);
+        Assert.Equal(
+            "Fresh-Robot-Identity-Candidate",
+            repository.GetBest("expired-device")!.ProposedRobotId);
     }
 
     [PostgreSqlIntegrationFact]

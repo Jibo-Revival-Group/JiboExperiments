@@ -690,6 +690,11 @@ These are the carryover items that need a clean proof pass first:
   - the guarded repeat now bounds token issuance and initial notification-socket bootstrap to four concurrent robots without reducing the selected simultaneous-turn percentage; a separate reconnect/enrollment-storm scenario will retain the intentionally bursty case
   - an exact-revision tier evidence collector records bounded Npgsql pool, used-connection, executing-command, and pending-request samples against each millisecond-precision tier window; missing usable connection telemetry now fails the evidence step rather than producing a false-green run
   - the staging aggregate windows were only about six minutes and intentionally remain `insufficient-evidence`; they exercise `CLIENT_ASR`, not physical Ogg/Opus audio or Azure Speech capacity, and cannot certify an enrollment or concurrency limit
+- Capacity guarded-repeat update (`2026-09-10`):
+  - workflow runs `34477940754`, `34479120393`, and `34480066458` repeated the 10%/25%/50% 6/10/15/20 matrix on unchanged image `sha-3773955b69c6`; all 460 requested turns passed with two-replica and cross-replica evidence
+  - complete per-tier pool evidence reported `pendingRequestMax: 0` in every run, so the earlier isolated two-request wait did not recur under bounded bootstrap
+  - application memory stayed at 201-217 MiB of 2 GiB, platform memory at 167-179 MiB, highest hourly-average CPU at 7.2%, and PostgreSQL connections at no more than 9 of 50
+  - the repeated 15-robot latency tail remains unresolved, and the 20-robot/50% maximum reached 5,884 ms against the 6,000 ms client timeout; the short matrix passes but does not yet demonstrate 25% sustained headroom
 - Exit criteria:
   - production DI does not resolve `InMemoryCloudStateStore` for durable cloud state or personal memory
   - no production mutation serializes or rewrites a whole-cloud JSON snapshot
@@ -699,8 +704,7 @@ These are the carryover items that need a clean proof pass first:
   - migration dry-run, apply, verification, rollback/export, backup creation, and restore all have automated tests and a managed-deployment smoke check
   - operators can detect persistence degradation before robot requests begin timing out while `/health` remains green
 - Next action:
-  - merge the bounded-bootstrap and per-tier evidence repair, then repeat the 10% short matrix with the new reliability guard; do not start the 60-minute step while any pending request is observed
-  - investigate the pool-saturation sample, repeatable 15-robot latency tail, and aggregate `maximumReplicasObserved: 3` reading before treating short-run telemetry as a capacity boundary
+  - investigate the repeated 15-robot latency tail and the 20-robot/50% near-timeout observation before choosing the 60-minute tier; define the pilot latency/headroom threshold explicitly
   - add a captured-audio/reconnect soak on staging; do not make an Azure Speech, physical-audio, or 50-concurrent-robot claim from the transcript-bearing driver
   - draft sustained-window operational alerts from the representative baseline, but do not enable paging until an operator action group and response ownership are reviewed
 

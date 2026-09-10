@@ -358,6 +358,34 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void IssuedRobotToken_ReinheritsExplicitBindingForObservedRuntimeIdentity()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "observed-runtime-id",
+            RobotId = "observed-runtime-id",
+            FriendlyName = "Observed runtime"
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "canonical-robot",
+            RobotId = "Canonical-Robot",
+            FriendlyName = "Canonical robot"
+        });
+
+        var first = store.OpenSession("hub", "observed-runtime-id", "conn:first", "neohub", "/v1/listen");
+        Assert.True(store.BindSessionToDevice(first.SessionId, "canonical-robot"));
+
+        var token = store.IssueRobotToken("observed-runtime-id");
+        var issued = Assert.IsType<CloudSession>(store.FindSessionByToken(token));
+
+        Assert.Equal("observed-runtime-id", issued.DeviceId);
+        Assert.Equal("canonical-robot", issued.Metadata["registeredDeviceId"]?.ToString());
+        Assert.Equal("Canonical-Robot", issued.Metadata["registeredRobotId"]?.ToString());
+    }
+
+    [Fact]
     public void Reconnect_DoesNotReinheritBindingToArchivedRobot()
     {
         var store = new InMemoryCloudStateStore();

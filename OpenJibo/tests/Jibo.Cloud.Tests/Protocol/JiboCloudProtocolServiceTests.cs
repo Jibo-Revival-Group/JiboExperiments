@@ -477,8 +477,14 @@ public sealed class JiboCloudProtocolServiceTests
         using var secondPayload = JsonDocument.Parse(second.BodyText);
         Assert.NotNull(store.FindSessionByToken(firstPayload.RootElement.GetProperty("token").GetString()!));
         Assert.NotNull(store.FindSessionByToken(secondPayload.RootElement.GetProperty("token").GetString()!));
-        Assert.Equal(2, store.GetSessions().Count(session => session.Kind == "robot" &&
-            session.DeviceId == "physical-token-durability"));
+        var issuedSessions = store.GetSessions().Where(session => session.Kind == "robot" &&
+            session.DeviceId == "physical-token-durability").ToArray();
+        Assert.Equal(2, issuedSessions.Length);
+        Assert.All(issuedSessions, session =>
+        {
+            Assert.Equal("physical-token-durability", session.Metadata["registeredDeviceId"]?.ToString());
+            Assert.Equal("robot-physical-token-durability", session.Metadata["registeredRobotId"]?.ToString());
+        });
     }
 
     [Fact]
@@ -597,6 +603,8 @@ public sealed class JiboCloudProtocolServiceTests
         var session = store.FindSessionByToken(payload.RootElement.GetProperty("token").GetString()!);
         Assert.NotNull(session);
         Assert.Equal("physical-device-001", session.DeviceId);
+        Assert.Equal("physical-device-001", session.Metadata["registeredDeviceId"]?.ToString());
+        Assert.Equal("Royal-Current-Sage-Canvas", session.Metadata["registeredRobotId"]?.ToString());
         Assert.DoesNotContain(store.GetDevices(), device =>
             device.DeviceId.Equals("Royal-Current-Sage-Canvas", StringComparison.OrdinalIgnoreCase));
     }

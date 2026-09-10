@@ -9316,6 +9316,50 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ProactiveContext_ReinheritsDurableObservedIdentityBinding()
+    {
+        _store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "proactive-observed-runtime", RobotId = "robot-proactive-observed-runtime",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        var target = _store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "proactive-canonical", RobotId = "robot-proactive-canonical",
+            FriendlyName = "Proactive Canonical"
+        });
+        var seed = _store.OpenSession("neo-hub-listen", "proactive-observed-runtime",
+            "seed-proactive-binding", "neo-hub.jibo.com", "/v1/listen");
+        Assert.True(_store.BindSessionToDevice(seed.SessionId, target.DeviceId));
+
+        const string connectionId = "proactive-identity-reconnect";
+        const string token = "proactive-identity-reconnect-token";
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = connectionId,
+            HostName = "neo-hub.jibo.com",
+            Path = "/v1/proactive",
+            Kind = "neo-hub-proactive",
+            Token = token,
+            Text = """{"type":"TRIGGER","transID":"trans-proactive-identity","data":{"triggerSource":"SURPRISE"}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = connectionId,
+            HostName = "neo-hub.jibo.com",
+            Path = "/v1/proactive",
+            Kind = "neo-hub-proactive",
+            Token = token,
+            Text = """{"type":"CONTEXT","transID":"trans-proactive-identity","data":{"runtime":{"loop":{"jibo":{"id":"proactive-observed-runtime"},"users":[]}}}}"""
+        });
+
+        var reconnect = Assert.IsType<CloudSession>(_store.FindActiveSessionByToken(token));
+        Assert.Equal("proactive-observed-runtime", reconnect.DeviceId);
+        Assert.Equal(target.DeviceId, reconnect.Metadata["registeredDeviceId"]?.ToString());
+    }
+
+    [Fact]
     public async Task ProactivePresence_EmitsMatchThenSkillActionWithoutListenFrames()
     {
         var token = _store.IssueHubToken("proactive-contract-device-b");

@@ -34,6 +34,8 @@ public interface ICloudStateStore
         string secondAccessKeyFingerprint, string claimSource);
     RobotMergeResult MergeRobotRecords(string sourceDeviceId, string targetDeviceId);
     RobotMergeResult MergeRobotRecordsForAdministration(string sourceDeviceId, string targetDeviceId);
+    RobotMergeResult MergeRobotRecordsForAdministration(string sourceDeviceId, string targetDeviceId,
+        RobotMergePrecondition precondition);
     RobotIdentityCleanupPreview PreviewRobotIdentityCleanup();
     RobotIdentityCleanupResult ResetRobotIdentityAssociations();
     UserRecord? CreateUser(string email, string password, string? firstName, string? lastName);
@@ -54,6 +56,7 @@ public interface ICloudStateStore
     CloudSession? FindActiveSessionByToken(string token);
     CloudSession? FindSessionByToken(string token);
     bool BindSessionToDevice(string sessionId, string deviceId);
+    bool BindObservedIdentityToDevice(string observedDeviceId, string deviceId);
     bool ClearSessionDeviceBinding(string sessionId);
     /// <summary>
     /// Copies dialog-continuation metadata from other sessions that share this session's DeviceId

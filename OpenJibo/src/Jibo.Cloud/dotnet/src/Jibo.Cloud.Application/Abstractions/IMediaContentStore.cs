@@ -7,6 +7,9 @@ public interface IMediaContentStore
 
     Task<MediaContentSnapshot?> LoadAsync(string path, CancellationToken cancellationToken = default);
 
+    IAsyncEnumerable<MediaContentItem> EnumerateAsync(string prefix,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<MediaContentItem>> ListAsync(string prefix, int maxCount = 100,
         CancellationToken cancellationToken = default);
 }

@@ -10,6 +10,60 @@ public sealed partial class PostgreSqlCloudStateStore
     public RobotMergeResult MergeRobotRecordsForAdministration(string sourceDeviceId, string targetDeviceId) =>
         MergeRobotRecordsCore(sourceDeviceId, targetDeviceId, administration: true);
 
+    public RobotMergeResult MergeRobotRecordsForAdministration(string sourceDeviceId, string targetDeviceId,
+        RobotMergePrecondition precondition)
+    {
+        ArgumentNullException.ThrowIfNull(precondition);
+        ArgumentNullException.ThrowIfNull(precondition.SessionIds);
+        ArgumentNullException.ThrowIfNull(precondition.CredentialFingerprints);
+        if (string.IsNullOrWhiteSpace(sourceDeviceId) || string.IsNullOrWhiteSpace(targetDeviceId) ||
+            sourceDeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Choose two different robot records.");
+        if (sourceDeviceId.Equals(GetRobot().DeviceId, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("The active robot record must be the canonical target, not the merge source.");
+
+        var expectedSessionIds = NormalizeValues(precondition.SessionIds);
+        var previewSessions = _sessions.Values.Where(item =>
+                sourceDeviceId.Equals(item.DeviceId, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (!NormalizeValues(previewSessions.Select(item => item.SessionId)).SequenceEqual(expectedSessionIds,
+                StringComparer.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Robot merge state changed after preview. Review the merge again.");
+
+        var source = Sync(_devices.GetByDeviceIdAsync(sourceDeviceId)) ??
+                     throw new KeyNotFoundException("Source robot record was not found.");
+        var target = Sync(_devices.GetByDeviceIdAsync(targetDeviceId)) ??
+                     throw new KeyNotFoundException("Target robot record was not found.");
+        var migratedBindings = Sync(_devices.MergeForAdministrationAsync(source.DeviceId, target.DeviceId,
+            NormalizeValues(precondition.CredentialFingerprints), "robot-merge"));
+
+        // Durable identity is committed first. Rebind every local source session observed afterward so a session
+        // admitted during the transaction also converges, without blocking all socket admission on database I/O.
+        var migratedSessions = _sessions.ExecuteExclusive(sessions =>
+        {
+            var currentSessions = sessions.Where(item =>
+                    source.DeviceId.Equals(item.DeviceId, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            foreach (var session in currentSessions)
+            {
+                if (!string.IsNullOrWhiteSpace(session.Token) &&
+                    !session.Token.StartsWith("conn:", StringComparison.OrdinalIgnoreCase))
+                    session.DeviceId = target.DeviceId;
+                ApplyRegisteredDeviceMetadata(session, target);
+            }
+            return currentSessions.Length;
+        });
+        return new RobotMergeResult(source.DeviceId, target.DeviceId, migratedSessions, migratedBindings,
+            DateTimeOffset.UtcNow);
+    }
+
+    private static string[] NormalizeValues(IEnumerable<string> values) => values
+        .Where(value => !string.IsNullOrWhiteSpace(value))
+        .Select(value => value.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
     private RobotMergeResult MergeRobotRecordsCore(string sourceDeviceId, string targetDeviceId, bool administration)
     {
         if (string.IsNullOrWhiteSpace(sourceDeviceId) || string.IsNullOrWhiteSpace(targetDeviceId) ||

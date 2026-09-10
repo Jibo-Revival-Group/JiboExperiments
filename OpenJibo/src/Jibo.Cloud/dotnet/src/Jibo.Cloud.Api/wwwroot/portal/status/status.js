@@ -720,7 +720,10 @@ function renderRecentSessions(rows = [], robots = [], changedSessionIds = new Se
         : `<div class="muted-row">Unclaimed session — observed traffic never assigns a robot.</div>`}
       ${renderSessionBindingAudit(session.sessionBindingAudit)}
       <div class="button-row session-link-row">
-        <select class="session-device-select" data-session-id="${escapeHtml(session.sessionId)}" aria-label="Robot record for live session">
+        <select class="session-device-select" data-session-id="${escapeHtml(session.sessionId)}"
+                data-observed-device-id="${escapeHtml(session.deviceId || "")}"
+                data-last-seen-utc="${escapeHtml(session.lastSeenUtc || "")}"
+                aria-label="Robot record for live session">
           <option value="">${session.registeredDeviceId ? "Replace explicit link..." : "Link to robot..."}</option>${robots.filter((robot) => !robot.isHidden).map((robot) =>
             `<option value="${escapeHtml(robot.deviceId)}" ${robot.deviceId === session.registeredDeviceId ? "selected" : ""}>${escapeHtml(robotSelectorLabel(robot))}</option>`
           ).join("")}
@@ -777,7 +780,11 @@ async function linkLiveSession(sessionId) {
 
   await apiFetch(`/api/portal/status/sessions/${encodeURIComponent(sessionId)}/link`, {
     method: "POST",
-    body: JSON.stringify({ deviceId: select.value }),
+    body: JSON.stringify({
+      deviceId: select.value,
+      observedDeviceId: select.dataset.observedDeviceId || null,
+      lastSeenUtc: select.dataset.lastSeenUtc || null,
+    }),
   });
   await refreshStatus("Live session linked to the selected robot record.");
 }

@@ -535,6 +535,110 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     public RobotMergeResult MergeRobotRecordsForAdministration(string sourceDeviceId, string targetDeviceId) =>
         MergeRobotRecords(sourceDeviceId, targetDeviceId);
 
+    public RobotMergeResult MergeRobotRecordsForAdministration(string sourceDeviceId, string targetDeviceId,
+        RobotMergePrecondition precondition)
+    {
+        ArgumentNullException.ThrowIfNull(precondition);
+        ArgumentNullException.ThrowIfNull(precondition.SessionIds);
+        ArgumentNullException.ThrowIfNull(precondition.CredentialFingerprints);
+        if (string.IsNullOrWhiteSpace(sourceDeviceId) || string.IsNullOrWhiteSpace(targetDeviceId) ||
+            sourceDeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Choose two different robot records.");
+        if (sourceDeviceId.Equals(_robot.DeviceId, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("The active robot record must be the canonical target, not the merge source.");
+
+        lock (_syncRoot)
+        {
+            return _sessions.ExecuteExclusive(sessions =>
+            {
+                var source = _devices.GetValueOrDefault(sourceDeviceId.Trim()) ??
+                             throw new KeyNotFoundException("Source robot record was not found.");
+                var target = _devices.GetValueOrDefault(targetDeviceId.Trim()) ??
+                             throw new KeyNotFoundException("Target robot record was not found.");
+                if (source.IsHidden || source.ArchivedUtc is not null || target.IsHidden || target.ArchivedUtc is not null)
+                    throw new InvalidOperationException("Robot merge requires two visible, unarchived records.");
+
+                var sourceUsers = _userDeviceLinks
+                    .Where(item => item.DeviceId.Equals(source.DeviceId, StringComparison.OrdinalIgnoreCase))
+                    .Select(item => item.UserId)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var targetUsers = _userDeviceLinks
+                    .Where(item => item.DeviceId.Equals(target.DeviceId, StringComparison.OrdinalIgnoreCase))
+                    .Select(item => item.UserId)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                if (!sourceUsers.SetEquals(targetUsers))
+                    throw new InvalidOperationException("Admin merge requires identical account associations.");
+
+                var sourceSessions = sessions.Where(item =>
+                        source.DeviceId.Equals(item.DeviceId, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+                if (!NormalizeValues(sourceSessions.Select(item => item.SessionId)).SequenceEqual(
+                        NormalizeValues(precondition.SessionIds), StringComparer.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Robot merge state changed after preview. Review the merge again.");
+
+                var sourceCredentials = _robotCredentialBindings.Values
+                    .Where(item => source.DeviceId.Equals(item.DeviceId, StringComparison.OrdinalIgnoreCase))
+                    .Select(item => item.AccessKeyFingerprint);
+                if (!NormalizeValues(sourceCredentials).SequenceEqual(
+                        NormalizeValues(precondition.CredentialFingerprints), StringComparer.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Robot merge state changed after preview. Review the merge again.");
+
+                var now = DateTimeOffset.UtcNow;
+                foreach (var session in sourceSessions)
+                {
+                    if (!string.IsNullOrWhiteSpace(session.Token) &&
+                        !session.Token.StartsWith("conn:", StringComparison.OrdinalIgnoreCase))
+                        session.DeviceId = target.DeviceId;
+                    session.Metadata["registeredDeviceId"] = target.DeviceId;
+                    session.Metadata["registeredRobotId"] = target.DeviceId;
+                }
+
+                var migratedBindings = 0;
+                foreach (var binding in _robotCredentialBindings.Values.Where(item =>
+                             source.DeviceId.Equals(item.DeviceId, StringComparison.OrdinalIgnoreCase)).ToArray())
+                {
+                    _robotCredentialBindings[binding.AccessKeyFingerprint] = binding with { DeviceId = target.DeviceId };
+                    migratedBindings++;
+                }
+
+                var mappings = new Dictionary<string, string>(source.HostMappings, StringComparer.OrdinalIgnoreCase)
+                {
+                    ["openjibo.mergedIntoDeviceId"] = target.DeviceId
+                };
+                _devices[source.DeviceId] = new DeviceRegistration
+                {
+                    DeviceId = source.DeviceId,
+                    RobotId = source.RobotId,
+                    FriendlyName = source.FriendlyName,
+                    FirmwareVersion = source.FirmwareVersion,
+                    ApplicationVersion = source.ApplicationVersion,
+                    IsActive = false,
+                    CertificateThumbprint = source.CertificateThumbprint,
+                    IssuedIdentityId = source.IssuedIdentityId,
+                    BuildHash = source.BuildHash,
+                    ConfigHash = source.ConfigHash,
+                    VerifiedSerialNumber = source.VerifiedSerialNumber,
+                    SerialEvidenceSource = source.SerialEvidenceSource,
+                    SerialEvidenceVerifiedUtc = source.SerialEvidenceVerifiedUtc,
+                    RegistrationSource = source.RegistrationSource,
+                    IsHidden = true,
+                    ArchivedUtc = now,
+                    HostMappings = mappings
+                };
+                TouchState();
+                return new RobotMergeResult(source.DeviceId, target.DeviceId, sourceSessions.Length,
+                    migratedBindings, now);
+            });
+        }
+    }
+
+    private static string[] NormalizeValues(IEnumerable<string> values) => values
+        .Where(value => !string.IsNullOrWhiteSpace(value))
+        .Select(value => value.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
     public RobotIdentityCleanupPreview PreviewRobotIdentityCleanup()
     {
         lock (_syncRoot)
@@ -1025,6 +1129,17 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             _sessions.RegisterActive(token, session);
 
         InheritDialogMetadataFromDevice(session);
+        if (durableToken is not null &&
+            !session.Metadata.ContainsKey("registeredDeviceId") &&
+            !string.IsNullOrWhiteSpace(resolvedDeviceId))
+        {
+            var registered = FindDeviceByFriendlyId(resolvedDeviceId);
+            if (registered is not null && !registered.IsHidden && registered.ArchivedUtc is null)
+            {
+                session.Metadata["registeredDeviceId"] = registered.DeviceId;
+                session.Metadata["registeredRobotId"] = registered.RobotId;
+            }
+        }
         TouchState();
 
         return session;
@@ -1166,6 +1281,30 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             {
                 observed.HostMappings["openjibo.boundRegisteredDeviceId"] = device.DeviceId;
                 observed.HostMappings["openjibo.boundRegisteredRobotId"] = device.RobotId;
+            }
+        }
+
+        TouchState();
+        return true;
+    }
+
+    public bool BindObservedIdentityToDevice(string observedDeviceId, string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(observedDeviceId) || string.IsNullOrWhiteSpace(deviceId)) return false;
+
+        lock (_syncRoot)
+        {
+            var device = FindDeviceByFriendlyId(deviceId);
+            var observed = _devices.GetValueOrDefault(observedDeviceId.Trim());
+            if (device is null || device.IsHidden || device.ArchivedUtc is not null || observed is null) return false;
+
+            observed.HostMappings["openjibo.boundRegisteredDeviceId"] = device.DeviceId;
+            observed.HostMappings["openjibo.boundRegisteredRobotId"] = device.RobotId;
+            foreach (var session in _sessions.Values.Where(candidate =>
+                         string.Equals(candidate.DeviceId, observed.DeviceId, StringComparison.OrdinalIgnoreCase)))
+            {
+                session.Metadata["registeredDeviceId"] = device.DeviceId;
+                session.Metadata["registeredRobotId"] = device.RobotId;
             }
         }
 

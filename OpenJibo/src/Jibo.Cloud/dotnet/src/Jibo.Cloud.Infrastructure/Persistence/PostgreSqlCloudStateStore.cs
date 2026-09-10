@@ -493,6 +493,14 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
                 session.Metadata[pair.Key] = pair.Value;
         _sessions.RegisterActive(sessionToken, session);
         ReinheritDialogMetadata(session);
+        if (durableToken is not null &&
+            !session.Metadata.ContainsKey("registeredDeviceId") &&
+            !string.IsNullOrWhiteSpace(resolvedDeviceId))
+        {
+            var registered = Sync(_devices.GetByDeviceIdAsync(resolvedDeviceId));
+            if (registered is not null && !registered.IsHidden && registered.ArchivedUtc is null)
+                ApplyRegisteredDeviceMetadata(session, registered);
+        }
         return session;
     }
 
@@ -530,12 +538,21 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         if (string.IsNullOrWhiteSpace(sessionId) || string.IsNullOrWhiteSpace(deviceId)) return false;
         var session = _sessions.Values.FirstOrDefault(candidate =>
             candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
-        var device = Sync(_devices.FindByFriendlyIdAsync(deviceId));
-        if (session is null || device is null || device.IsHidden || device.ArchivedUtc is not null ||
-            string.IsNullOrWhiteSpace(session.DeviceId)) return false;
+        return session is not null && !string.IsNullOrWhiteSpace(session.DeviceId) &&
+               BindObservedIdentityToDevice(session.DeviceId, deviceId);
+    }
 
-        Sync(_identityLinks.UpsertAsync(session.DeviceId, device.DeviceId, "portal-admin"));
-        ApplyRegisteredDeviceMetadata(session, device);
+    public bool BindObservedIdentityToDevice(string observedDeviceId, string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(observedDeviceId) || string.IsNullOrWhiteSpace(deviceId)) return false;
+        var device = Sync(_devices.FindByFriendlyIdAsync(deviceId));
+        if (device is null || device.IsHidden || device.ArchivedUtc is not null) return false;
+
+        var observed = observedDeviceId.Trim();
+        Sync(_identityLinks.UpsertAsync(observed, device.DeviceId, "portal-admin"));
+        foreach (var session in _sessions.Values.Where(candidate =>
+                     string.Equals(candidate.DeviceId, observed, StringComparison.OrdinalIgnoreCase)))
+            ApplyRegisteredDeviceMetadata(session, device);
         return true;
     }
 

@@ -392,6 +392,9 @@ public sealed partial class PostgreSqlCloudStateStoreTests
             CancellationToken cancellationToken = default) => Task.FromResult<DeviceRegistration?>(null);
         public Task<int> MoveCredentialBindingsAsync(string sourceDeviceId, string targetDeviceId,
             string claimSource, CancellationToken cancellationToken = default) => Task.FromResult(0);
+        public Task<int> MergeForAdministrationAsync(string sourceDeviceId, string targetDeviceId,
+            IReadOnlyList<string> expectedCredentialFingerprints, string claimSource,
+            CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
     private sealed class FakeTokenRepository : ICloudAuthTokenRepository

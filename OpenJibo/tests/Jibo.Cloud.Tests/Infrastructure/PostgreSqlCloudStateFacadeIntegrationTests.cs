@@ -327,13 +327,34 @@ public sealed class PostgreSqlCloudStateFacadeIntegrationTests
             VALUES ('other-account','single-source'),('other-account','single-target'),
                    ('other-account','multi-source'),('other-account','multi-target'),
                    ('usr_openjibo_owner','multi-source'),('usr_openjibo_owner','multi-target');
+            INSERT INTO RobotCredentialBindings (AccessKeyFingerprint,DeviceId,ClaimedUtc,ClaimSource)
+            VALUES ('0123456789abcdef','multi-source',NOW(),'integration-test');
             """);
-        store.MergeRobotRecordsForAdministration("single-source", "single-target");
+        store.MergeRobotRecordsForAdministration("single-source", "single-target",
+            new RobotMergePrecondition([], []));
         Assert.Equal(1, await database.ExecuteScalarAsync<long>(
             "SELECT COUNT(*) FROM AccountDevices WHERE DeviceId='single-source' AND AccountId='other-account'"));
-        store.MergeRobotRecordsForAdministration("multi-source", "multi-target");
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM RobotIdentityLinks WHERE ObservedDeviceId='single-source' AND InventoryDeviceId='single-target'"));
+        Assert.True(store.BindObservedIdentityToDevice("peer-replica-observed", "single-target"));
+        var peerStore = new PostgreSqlCloudStateStore(source, new PlaintextTestProtector());
+        var peerSession = peerStore.OpenSession("neo-hub-proactive", "peer-replica-observed",
+            "peer-replica-token", "neo-hub", "/v1/proactive");
+        Assert.Equal("single-target", peerSession.Metadata["registeredDeviceId"]?.ToString());
+
+        Assert.Throws<InvalidOperationException>(() => store.MergeRobotRecordsForAdministration(
+            "multi-source", "multi-target", new RobotMergePrecondition([], [])));
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM Devices WHERE DeviceId='multi-source' AND NOT IsHidden AND ArchivedUtc IS NULL"));
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM RobotCredentialBindings WHERE AccessKeyFingerprint='0123456789abcdef' AND DeviceId='multi-source'"));
+
+        store.MergeRobotRecordsForAdministration("multi-source", "multi-target",
+            new RobotMergePrecondition([], ["0123456789abcdef"]));
         Assert.Equal(2, await database.ExecuteScalarAsync<long>(
             "SELECT COUNT(*) FROM AccountDevices WHERE DeviceId='multi-source'"));
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM RobotCredentialBindings WHERE AccessKeyFingerprint='0123456789abcdef' AND DeviceId='multi-target'"));
         store.MergeRobotRecordsForAdministration("zero-source", "zero-target");
         Assert.Equal(0, await database.ExecuteScalarAsync<long>(
             "SELECT COUNT(*) FROM AccountDevices WHERE DeviceId IN ('zero-source','zero-target')"));

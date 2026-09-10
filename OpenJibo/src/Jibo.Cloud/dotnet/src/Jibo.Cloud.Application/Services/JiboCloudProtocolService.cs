@@ -2512,6 +2512,13 @@ public sealed class JiboCloudProtocolService(
             return Task.FromResult<MediaContentSnapshot?>(null);
         }
 
+        public async IAsyncEnumerable<MediaContentItem> EnumerateAsync(string prefix,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
+
         public Task<IReadOnlyList<MediaContentItem>> ListAsync(string prefix, int maxCount = 100,
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<MediaContentItem>>([]);

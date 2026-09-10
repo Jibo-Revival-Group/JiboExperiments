@@ -458,7 +458,12 @@ if [[ "$linux_publish_script_text" != *"--build-arg ENABLE_LOCAL_WHISPER=false"*
   echo "Linux publish script must build managed images with ENABLE_LOCAL_WHISPER=false to stay on Azure Speech and avoid baking in whisper.cpp." >&2
   exit 1
 fi
-if ! printf '%s' "$managed_text" | grep -Eq "name: 'OpenJibo__Stt__EnableLocalWhisperCpp'[[:space:]]+value: 'false'"; then
+if ! printf '%s\n' "$managed_text" | awk '
+  /name: '\''OpenJibo__Stt__EnableLocalWhisperCpp'\''/ { found_name = 1; next }
+  found_name && /value: '\''false'\''/ { found_value = 1; exit }
+  found_name && /name:/ { exit }
+  END { exit(found_value ? 0 : 1) }
+'; then
   echo "Managed Container App must explicitly disable local Whisper at runtime because the managed image omits whisper.cpp." >&2
   exit 1
 fi

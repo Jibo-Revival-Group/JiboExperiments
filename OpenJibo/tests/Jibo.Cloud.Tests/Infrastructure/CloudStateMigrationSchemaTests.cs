@@ -95,4 +95,38 @@ public sealed class CloudStateMigrationSchemaTests
         Assert.DoesNotContain("Serial", migration, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Transcript", migration, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void RuntimeUsageDeliveryBoundary_IsOwnerOnlyAndHeadOfLineSafe()
+    {
+        var migration = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
+            "012_runtime_usage_delivery_boundary.state.sql"));
+
+        Assert.Contains("CREATE OR REPLACE FUNCTION ClaimRuntimeUsageOutbox", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("CREATE OR REPLACE FUNCTION AcknowledgeRuntimeUsageOutbox", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("CREATE OR REPLACE FUNCTION QuarantineRuntimeUsageOutbox", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("FOR UPDATE OF delivery SKIP LOCKED", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("earlier_delivery.DeliveryState <> 'acknowledged'", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("LeaseExpiresUtc <= v_now", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("p_message_id IS NULL", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("p_receipt_hash IS NULL", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("p_quarantine_category IS NULL", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("REVOKE ALL ON FUNCTION ClaimRuntimeUsageOutbox", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("REVOKE ALL ON FUNCTION AcknowledgeRuntimeUsageOutbox", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("REVOKE ALL ON FUNCTION QuarantineRuntimeUsageOutbox", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("GRANT EXECUTE", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("SECURITY DEFINER", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DeviceId", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Transcript", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("AudioContent", migration, StringComparison.OrdinalIgnoreCase);
+    }
 }

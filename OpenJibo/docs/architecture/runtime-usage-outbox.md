@@ -1,6 +1,6 @@
 # Runtime Usage Outbox Boundary
 
-Status date: `2026-09-13`
+Status date: `2026-09-14`
 
 This boundary provides dormant, source-local PostgreSQL storage for privacy-safe runtime usage components. It
 does not collect usage yet, does not contact a managed-service endpoint, and is not billing evidence.
@@ -16,6 +16,7 @@ flowchart LR
     Schedule["ScheduleRuntimeUsageSnapshot<br/>locked revision + sequence"]
     Message["Immutable typed outbox snapshot"]
     Delivery["Separate delivery state"]
+    DeliveryApi["Owner-only claim / acknowledge / quarantine<br/><b>DORMANT</b>"]
     Collector["Private pull collector<br/><b>REMAINING</b>"]
     Assembly["Multi-source Cloud assembly<br/><b>REMAINING</b>"]
 
@@ -25,9 +26,8 @@ flowchart LR
     Record --> Receipt
     Accumulator --> Schedule
     Schedule --> Message
-    Schedule --> Delivery
-    Message --> Collector --> Assembly
-    Delivery --> Collector
+    Schedule --> Delivery --> DeliveryApi
+    Message --> DeliveryApi --> Collector --> Assembly
 ```
 
 Migration `011_create_runtime_usage_outbox.state.sql` creates five prefixed tables in the configured state
@@ -49,17 +49,26 @@ the typed component fields to an immutable outbox row, creates pending delivery 
 scheduled revision atomically. Repeating a schedule when the revision has not advanced returns the existing
 snapshot.
 
+Migration `012_runtime_usage_delivery_boundary.state.sql` adds the dormant owner-only delivery lifecycle.
+Claims are bounded, leased with `FOR UPDATE SKIP LOCKED`, and head-of-line ordered per robot/day/environment
+stream. Expired leases can be reclaimed. Acknowledgement requires the current live lease and a 32-byte receipt
+hash; quarantine requires the current live lease and a bounded category. Terminal replays are idempotent only
+when their receipt or category agrees. A quarantined message deliberately blocks later messages in the same
+stream so an operator cannot silently skip a source sequence. The migration grants no collector capability and
+explicitly revokes `PUBLIC` execution.
+
 ## Activation Boundary
 
 This migration intentionally grants no runtime, binding-administrator, or collector role. The functions run
 with invoker rights and are currently usable only by the database owner. Before activation:
 
 1. add narrowly owned `SECURITY DEFINER` deployment wrappers with a pinned search path and separate roles;
-2. implement binding administration and head-of-line claim/acknowledge/quarantine functions;
+2. add and exercise a narrowly scoped deployment wrapper/collector role for the owner-only delivery functions;
 3. add the runtime writer without making customer requests fail solely because metering storage is unavailable;
 4. durably mark the affected day incomplete after a source write outage;
 5. prove concurrent replica, crash/retry, expired-lease, binding rotation, and least-privilege behavior in CI;
-6. add the private collector and reconcile shadow output before enabling any final managed-service import.
+6. add the private collector, durable cloud-side progress store, and shadow reconciliation before enabling any
+   final managed-service import.
 
 Application Insights and diagnostic capture remain operational/debugging systems. They are aggregate or
 best-effort and must not be parsed into this ledger.

@@ -1074,7 +1074,9 @@ internal static class PortalEndpoints
             RobotPresenceRegistry robotPresenceRegistry,
             FleetNetworkPresenceRegistry fleetNetworkPresenceRegistry,
             OpenJiboServerIdentity serverIdentity,
-            RobotIdentitySuggestionStore identitySuggestionStore) =>
+            RobotIdentitySuggestionStore identitySuggestionStore,
+            ReleaseSmokeAuthorizationOptions releaseSmokeAuthorization,
+            IConfiguration configuration) =>
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session))
@@ -1083,7 +1085,8 @@ internal static class PortalEndpoints
             var includeHidden = bool.TryParse(request.Query["includeHidden"], out var requestedIncludeHidden) &&
                                 requestedIncludeHidden;
             return Results.Json(BuildStatusSummaryPayload(cloudStateStore, robotPresenceRegistry,
-                fleetNetworkPresenceRegistry, serverIdentity, identitySuggestionStore, includeHidden));
+                fleetNetworkPresenceRegistry, serverIdentity, identitySuggestionStore,
+                releaseSmokeAuthorization, configuration, includeHidden));
         });
 
         app.MapPost("/api/portal/status/robots/{deviceId}/archive", (
@@ -1978,11 +1981,17 @@ internal static class PortalEndpoints
     private static object BuildStatusSummaryPayload(ICloudStateStore cloudStateStore,
         RobotPresenceRegistry robotPresenceRegistry, FleetNetworkPresenceRegistry fleetNetworkPresenceRegistry,
         OpenJiboServerIdentity serverIdentity, RobotIdentitySuggestionStore identitySuggestionStore,
+        ReleaseSmokeAuthorizationOptions releaseSmokeAuthorization, IConfiguration configuration,
         bool includeHidden)
     {
         var now = DateTimeOffset.UtcNow;
         using var process = Process.GetCurrentProcess();
         var processStartUtc = process.StartTime.ToUniversalTime();
+        var persistence = cloudStateStore.GetPersistenceStateInfo();
+        var deploymentMode = configuration["OpenJibo:Deployment:Mode"] ?? "unspecified";
+        var revision = Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? "local";
+        var hasLocalWhisperSetting = bool.TryParse(
+            configuration["OpenJibo:Stt:EnableLocalWhisperCpp"], out var localWhisperEnabled);
         var allDevices = cloudStateStore.GetDevicesForAdministration();
         var sessions = cloudStateStore.GetSessions();
         // GetSessions intentionally includes durable issued-token records. Those
@@ -2037,9 +2046,25 @@ internal static class PortalEndpoints
                 version = OpenJiboCloudBuildInfo.Version,
                 startedAtUtc = processStartUtc,
                 uptimeSeconds = (long)(now - processStartUtc).TotalSeconds,
-                uptimeLabel = FormatDuration(now - processStartUtc)
+                uptimeLabel = FormatDuration(now - processStartUtc),
+                deployment = new
+                {
+                    mode = deploymentMode,
+                    revision,
+                    replica = serverIdentity.InstanceId,
+                    instanceId = $"{revision}/{serverIdentity.InstanceId}",
+                    canonicalApiHostname = serverIdentity.CanonicalHost,
+                    stateBackend = configuration["OpenJibo:State:Backend"] ?? "unspecified",
+                    personalMemoryBackend = configuration["OpenJibo:PersonalMemory:Backend"] ?? "unspecified",
+                    localWhisperEnabled,
+                    managedConfigurationCompatible =
+                        !deploymentMode.Equals("managed", StringComparison.OrdinalIgnoreCase) ||
+                        hasLocalWhisperSetting && !localWhisperEnabled,
+                    persistenceSchemaVersion = persistence.SchemaVersion,
+                    releaseSmokeEnabled = releaseSmokeAuthorization.Enabled
+                }
             },
-            persistence = cloudStateStore.GetPersistenceStateInfo(),
+            persistence,
             inventory = allDevices
                 .OrderBy(device => device.FriendlyName, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(device => device.DeviceId, StringComparer.OrdinalIgnoreCase)

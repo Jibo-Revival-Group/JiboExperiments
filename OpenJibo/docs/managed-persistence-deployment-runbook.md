@@ -146,6 +146,10 @@ workflow again; an older workflow definition would restore the environment refer
 Before production, confirm:
 
 - the workflow and smoke checks pass;
+- the workflow summary links to the staging status dashboard;
+- the authenticated dashboard's Deployment card shows the expected exact revision, `managed` mode,
+  staging canonical hostname, serving replica, and `config compatible`;
+- the dashboard persistence schema and revision match the migrated staging database;
 - normalized accounts, robots, devices, loops, people, tokens, and personal memory exist;
 - robot identity mappings match production;
 - at least one legacy backup can be read or restored when backups exist;

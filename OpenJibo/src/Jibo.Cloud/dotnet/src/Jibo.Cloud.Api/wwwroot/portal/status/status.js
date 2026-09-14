@@ -131,6 +131,18 @@ function formatFloat(value, digits = 1) {
   return num.toFixed(digits);
 }
 
+function renderDeploymentStatus(deployment = {}) {
+  const compatibility = deployment.managedConfigurationCompatible ? "compatible" : "check required";
+  return `
+    <div class="stat-card">
+      <span class="label">Deployment</span>
+      <span class="value mono">${escapeHtml(deployment.revision || "-")}</span>
+      <span class="detail">${escapeHtml(deployment.mode || "unspecified")} · ${escapeHtml(deployment.canonicalApiHostname || "-")}</span>
+      <span class="detail">Replica ${escapeHtml(deployment.replica || "-")} · config ${compatibility}</span>
+    </div>
+  `;
+}
+
 function statusBadge(presence) {
   const badges = {
     online: ["success", "Online"],
@@ -892,6 +904,7 @@ function renderStatusView(summary, previous = previousSummary) {
   const localServer = serverFleet.localServer || {};
   const networkFleet = serverFleet.network || {};
   const service = summary.service || {};
+  const deployment = service.deployment || {};
   const robots = summary.robots || [];
   const inventory = summary.inventory || robots;
   const recentSessions = summary.recentSessions || [];
@@ -978,12 +991,13 @@ function renderStatusView(summary, previous = previousSummary) {
             <span class="value">${networkFleet.connectedRobots ?? 0}</span>
             <span class="detail">${networkFleet.reportingServers ?? 0}/${networkFleet.knownServers ?? 0} trusted servers reporting.</span>
           </div>
+          ${renderDeploymentStatus(deployment)}
         </div>
 
         <div class="status-footer">
           <span>Generated ${formatDate(summary.generatedAtUtc)}</span>
           <span>This server ${escapeHtml(localServer.canonicalHost || "-")} · ${localServer.connectedRobots ?? 0} robots</span>
-          <span>Persistence rev ${escapeHtml(summary.persistence?.revision ?? "-")}</span>
+          <span>Persistence schema ${escapeHtml(deployment.persistenceSchemaVersion || "-")} · rev ${escapeHtml(summary.persistence?.revision ?? "-")}</span>
         </div>
       </section>
 

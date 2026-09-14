@@ -147,7 +147,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Resolve immutable image tag
         id: image
@@ -265,14 +265,15 @@ jobs:
           PY
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
+          package-manager-cache: false
 
       - name: Azure login
         id: azure_login
@@ -907,7 +908,7 @@ jobs:
 
       - name: Upload staging promotion gate
         if: success() && inputs.deployment_target == 'staging'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: openjibo-staging-gate-${{ github.sha }}
           path: ${{ runner.temp }}/openjibo-staging-gate/gate.json

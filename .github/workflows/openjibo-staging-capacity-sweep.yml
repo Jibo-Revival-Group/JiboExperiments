@@ -42,12 +42,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
+          package-manager-cache: false
 
       - name: Azure login
         uses: azure/login@v3
@@ -328,7 +329,7 @@ jobs:
 
       - name: Upload staging capacity evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: openjibo-staging-capacity-${{ github.run_id }}
           path: ${{ runner.temp }}/openjibo-staging-capacity

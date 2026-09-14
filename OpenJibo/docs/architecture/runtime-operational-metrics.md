@@ -7,6 +7,9 @@ measurements are intended to establish a concurrency and cost envelope; they are
 Robot IDs, session IDs, transcripts, audio, credentials, connection strings, and free-form error text must never
 be added as metric attributes.
 
+These metrics are not a durable per-robot source and must not be converted into billing facts. The separate,
+dormant source-local design is documented in [runtime-usage-outbox.md](runtime-usage-outbox.md).
+
 ## Application Instruments
 
 | Instrument | Type | Unit | Attributes |

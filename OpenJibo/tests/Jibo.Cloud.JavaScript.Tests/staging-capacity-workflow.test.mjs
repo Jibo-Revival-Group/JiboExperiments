@@ -59,5 +59,5 @@ test("staging capacity sweep retains evidence and always restores authorization 
   assert.match(workflow, /touch .*reliability-signal-detected/);
   assert.match(workflow, /current_image.*steps\.baseline\.outputs\.image/s);
   assert.match(workflow, /stored_smoke_secrets.*!= \"0\"/s);
-  assert.match(workflow, /actions\/upload-artifact@v4/);
+  assert.match(workflow, /actions\/upload-artifact@v6/);
 });

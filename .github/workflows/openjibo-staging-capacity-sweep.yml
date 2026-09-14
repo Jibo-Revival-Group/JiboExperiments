@@ -42,10 +42,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           package-manager-cache: false
@@ -329,7 +329,7 @@ jobs:
 
       - name: Upload staging capacity evidence
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: openjibo-staging-capacity-${{ github.run_id }}
           path: ${{ runner.temp }}/openjibo-staging-capacity

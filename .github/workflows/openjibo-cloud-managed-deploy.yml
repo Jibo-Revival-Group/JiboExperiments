@@ -927,8 +927,11 @@ jobs:
             echo "- Database preparation: passed"
             echo "- Smoke test: passed"
             if [[ "${{ inputs.deployment_target }}" == "staging" ]]; then
+              app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
+              app_fqdn="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.configuration.ingress.fqdn --output tsv)"
               echo "- WebSocket release smoke: passed"
               echo "- Production promotion gate: workflow run $GITHUB_RUN_ID"
+              echo "- Status dashboard: https://${app_fqdn}/portal/status"
             else
               echo "- PITR reference time: ${{ steps.recovery.outputs.utc }}"
               echo "- PITR retention: ${{ steps.recovery.outputs.retention_days }} days"

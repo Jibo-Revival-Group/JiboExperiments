@@ -378,6 +378,17 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Empty(summary.GetProperty("recentSessions").EnumerateArray());
         Assert.Equal(2, summary.GetProperty("fleet").GetProperty("hiddenRobots").GetInt32());
         Assert.True(summary.GetProperty("service").GetProperty("uptimeSeconds").GetInt64() >= 0);
+        var deployment = summary.GetProperty("service").GetProperty("deployment");
+        Assert.Equal("self-hosted-isolated", deployment.GetProperty("mode").GetString());
+        Assert.Equal("local", deployment.GetProperty("revision").GetString());
+        Assert.StartsWith("local/", deployment.GetProperty("instanceId").GetString());
+        Assert.Equal("test.openjibo.local", deployment.GetProperty("canonicalApiHostname").GetString());
+        Assert.Equal("File", deployment.GetProperty("stateBackend").GetString());
+        Assert.Equal("File", deployment.GetProperty("personalMemoryBackend").GetString());
+        Assert.False(deployment.GetProperty("localWhisperEnabled").GetBoolean());
+        Assert.True(deployment.GetProperty("managedConfigurationCompatible").GetBoolean());
+        Assert.False(deployment.GetProperty("releaseSmokeEnabled").GetBoolean());
+        Assert.False(string.IsNullOrWhiteSpace(deployment.GetProperty("persistenceSchemaVersion").GetString()));
         Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
             robot.GetProperty("deviceId").GetString() == "physical-status-robot" &&
             robot.GetProperty("presence").GetString() == "never-connected" &&
@@ -445,6 +456,24 @@ public sealed class HomeAssistantPortalApiTests
             FleetPeerSyncAuthentication.Sign(remoteServer.ServerId, peerTimestamp, peerPayloadHash, "test-peer-key"));
         var peerResponse = await client.SendAsync(peerRequest);
         Assert.Equal(HttpStatusCode.OK, peerResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task StatusSummary_FlagsManagedConfigurationThatEnablesLocalWhisper()
+    {
+        await using var factory = CreateFactory(
+            deploymentMode: "managed",
+            localWhisperEnabled: true);
+        var client = factory.CreateClient();
+        await AuthenticateAdminAsync(client);
+
+        var summary = await (await client.GetAsync("/api/portal/status/summary"))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var deployment = summary.GetProperty("service").GetProperty("deployment");
+
+        Assert.Equal("managed", deployment.GetProperty("mode").GetString());
+        Assert.True(deployment.GetProperty("localWhisperEnabled").GetBoolean());
+        Assert.False(deployment.GetProperty("managedConfigurationCompatible").GetBoolean());
     }
 
     [Fact]
@@ -1854,10 +1883,22 @@ public sealed class HomeAssistantPortalApiTests
         }
     }
 
-    private static WebApplicationFactory<Program> CreateFactory(bool peerSyncEnabled = true)
+    private static WebApplicationFactory<Program> CreateFactory(
+        bool peerSyncEnabled = true,
+        string deploymentMode = "self-hosted-isolated",
+        bool localWhisperEnabled = false)
     {
         var root = Path.Combine(Path.GetTempPath(), $"openjibo-portal-tests-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
+        var ffmpegPath = Path.Combine(root, "ffmpeg.exe");
+        var whisperCliPath = Path.Combine(root, "whisper-cli.exe");
+        var whisperModelPath = Path.Combine(root, "ggml-test.bin");
+        if (localWhisperEnabled)
+        {
+            File.WriteAllText(ffmpegPath, "test");
+            File.WriteAllText(whisperCliPath, "test");
+            File.WriteAllText(whisperModelPath, "test");
+        }
 
         return new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
@@ -1867,7 +1908,8 @@ public sealed class HomeAssistantPortalApiTests
                     services.RemoveAll<IMediaContentStore>();
                     services.AddSingleton<IMediaContentStore>(new FileMediaContentStore(Path.Combine(root, "media")));
                 });
-                builder.UseSetting("OpenJibo:Deployment:Mode", "self-hosted-isolated");
+                builder.UseSetting("OpenJibo:Deployment:Mode", deploymentMode);
+                builder.UseSetting("OpenJibo:CanonicalApiHostname", "test.openjibo.local");
                 builder.UseSetting("OpenJibo:Telemetry:DirectoryPath", Path.Combine(root, "websocket"));
                 builder.UseSetting("OpenJibo:ProtocolTelemetry:DirectoryPath", Path.Combine(root, "http"));
                 builder.UseSetting("OpenJibo:TurnTelemetry:DirectoryPath", Path.Combine(root, "turn"));
@@ -1881,7 +1923,10 @@ public sealed class HomeAssistantPortalApiTests
                 builder.UseSetting(
                     "OpenJibo:PersonalMemory:PersistencePath",
                     Path.Combine(root, "personal-memory.json"));
-                builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", "false");
+                builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", localWhisperEnabled.ToString());
+                builder.UseSetting("OpenJibo:Stt:FfmpegPath", ffmpegPath);
+                builder.UseSetting("OpenJibo:Stt:WhisperCliPath", whisperCliPath);
+                builder.UseSetting("OpenJibo:Stt:WhisperModelPath", whisperModelPath);
                 builder.UseSetting("OpenJibo:Portal:StatusPassword", "test-admin-password");
                 builder.UseSetting("OpenJibo:FleetNetwork:PeerSyncEnabled", peerSyncEnabled.ToString());
                 builder.UseSetting("OpenJibo:FleetNetwork:AllowedPeerHosts", "fleet.example.openjibo.com");

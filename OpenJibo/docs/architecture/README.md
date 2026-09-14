@@ -14,4 +14,8 @@ Current turn-boundary work lives in `turn-boundary-eos-parity.md` and captures t
 
 Current circadian work lives in `../system-diagram-alignment.md` and captures the robot-side `ALERT` / `RELAXED` / `NAP` / `FALLING_ASLEEP` / `ASLEEP` / `WAKING_UP` / `TURN_AWAY` flow plus the cloud-side sleep-state mirror.
 
+The dormant privacy-safe runtime usage storage and activation boundary lives in
+`runtime-usage-outbox.md`. It separates typed source accounting from aggregate operational metrics and from
+the managed service's later multi-source assembly.
+
 When a decision starts as exploration, record the mapping here first, then link the active release plan to it.

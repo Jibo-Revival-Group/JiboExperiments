@@ -62,4 +62,37 @@ public sealed class CloudStateMigrationSchemaTests
         Assert.Contains("WHERE VerifiedSerialNumber IS NOT NULL", migration,
             StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void RuntimeUsageOutbox_IsPrivacyBoundImmutableAndDeliverySeparated()
+    {
+        var migration = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
+            "011_create_runtime_usage_outbox.state.sql"));
+
+        Assert.Contains("RuntimeUsageRobotBindings", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("SourceSubjectHmac BYTEA", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OCTET_LENGTH(SourceSubjectHmac) = 32", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RuntimeUsageDailyAccumulators", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("IsIncomplete BOOLEAN NOT NULL DEFAULT FALSE", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RuntimeUsageAppliedEvents", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RecordRuntimeUsageEvent", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ScheduleRuntimeUsageSnapshot", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("openjibo-runtime-usage.v1", migration, StringComparison.Ordinal);
+        Assert.Contains("RuntimeUsageOutboxMessages", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("WebSocketInboundBytes BIGINT", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("CanonicalPayload", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RuntimeUsageOutboxDelivery", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("BEFORE UPDATE OR DELETE", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OLD.IsIncomplete AND NOT NEW.IsIncomplete", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("bindings are append-only and may only be revoked once", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("grants no application, binding-administrator, or collector role", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("REVOKE EXECUTE ON FUNCTION", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DeviceId", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Serial", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Transcript", migration, StringComparison.OrdinalIgnoreCase);
+    }
 }

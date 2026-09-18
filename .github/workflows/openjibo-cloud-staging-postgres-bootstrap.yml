@@ -1,0 +1,63 @@
+name: openjibo-cloud-staging-postgres-bootstrap
+run-name: OpenJiboCloud staging PostgreSQL bootstrap @ ${{ github.sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      bootstrap_confirmed:
+        description: Create or verify the isolated OpenJiboCloud staging database principals and deployer secret
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: openjibo-cloud-staging-postgres-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    if: inputs.bootstrap_confirmed == true
+    runs-on: ubuntu-latest
+    environment:
+      name: openjibo-staging
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: OpenJibo
+    env:
+      OPENJIBO_RESOURCE_GROUP: ${{ secrets.OPENJIBO_RESOURCE_GROUP }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Azure login
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install PostgreSQL client
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+
+      - name: Bootstrap isolated staging database principals
+        shell: bash
+        env:
+          OPENJIBO_BOOTSTRAP_CONFIRMED: "true"
+        run: bash ./scripts/cloud/bootstrap-openjibo-cloud-staging-postgres.sh
+
+      - name: Summarize bootstrap
+        shell: bash
+        run: |
+          {
+            echo "### OpenJiboCloud staging PostgreSQL bootstrap"
+            echo ""
+            echo "The dedicated deployer, dormant runtime principals, and Key Vault credential were created or verified."
+            echo "No runtime login credential was created and no application was deployed."
+          } >> "$GITHUB_STEP_SUMMARY"

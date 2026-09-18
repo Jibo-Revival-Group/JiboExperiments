@@ -315,6 +315,176 @@ public sealed class PostgreSqlRuntimeUsageOutboxIntegrationTests
             "SELECT SourceSequence FROM RuntimeUsageOutboxMessages"));
     }
 
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
+    public async Task DeliveryBoundary_ClaimsHeadOfLineAndSupportsLeaseTakeoverAndReplay()
+    {
+        await using var database = await RuntimeUsageTestDatabase.CreateAsync();
+        await database.ExecuteAsync("""
+            INSERT INTO RuntimeUsageRobotBindings
+                (SourceSubjectHmac, BindingVersion, ManagedRobotId, ActiveFromUtc, ActorCode, ReasonCode)
+            VALUES
+                (decode(repeat('aa', 32), 'hex'), 1, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+                 '2026-09-13T00:00:00Z', 'binding-admin', 'delivery-test');
+            SELECT * FROM RecordRuntimeUsageEvent(
+                decode(repeat('aa', 32), 'hex'),
+                'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '2026-09-13T01:00:00Z', 'staging',
+                1, 0, 0, 0, 0, 1, 0, 10, 0, 20, NULL);
+            SELECT * FROM ScheduleRuntimeUsageSnapshot(
+                decode(repeat('aa', 32), 'hex'), '2026-09-13', 'staging',
+                'cccccccc-cccc-cccc-cccc-cccccccccccc',
+                'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC');
+            SELECT * FROM RecordRuntimeUsageEvent(
+                decode(repeat('aa', 32), 'hex'),
+                'dddddddd-dddd-dddd-dddd-dddddddddddd', '2026-09-13T02:00:00Z', 'staging',
+                1, 0, 0, 0, 0, 1, 0, 10, 0, 20, NULL);
+            SELECT * FROM ScheduleRuntimeUsageSnapshot(
+                decode(repeat('aa', 32), 'hex'), '2026-09-13', 'staging',
+                'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+                'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE');
+            SELECT * FROM RecordRuntimeUsageEvent(
+                decode(repeat('aa', 32), 'hex'),
+                'ffffffff-ffff-ffff-ffff-ffffffffffff', '2026-09-13T03:00:00Z', 'staging',
+                1, 0, 0, 0, 0, 1, 0, 10, 0, 20, NULL);
+            SELECT * FROM ScheduleRuntimeUsageSnapshot(
+                decode(repeat('aa', 32), 'hex'), '2026-09-13', 'staging',
+                '12121212-1212-1212-1212-121212121212',
+                'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
+            """);
+
+        var first = await database.ExecuteScalarAsync<string>("""
+            SELECT MessageId::text
+            FROM ClaimRuntimeUsageOutbox('collector-a', 1, 1)
+            """);
+        Assert.Equal("cccccccc-cccc-cccc-cccc-cccccccccccc", first);
+
+        Assert.Null(await database.ExecuteScalarOrNullAsync("""
+            SELECT MessageId::text
+            FROM ClaimRuntimeUsageOutbox('collector-b', 300, 1)
+            """));
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM AcknowledgeRuntimeUsageOutbox(
+                'cccccccc-cccc-cccc-cccc-cccccccccccc', 'wrong-owner', decode(repeat('11', 32), 'hex'))
+            """));
+
+        await database.ExecuteAsync("""
+            UPDATE RuntimeUsageOutboxDelivery
+            SET LeaseExpiresUtc = NOW() - INTERVAL '1 second'
+            WHERE MessageId = 'cccccccc-cccc-cccc-cccc-cccccccccccc'
+            """);
+        var takeover = await database.ExecuteScalarAsync<string>("""
+            SELECT MessageId::text
+            FROM ClaimRuntimeUsageOutbox('collector-b', 300, 1)
+            """);
+        Assert.Equal(first, takeover);
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM AcknowledgeRuntimeUsageOutbox(
+                'cccccccc-cccc-cccc-cccc-cccccccccccc', 'collector-a', decode(repeat('11', 32), 'hex'))
+            """));
+
+        Assert.False(await database.ExecuteScalarAsync<bool>("""
+            SELECT WasReplay
+            FROM AcknowledgeRuntimeUsageOutbox(
+                'cccccccc-cccc-cccc-cccc-cccccccccccc', 'collector-b', decode(repeat('22', 32), 'hex'))
+            """));
+        Assert.True(await database.ExecuteScalarAsync<bool>("""
+            SELECT WasReplay
+            FROM AcknowledgeRuntimeUsageOutbox(
+                'cccccccc-cccc-cccc-cccc-cccccccccccc', 'collector-b', decode(repeat('22', 32), 'hex'))
+            """));
+
+        var second = await database.ExecuteScalarAsync<string>("""
+            SELECT MessageId::text
+            FROM ClaimRuntimeUsageOutbox('collector-c', 300, 1)
+            """);
+        Assert.Equal("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee", second);
+        Assert.False(await database.ExecuteScalarAsync<bool>("""
+            SELECT WasReplay
+            FROM QuarantineRuntimeUsageOutbox(
+                'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'collector-c', 'invalid-envelope')
+            """));
+        Assert.True(await database.ExecuteScalarAsync<bool>("""
+            SELECT WasReplay
+            FROM QuarantineRuntimeUsageOutbox(
+                'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'collector-c', 'invalid-envelope')
+            """));
+        Assert.Null(await database.ExecuteScalarOrNullAsync("""
+            SELECT MessageId::text
+            FROM ClaimRuntimeUsageOutbox('collector-d', 300, 1)
+            """));
+        Assert.Equal("pending", await database.ExecuteScalarAsync<string>("""
+            SELECT DeliveryState
+            FROM RuntimeUsageOutboxDelivery
+            WHERE MessageId='12121212-1212-1212-1212-121212121212'
+            """));
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
+    public async Task DeliveryBoundary_ConcurrentClaimsYieldOneLease()
+    {
+        await using var database = await RuntimeUsageTestDatabase.CreateAsync();
+        await database.ExecuteAsync("""
+            INSERT INTO RuntimeUsageRobotBindings
+                (SourceSubjectHmac, BindingVersion, ManagedRobotId, ActiveFromUtc, ActorCode, ReasonCode)
+            VALUES
+                (decode(repeat('ab', 32), 'hex'), 1, 'abababab-abab-abab-abab-abababababab',
+                 '2026-09-13T00:00:00Z', 'binding-admin', 'concurrent-delivery-test');
+            SELECT * FROM RecordRuntimeUsageEvent(
+                decode(repeat('ab', 32), 'hex'),
+                'acacacac-acac-acac-acac-acacacacacac', '2026-09-13T01:00:00Z', 'staging',
+                1, 0, 0, 0, 0, 1, 0, 10, 0, 20, NULL);
+            SELECT * FROM ScheduleRuntimeUsageSnapshot(
+                decode(repeat('ab', 32), 'hex'), '2026-09-13', 'staging',
+                'adadadad-adad-adad-adad-adadadadadad',
+                'ADADADADADADADADADADADADADADADADADADADADADA');
+            """);
+
+        var claims = await Task.WhenAll(
+            database.ExecuteScalarOrNullAsync("""
+                SELECT MessageId::text
+                FROM ClaimRuntimeUsageOutbox('concurrent-a', 300, 1)
+                """),
+            database.ExecuteScalarOrNullAsync("""
+                SELECT MessageId::text
+                FROM ClaimRuntimeUsageOutbox('concurrent-b', 300, 1)
+                """));
+
+        Assert.Single(claims, value => value is not null);
+        Assert.Equal("adadadad-adad-adad-adad-adadadadadad",
+            claims.Single(value => value is not null));
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>("""
+            SELECT AttemptCount FROM RuntimeUsageOutboxDelivery
+            WHERE MessageId='adadadad-adad-adad-adad-adadadadadad'
+            """));
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
+    public async Task DeliveryBoundary_RejectsNullAndInvalidRequestsWithoutMutation()
+    {
+        await using var database = await RuntimeUsageTestDatabase.CreateAsync();
+
+        Assert.Equal("22023", await database.TryExecuteAsync(
+            "SELECT * FROM ClaimRuntimeUsageOutbox(NULL, 300, 1)"));
+        Assert.Equal("22023", await database.TryExecuteAsync(
+            "SELECT * FROM ClaimRuntimeUsageOutbox('collector', NULL, 1)"));
+        Assert.Equal("22023", await database.TryExecuteAsync(
+            "SELECT * FROM ClaimRuntimeUsageOutbox('collector', 300, NULL)"));
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM AcknowledgeRuntimeUsageOutbox(
+                NULL, 'collector', decode(repeat('11', 32), 'hex'))
+            """));
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM AcknowledgeRuntimeUsageOutbox(
+                'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'collector', NULL)
+            """));
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM QuarantineRuntimeUsageOutbox(
+                'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'collector', NULL)
+            """));
+    }
+
     private sealed class RuntimeUsageTestDatabase : IAsyncDisposable
     {
         private const string ConnectionVariable = "OPENJIBO_TEST_POSTGRES_CONNECTION_STRING";
@@ -363,9 +533,15 @@ public sealed class PostgreSqlRuntimeUsageOutboxIntegrationTests
 
         internal async Task ApplyMigrationAsync()
         {
-            var path = Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
-                "011_create_runtime_usage_outbox.state.sql");
-            await ExecuteAsync(await File.ReadAllTextAsync(path));
+            foreach (var fileName in new[]
+                     {
+                         "011_create_runtime_usage_outbox.state.sql",
+                         "012_runtime_usage_delivery_boundary.state.sql"
+                     })
+            {
+                var path = Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql", fileName);
+                await ExecuteAsync(await File.ReadAllTextAsync(path));
+            }
         }
 
         internal async Task ExecuteAsync(string sql)
@@ -398,6 +574,15 @@ public sealed class PostgreSqlRuntimeUsageOutboxIntegrationTests
             command.CommandText = sql;
             var value = await command.ExecuteScalarAsync();
             return (T)Convert.ChangeType(value!, typeof(T), System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        internal async Task<object?> ExecuteScalarOrNullAsync(string sql)
+        {
+            await using var connection = new NpgsqlConnection(ConnectionString);
+            await connection.OpenAsync();
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            return await command.ExecuteScalarAsync();
         }
 
         public async ValueTask DisposeAsync()

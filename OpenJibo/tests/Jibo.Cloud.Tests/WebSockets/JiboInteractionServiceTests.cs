@@ -1773,7 +1773,13 @@ public sealed class JiboInteractionServiceTests
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
             RawTranscript = transcript,
-            NormalizedTranscript = transcript
+            NormalizedTranscript = transcript,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = """
+                    {"runtime":{"location":{"iso":"2026-08-29T12:00:00-05:00"}}}
+                    """
+            }
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);

@@ -42,6 +42,10 @@ jobs:
         shell: bash
         run: bash ./scripts/cloud/test-openjibo-self-hosted-deployment-contract.sh
 
+      - name: Validate OpenJiboCloud staging PostgreSQL bootstrap contract
+        shell: bash
+        run: bash ./scripts/cloud/test-openjibo-cloud-staging-bootstrap-contract.sh
+
       - name: Restore and test
         run: dotnet test tests/Jibo.Cloud.Tests/Jibo.Cloud.Tests.csproj
         env:

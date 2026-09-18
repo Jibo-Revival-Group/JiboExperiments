@@ -309,7 +309,7 @@ GRANT openjibo_usage_checkpoint_owner, openjibo_usage_metering,
 COMMIT;
 SQL
 
-admin_connection="host=$postgres_host port=5432 dbname=$expected_database user=$postgres_admin sslmode=verify-full connect_timeout=15"
+admin_connection="host=$postgres_host port=5432 dbname=$expected_database user=$postgres_admin sslmode=verify-full sslrootcert=system connect_timeout=15"
 PGPASSFILE="$admin_pgpass" psql "$admin_connection" --no-psqlrc \
   --set ON_ERROR_STOP=1 --file "$bootstrap_sql" >/dev/null
 
@@ -322,7 +322,7 @@ if [[ "$store_deployer_secret" == "true" ]]; then
 fi
 unset admin_password deployer_password
 
-deployer_connection="host=$postgres_host port=5432 dbname=$expected_database user=$deployer_role sslmode=verify-full connect_timeout=15"
+deployer_connection="host=$postgres_host port=5432 dbname=$expected_database user=$deployer_role sslmode=verify-full sslrootcert=system connect_timeout=15"
 identity="$(PGPASSFILE="$deployer_pgpass" psql "$deployer_connection" --no-psqlrc \
   --tuples-only --no-align --field-separator '|' --set ON_ERROR_STOP=1 \
   --command "SELECT current_database(), current_user, COALESCE((SELECT ssl::text FROM pg_stat_ssl WHERE pid=pg_backend_pid()), 'false');")"

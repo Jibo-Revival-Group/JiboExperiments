@@ -41,6 +41,7 @@ bootstrap_markers=(
   'reconciliation_role="openjibo_usage_reconciliation_runtime"'
   "tags.openjiboEnvironment=='staging'"
   'sslmode=verify-full'
+  'sslrootcert=system'
   'flexible-server db create'
   '--name "$expected_database"'
   'NOLOGIN INHERIT NOSUPERUSER NOCREATEDB'

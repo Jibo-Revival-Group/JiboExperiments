@@ -287,6 +287,9 @@ BEGIN
            'openjibo_usage_reconciler')
          AND NOT (
            (member_role.rolname = '${deployer_role}' AND membership.admin_option) OR
+           (member_role.rolname = '${postgres_admin}' AND
+            membership.admin_option AND NOT membership.inherit_option AND
+            NOT membership.set_option) OR
            (granted_role.rolname = 'openjibo_usage_metering' AND
             member_role.rolname = '${metering_role}' AND
             NOT membership.admin_option AND membership.inherit_option AND

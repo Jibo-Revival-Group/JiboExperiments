@@ -49,6 +49,7 @@ bootstrap_markers=(
   'WITH ADMIN OPTION'
   'membership.inherit_option'
   'membership.set_option'
+  "member_role.rolname = '\${postgres_admin}'"
   'firewall-rule create'
   'firewall-rule delete'
   '--server-name "$postgres_server"'

@@ -173,6 +173,7 @@ public sealed class PortalAccountApiTests
                 builder.UseSetting("OpenJibo:PersonalMemory:PersistencePath",
                     Path.Combine(root, "personal-memory.json"));
                 builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", "false");
+                builder.UseSetting("OpenJibo:Stt:EnableWhisperServer", "false");
                 builder.UseSetting("OpenJibo:Portal:StatusPassword", "test-admin-password");
                 builder.UseSetting("OpenJibo:FleetNetwork:PeerSyncEnabled", "false");
                 builder.UseSetting("OpenJibo:FleetNetwork:AllowedPeerHosts", "fleet.example.openjibo.com");

@@ -260,9 +260,11 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"LISTEN","transID":"trans-clock-then-hotphrase","data":{"text":"what time is it","hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
-        Assert.Equal(4, firstReplies.Count);
+        Assert.Equal(2, firstReplies.Count);
         Assert.Equal("LISTEN", ReadReplyType(firstReplies[0]));
         Assert.Equal("EOS", ReadReplyType(firstReplies[1]));
+        Assert.DoesNotContain(firstReplies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         var session = _store.FindSessionByToken("hub-clock-then-hotphrase-token");
         Assert.NotNull(session);
@@ -296,9 +298,11 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"CLIENT_ASR","transID":"trans-clock-then-hotphrase-retry","data":{"text":"what time is it"}}"""
         });
 
-        Assert.Equal(4, commandReplies.Count);
+        Assert.Equal(2, commandReplies.Count);
         Assert.Equal("LISTEN", ReadReplyType(commandReplies[0]));
         Assert.Equal("EOS", ReadReplyType(commandReplies[1]));
+        Assert.DoesNotContain(commandReplies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(commandReplies[0].Text!);
         Assert.Equal("askForTime",
@@ -765,7 +769,7 @@ public sealed class JiboWebSocketServiceTests
 
         var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-continuous-clock-token");
         Assert.NotNull(session);
-        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1800);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(2900);
         session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
 
         var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1617,17 +1621,23 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"CLIENT_ASR","transID":"trans-clock-timer","data":{"text":"set a timer for five minutes"}}"""
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
-        Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
-        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("start",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         Assert.Equal("@be/clock",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("@be/clock",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("launch")
+            .GetBoolean());
+        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skipSurprises")
+            .GetBoolean());
         Assert.Equal("timer",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
                 .GetProperty("domain").GetString());
@@ -1640,14 +1650,6 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("null",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
                 .GetProperty("seconds").GetString());
-
-        using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/clock",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.True(redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skipSurprises")
-            .GetBoolean());
-        Assert.Equal("start",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -1672,10 +1674,11 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-clock-open","data":{"text":"open the clock"}}"""
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
-        Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("askForTime",
@@ -1683,12 +1686,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("clock",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
                 .GetProperty("domain").GetString());
-
-        using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
         Assert.Equal("@be/clock",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("askForTime",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("launch")
+            .GetBoolean());
     }
 
     [Fact]
@@ -1713,15 +1714,21 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-clock-voice-time","data":{"text":"what time is it"}}"""
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("askForTime",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         Assert.Equal("@be/clock",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("@be/clock",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("launch")
+            .GetBoolean());
     }
 
     [Fact]
@@ -1746,13 +1753,17 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-clock-alarm","data":{"text":"set an alarm for 7:30 am"}}"""
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("start",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         Assert.Equal("@be/clock",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("@be/clock",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
         Assert.Equal("alarm",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
                 .GetProperty("domain").GetString());
@@ -1787,7 +1798,9 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"CLIENT_ASR","transID":"trans-clock-compact-alarm","data":{"text":"set an alarm for 830"}}"""
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("8:30",
@@ -1821,7 +1834,9 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"CLIENT_ASR","transID":"trans-clock-hyphen-alarm","data":{"text":"set an alarm for 10-25"}}"""
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("start",
@@ -1860,7 +1875,9 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"CLIENT_ASR","transID":"trans-clock-pm-alarm","data":{"text":"set an alarm for 10:25 pm"}}"""
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("10:25",
@@ -2050,11 +2067,11 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-clock-clarify-alarm","data":{"text":"set an alarm"}}"""
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
-        Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
-        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("set",
@@ -2064,12 +2081,10 @@ public sealed class JiboWebSocketServiceTests
                 .GetProperty("domain").GetString());
         Assert.False(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
             .TryGetProperty("time", out _));
-
-        using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
         Assert.Equal("@be/clock",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("set",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("launch")
+            .GetBoolean());
     }
 
     [Fact]
@@ -2094,7 +2109,9 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-clock-cancel-alarm","data":{"text":"cancel alarm"}}"""
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("delete",
@@ -2102,12 +2119,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("alarm",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
                 .GetProperty("domain").GetString());
-
-        using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
         Assert.Equal("@be/clock",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("delete",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("launch")
+            .GetBoolean());
 
         var session = _store.FindSessionByToken("hub-clock-cancel-alarm-token");
         Assert.NotNull(session);
@@ -6041,17 +6056,19 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"LISTEN","transID":"trans-delete-the-alarm","data":{"text":"So, delete the alarm.","rules":["launch","globals/global_commands_launch"]}}"""
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
-        Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
-        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("delete",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         Assert.Equal("@be/clock",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("@be/clock",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
         Assert.Equal("alarm",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
                 .GetProperty("domain").GetString());
@@ -8478,9 +8495,11 @@ public sealed class JiboWebSocketServiceTests
             Binary = new byte[3000]
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("what time is it",

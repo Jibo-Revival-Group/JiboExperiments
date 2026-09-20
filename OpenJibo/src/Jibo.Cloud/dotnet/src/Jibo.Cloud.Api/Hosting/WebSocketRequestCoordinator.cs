@@ -20,7 +20,7 @@ internal sealed class WebSocketRequestCoordinator(
     WebSocketTransportPolicy transportPolicy,
     ILogger<WebSocketRequestCoordinator> logger)
 {
-    private static readonly TimeSpan TurnWatchdogInterval = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan TurnWatchdogInterval = TimeSpan.FromMilliseconds(50);
     private const string ActiveConnectionIdMetadataKey = "openjibo.activeWebSocketConnectionId";
     private static readonly object SessionGateRegistryLock = new();
     private static readonly Dictionary<string, SessionGate> SessionGates = new(StringComparer.OrdinalIgnoreCase);

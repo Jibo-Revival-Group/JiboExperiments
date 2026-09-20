@@ -59,6 +59,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var isIntroductionsLaunch = string.Equals(skill?.SkillName, "@be/introductions", StringComparison.OrdinalIgnoreCase);
         var idleRedirectDelayMs = 75;
         var idleCompletionDelayMs = isTurnAroundCommand ? 750 : 125;
+        const int cloudSpeakDelayMs = 75;
         var localIntent = ReadSkillPayloadString(skill, "localIntent");
         var clockIntent = ReadSkillPayloadString(skill, "clockIntent");
         var clockDomain = ReadSkillPayloadString(skill, "domain");
@@ -356,7 +357,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                75));
+                cloudSpeakDelayMs));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/word-of-the-day")),
                 125));
@@ -372,7 +373,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                75));
+                cloudSpeakDelayMs));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/radio")),
                 125));
@@ -388,7 +389,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                75));
+                cloudSpeakDelayMs));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/bad-apple")),
                 125));
@@ -432,7 +433,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (isVolumeControl)
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/nimbus")),
-                75));
+                cloudSpeakDelayMs));
 
         if (isSettingsLaunch &&
             !string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase))
@@ -445,30 +446,16 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                75));
+                cloudSpeakDelayMs));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/settings")),
                 125));
         }
 
-        if (isClockSkillLaunch &&
-            !isCloudOwnedFollowUp &&
-            !string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase) &&
-            !IsLocalClockFollowUpTurn(rules))
-        {
-            messages.Add(new SocketReplyPlan(
-                JsonSerializer.Serialize(BuildSkillRedirectPayload(
-                    transId,
-                    "@be/clock",
-                    outboundIntent,
-                    outboundAsrText,
-                    outboundRules,
-                    entities)),
-                75));
-            messages.Add(new SocketReplyPlan(
-                JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/clock")),
-                125));
-        }
+        // The initial LISTEN match already launches @be/clock (skillID + launch=true).
+        // Do not also send a delayed SKILL_REDIRECT: stock JiboClock treats it as a second
+        // local launch, which closes/reopens the clock screen and re-announces the time.
+        // CLIENT_NLU menu turns and local alarm/timer follow-ups already rely on LISTEN/EOS only.
 
         if ((isPhotoGalleryLaunch || isPhotoCreateLaunch) &&
             !string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase))
@@ -482,7 +469,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                75));
+                cloudSpeakDelayMs));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, skillId)),
                 125));
@@ -499,7 +486,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                75));
+                cloudSpeakDelayMs));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/introductions")),
                 125));
@@ -511,7 +498,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (shouldEmitCloudSpeak)
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak!, skill, outboundAsrText)),
-                75));
+                cloudSpeakDelayMs));
 
         return messages;
     }
@@ -666,7 +653,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         string transId,
         IReadOnlyList<string> rules,
         string skillId,
-        int redirectDelayMs = 75)
+        int redirectDelayMs = 0)
     {
         var messages = new List<SocketReplyPlan>(MapNoInput(transId, rules))
         {
@@ -1190,17 +1177,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
             string.Equals(rule, "globals/global_commands_launch", StringComparison.OrdinalIgnoreCase))
             ? ["globals/global_commands_launch"]
             : [];
-    }
-
-    private static bool IsLocalClockFollowUpTurn(IReadOnlyList<string> rules)
-    {
-        return rules.Any(static rule =>
-            string.Equals(rule, "clock/alarm_set_value", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(rule, "clock/timer_set_value", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(rule, "clock/alarm_timer_change", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(rule, "clock/alarm_timer_okay", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(rule, "clock/alarm_timer_none_set", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(rule, "clock/alarm_timer_query_menu", StringComparison.OrdinalIgnoreCase));
     }
 
     private static object BuildGenericFallbackSkillPayload(string transId)

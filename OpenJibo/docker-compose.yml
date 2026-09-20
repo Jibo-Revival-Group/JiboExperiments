@@ -52,6 +52,12 @@ services:
       OpenJibo__Stt__EnableLocalWhisperCpp: ${OPENJIBO_ENABLE_LOCAL_WHISPER:-true}
       OPENJIBO_STT_WHISPER_CLI_PATH: /usr/bin/whisper.cpp/build/bin/whisper-cli
       OPENJIBO_STT_WHISPER_MODEL_PATH: /usr/bin/whisper.cpp/models/ggml-${OPENJIBO_WHISPER_MODEL:-base.en}.bin
+      OPENJIBO_STT_WHISPER_AUDIO_CTX: ${OPENJIBO_STT_WHISPER_AUDIO_CTX:-512}
+      OPENJIBO_STT_WHISPER_BEAM_SIZE: ${OPENJIBO_STT_WHISPER_BEAM_SIZE:-1}
+      OPENJIBO_STT_ENABLE_WHISPER_SERVER: ${OPENJIBO_STT_ENABLE_WHISPER_SERVER:-true}
+      OPENJIBO_STT_WHISPER_SERVER_URL: ${OPENJIBO_STT_WHISPER_SERVER_URL:-http://127.0.0.1:8090}
+      OpenJibo__Stt__EnableWhisperServer: ${OPENJIBO_STT_ENABLE_WHISPER_SERVER:-true}
+      OpenJibo__Stt__WhisperServerUrl: ${OPENJIBO_STT_WHISPER_SERVER_URL:-http://127.0.0.1:8090}
       OpenJibo__State__PersistencePath: /data/state/cloud-state.json
       OpenJibo__PersonalMemory__PersistencePath: /data/personal-memory/personal-memory.json
       OpenJibo__Media__DirectoryPath: /data/media

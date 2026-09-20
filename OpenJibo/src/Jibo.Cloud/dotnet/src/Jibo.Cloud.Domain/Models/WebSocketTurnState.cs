@@ -27,6 +27,11 @@ public sealed class WebSocketTurnState
     public TimeSpan? ListenMaxSpeechTimeout { get; set; }
     public int BufferedAudioChunkCount { get; set; }
     public int BufferedAudioBytes { get; set; }
+    /// <summary>
+    /// Buffered byte count when an early probe deferred for an incomplete command.
+    /// Early probes must wait for additional audio before re-running STT.
+    /// </summary>
+    public int DeferredIncompleteAudioBytes { get; set; }
     public List<byte[]> BufferedAudioFrames { get; } = [];
     public int FinalizeAttemptCount { get; set; }
     public string? LastLocalNoInputRule { get; set; }

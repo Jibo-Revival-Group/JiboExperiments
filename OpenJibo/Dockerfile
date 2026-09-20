@@ -61,5 +61,6 @@ RUN apt-get update \
 COPY --from=whisper-stage /usr/bin/whisper.cpp /usr/bin/whisper.cpp
 COPY --from=build /app/publish/api ./api
 COPY --from=build /app/publish/migrations ./migrations
-ENTRYPOINT ["dotnet"]
-CMD ["/app/api/Jibo.Cloud.Api.dll"]
+COPY scripts/docker-api-entrypoint.sh /app/docker-api-entrypoint.sh
+RUN chmod +x /app/docker-api-entrypoint.sh
+ENTRYPOINT ["/app/docker-api-entrypoint.sh"]

@@ -159,13 +159,16 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
                 return BuildResult(string.Empty, turn, wavPath, ffmpegResult, string.Empty, string.Empty, pageCounts);
             }
 
-            logger.LogDebug("STT whisper launch turnId={TurnId} whisperCliPath={WhisperCliPath} modelPath={ModelPath}",
+            var whisperArguments = BuildWhisperCliArguments(wavPath);
+            logger.LogDebug(
+                "STT whisper launch turnId={TurnId} whisperCliPath={WhisperCliPath} modelPath={ModelPath} arguments={Arguments}",
                 turn.TurnId,
                 _options.WhisperCliPath,
-                _options.WhisperModelPath);
+                _options.WhisperModelPath,
+                string.Join(' ', whisperArguments));
             var whisperResult = await processRunner.RunAsync(
                 _options.WhisperCliPath!,
-                ["-m", _options.WhisperModelPath!, "-f", wavPath, "-l", _options.WhisperLanguage],
+                whisperArguments,
                 cancellationToken);
             logger.LogDebug(
                 "STT whisper finished turnId={TurnId} exitCode={ExitCode} stdoutBytes={StdOutBytes} stderrBytes={StdErrBytes}",
@@ -281,6 +284,26 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
             logger.LogDebug("STT transcription end turnId={TurnId} cleanupTempFiles={CleanupTempFiles}", turn.TurnId,
                 _options.CleanupTempFiles);
         }
+    }
+
+    private IReadOnlyList<string> BuildWhisperCliArguments(string wavPath)
+    {
+        var threads = _options.WhisperThreads > 0
+            ? _options.WhisperThreads
+            : Math.Max(1, Environment.ProcessorCount);
+        var audioContext = _options.WhisperAudioContext > 0 ? _options.WhisperAudioContext : 512;
+        var beamSize = _options.WhisperBeamSize > 0 ? _options.WhisperBeamSize : 1;
+
+        return
+        [
+            "-m", _options.WhisperModelPath!,
+            "-f", wavPath,
+            "-l", _options.WhisperLanguage,
+            "-t", threads.ToString(),
+            "--audio-ctx", audioContext.ToString(),
+            "-bs", beamSize.ToString(),
+            "-nt"
+        ];
     }
 
     private static string? ReadTranscriptHint(TurnContext turn)

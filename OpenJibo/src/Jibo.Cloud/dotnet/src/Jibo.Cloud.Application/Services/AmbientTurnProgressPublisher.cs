@@ -19,6 +19,15 @@ public sealed class AmbientTurnProgressPublisher(ILogger<AmbientTurnProgressPubl
         return new Popper(previous);
     }
 
+    /// <summary>
+    /// Captures the active outbound send callback so turn finalization can continue
+    /// on a background task after the websocket receive loop moves on.
+    /// </summary>
+    public static Func<WebSocketReply, CancellationToken, Task>? TryGetSendAsync()
+    {
+        return Current.Value?.SendAsync;
+    }
+
     public static void BindTurn(TurnContext turn, CloudSession session)
     {
         var scope = Current.Value;

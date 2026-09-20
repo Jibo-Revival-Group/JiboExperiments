@@ -180,6 +180,7 @@ public sealed class PortalLoopMemberApiTests
                     "OpenJibo:PersonalMemory:PersistencePath",
                     Path.Combine(root, "personal-memory.json"));
                 builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", "false");
+                builder.UseSetting("OpenJibo:Stt:EnableWhisperServer", "false");
             });
     }
 }

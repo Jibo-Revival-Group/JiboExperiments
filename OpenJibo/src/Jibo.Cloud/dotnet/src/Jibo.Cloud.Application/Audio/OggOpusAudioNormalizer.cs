@@ -57,6 +57,42 @@ public static class OggOpusAudioNormalizer
         return normalized.SelectMany(static page => page).ToArray();
     }
 
+    /// <summary>
+    /// Enumerates decoded Opus audio packets (excluding OpusHead/OpusTags) with
+    /// byte length and sample duration for content-based speech activity detection.
+    /// </summary>
+    public static IEnumerable<OpusAudioPacket> EnumerateAudioPackets(IReadOnlyList<byte[]> pages)
+    {
+        if (pages.Count == 0) yield break;
+
+        var pendingPacket = new List<byte>();
+        foreach (var page in pages)
+        {
+            ParsedOggPage[] parsed;
+            try
+            {
+                // Skip corrupt/partial WebSocket frames instead of aborting the whole
+                // buffer — one bad frame used to zero out VAD and force the slow
+                // continuous-probe path (~3s).
+                parsed = ParsePages(page).ToArray();
+            }
+            catch (InvalidOperationException)
+            {
+                continue;
+            }
+
+            foreach (var parsedPage in parsed)
+            {
+                foreach (var packet in ReadCompletedPackets(parsedPage, pendingPacket))
+                {
+                    if (IsOpusMetadata(packet)) continue;
+                    if (!TryGetOpusPacketSampleCount(packet, out var samples)) continue;
+                    yield return new OpusAudioPacket(packet.Length, samples);
+                }
+            }
+        }
+    }
+
     private static IEnumerable<ParsedOggPage> ParsePages(byte[] buffer)
     {
         var offset = 0;
@@ -81,7 +117,7 @@ public static class OggOpusAudioNormalizer
                 buffer.AsSpan(offset, pageLength).ToArray(),
                 BinaryPrimitives.ReadUInt32LittleEndian(buffer.AsSpan(offset + 14, 4)),
                 pageSegments,
-                27);
+                27 + pageSegments);
             offset += pageLength;
         }
     }
@@ -157,3 +193,6 @@ public static class OggOpusAudioNormalizer
 
     private sealed record ParsedOggPage(byte[] Content, uint StreamSerial, int PageSegments, int PayloadOffset);
 }
+
+/// <summary>One Opus audio packet with compressed size and PCM sample duration at 48 kHz.</summary>
+public readonly record struct OpusAudioPacket(int ByteLength, ulong SampleCount);

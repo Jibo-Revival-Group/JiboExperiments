@@ -287,6 +287,7 @@ public sealed class JiboCloudApiIntegrationTests
                     Path.Combine(root, "personal-memory.json"));
                 builder.UseSetting("OpenJibo:Media:DirectoryPath", Path.Combine(root, "media"));
                 builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", "false");
+                builder.UseSetting("OpenJibo:Stt:EnableWhisperServer", "false");
                 if (enableReleaseSmoke)
                 {
                     builder.UseSetting("OpenJibo:ReleaseSmoke:Enabled", "true");

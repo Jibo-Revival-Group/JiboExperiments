@@ -13,6 +13,7 @@ using Moq;
 
 namespace Jibo.Cloud.Tests.WebSockets;
 
+[Collection("Environment variable tests")]
 public sealed class JiboInteractionServiceTests
 {
     private const string PersonalReportStateKey = "personalReportState";

@@ -6,6 +6,7 @@ using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Tests.Application;
 
+[Collection("Environment variable tests")]
 public sealed class UserRequiredLoginInteractionTests
 {
     [Fact]

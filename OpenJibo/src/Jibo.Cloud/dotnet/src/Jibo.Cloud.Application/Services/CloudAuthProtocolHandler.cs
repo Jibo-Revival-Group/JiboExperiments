@@ -10,11 +10,14 @@ public sealed class CloudAuthProtocolHandler(
     ICloudStateStore stateStore,
     ILogger<CloudAuthProtocolHandler>? logger = null,
     RobotIdentitySuggestionStore? identitySuggestionStore = null,
-    ReleaseSmokeAuthorizationOptions? releaseSmokeAuthorization = null) : ICloudAuthProtocolHandler
+    ReleaseSmokeAuthorizationOptions? releaseSmokeAuthorization = null,
+    AwsSigV4RequestVerifier? awsSigV4Verifier = null) : ICloudAuthProtocolHandler
 {
     private readonly ILogger _logger = logger ?? NullLogger<CloudAuthProtocolHandler>.Instance;
     private readonly ReleaseSmokeAuthorizationOptions _releaseSmokeAuthorization =
         releaseSmokeAuthorization ?? new ReleaseSmokeAuthorizationOptions();
+    private readonly AwsSigV4RequestVerifier _awsSigV4Verifier =
+        awsSigV4Verifier ?? new AwsSigV4RequestVerifier(stateStore);
     public ProtocolDispatchResult HandleAccount(string operation, ProtocolEnvelope envelope)
     {
         var account = stateStore.GetAccount();
@@ -22,6 +25,7 @@ public sealed class CloudAuthProtocolHandler(
 
         if (operation.Equals("CreateHubToken", StringComparison.OrdinalIgnoreCase))
         {
+            ObserveLegacyCredential("Account.CreateHubToken", envelope);
             var deviceId = !string.IsNullOrWhiteSpace(envelope.DeviceId)
                 ? envelope.DeviceId!
                 : ReadString(body, "deviceId")
@@ -203,6 +207,8 @@ public sealed class CloudAuthProtocolHandler(
         if (!operation.Equals("NewRobotToken", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(new { ok = true, operation });
 
+        ObserveLegacyCredential("Notification.NewRobotToken", envelope);
+
         var body = envelope.TryParseBody();
         var presentedDeviceId = ReadString(body, "deviceId")
                                 ?? ReadString(body, "serial_number")
@@ -274,6 +280,36 @@ public sealed class CloudAuthProtocolHandler(
         }
 
         return null;
+    }
+
+    private void ObserveLegacyCredential(string operation, ProtocolEnvelope envelope)
+    {
+        var verification = _awsSigV4Verifier.Verify(envelope);
+        if (verification.Outcome == AwsSigV4VerificationOutcome.NotPresented)
+        {
+            _logger.LogDebug("Legacy SigV4 was not presented operation={Operation}", operation);
+            return;
+        }
+
+        if (verification.CredentialAuthenticated)
+        {
+            _logger.LogInformation(
+                "Legacy credential signature valid operation={Operation} outcome={Outcome} credentialFingerprint={CredentialFingerprint} payloadBound={PayloadBound} targetBound={TargetBound} robotIdentityProof=false",
+                operation,
+                verification.Outcome,
+                verification.AccessKeyFingerprint,
+                verification.PayloadBound,
+                verification.TargetBound);
+            return;
+        }
+
+        // Shadow mode: record bounded evidence without changing token issuance. Enforcement
+        // remains closed until captured stock-robot traffic and cross-replica replay controls pass.
+        _logger.LogWarning(
+            "Legacy SigV4 did not verify operation={Operation} outcome={Outcome} credentialFingerprint={CredentialFingerprint}",
+            operation,
+            verification.Outcome,
+            verification.AccessKeyFingerprint);
     }
 
     private ProtocolDispatchResult? TryIssueDeploymentSmokeHubToken(string deviceId, string? registrationSource,

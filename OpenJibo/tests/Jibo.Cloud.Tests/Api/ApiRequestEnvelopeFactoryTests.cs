@@ -42,5 +42,6 @@ public sealed class ApiRequestEnvelopeFactoryTests
         Assert.Equal("""{"hello":"world"}""", envelope.BodyText);
         Assert.Equal(0, context.Request.Body.Position);
         Assert.Equal("Account_20160715.CreateHubToken", envelope.Headers["X-Amz-Target"]);
+        Assert.Equal("api.jibo.com", envelope.Headers["Host"]);
     }
 }

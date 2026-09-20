@@ -38,7 +38,12 @@ public static class ServiceCollectionExtensions
             configuration.GetSection("OpenJibo:Stt").Bind(sttOptions);
         }
 
-        BufferedAudioSttPathResolver.ValidateResolvedDependencies(sttOptions);
+        var skipSttDependencyValidation = string.Equals(
+            configuration?["OpenJibo:Testing:SkipSttDependencyValidation"],
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+        if (!skipSttDependencyValidation)
+            BufferedAudioSttPathResolver.ValidateResolvedDependencies(sttOptions);
 
         var openWeatherOptions = new OpenWeatherOptions();
         configuration?.GetSection("OpenJibo:Weather:OpenWeather").Bind(openWeatherOptions);

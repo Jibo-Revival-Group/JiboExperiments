@@ -1928,6 +1928,9 @@ public sealed class HomeAssistantPortalApiTests
                 builder.UseSetting("OpenJibo:Stt:WhisperCliPath", whisperCliPath);
                 builder.UseSetting("OpenJibo:Stt:WhisperModelPath", whisperModelPath);
                 builder.UseSetting("OpenJibo:Stt:EnableWhisperServer", "false");
+                builder.UseSetting("OpenJibo:Stt:AutoStartWhisperServer", "false");
+                builder.UseSetting("OpenJibo:Testing:SkipSttDependencyValidation",
+                    localWhisperEnabled.ToString());
                 builder.UseSetting("OpenJibo:Portal:StatusPassword", "test-admin-password");
                 builder.UseSetting("OpenJibo:FleetNetwork:PeerSyncEnabled", peerSyncEnabled.ToString());
                 builder.UseSetting("OpenJibo:FleetNetwork:AllowedPeerHosts", "fleet.example.openjibo.com");

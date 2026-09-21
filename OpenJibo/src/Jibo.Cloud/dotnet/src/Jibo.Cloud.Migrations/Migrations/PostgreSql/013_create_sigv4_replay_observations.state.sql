@@ -85,7 +85,10 @@ BEGIN
             WHEN observation.ExpiresUtc <= v_now THEN v_now
             ELSE observation.FirstSeenUtc
         END,
-        LastSeenUtc = v_now,
+        LastSeenUtc = CASE
+            WHEN observation.ExpiresUtc <= v_now THEN v_now
+            ELSE GREATEST(observation.LastSeenUtc, v_now)
+        END,
         ExpiresUtc = CASE
             WHEN observation.ExpiresUtc <= v_now THEN v_now + INTERVAL '15 minutes'
             ELSE observation.ExpiresUtc

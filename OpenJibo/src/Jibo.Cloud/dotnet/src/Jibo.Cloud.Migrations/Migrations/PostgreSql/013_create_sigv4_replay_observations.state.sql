@@ -56,11 +56,11 @@ BEGIN
     -- Bound opportunistic cleanup so request latency cannot grow with table history.
     WITH expired AS
     (
-        SELECT ReplayDigest
-        FROM AwsSigV4ReplayObservations
-        WHERE ExpiresUtc <= v_now
-          AND ReplayDigest <> p_replay_digest
-        ORDER BY ExpiresUtc
+        SELECT candidate.ReplayDigest
+        FROM AwsSigV4ReplayObservations AS candidate
+        WHERE candidate.ExpiresUtc <= v_now
+          AND candidate.ReplayDigest <> p_replay_digest
+        ORDER BY candidate.ExpiresUtc
         LIMIT 256
     )
     DELETE FROM AwsSigV4ReplayObservations AS observation

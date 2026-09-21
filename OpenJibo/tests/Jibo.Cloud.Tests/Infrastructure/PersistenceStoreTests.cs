@@ -953,6 +953,9 @@ public sealed class PersistenceStoreTests
                 ["OpenJibo:State:ConnectionString"] =
                     "Host=localhost;Database=openjibo_di_test;Username=openjibo;Password=test",
                 ["OpenJibo:Security:SigV4ReplayObservation:Enabled"] = "true",
+                ["OpenJibo:Security:SigV4ReplayObservation:ConnectionString"] =
+                    "Host=localhost;Database=openjibo_di_test;Username=replay_observer;Password=test",
+                ["OpenJibo:Security:SigV4ReplayObservation:MaxPoolSize"] = "9",
                 ["OpenJibo:Security:SigV4ReplayHmacKey"] =
                     Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
             })
@@ -967,6 +970,10 @@ public sealed class PersistenceStoreTests
             provider.GetRequiredService<IAwsSigV4ReplayObservationPublisher>());
         Assert.IsType<PostgreSqlAwsSigV4ReplayObservationStore>(
             provider.GetRequiredService<IAwsSigV4ReplayObservationStore>());
+        var dataSource = provider.GetRequiredService<PostgreSqlAwsSigV4ReplayDataSource>();
+        var builder = new NpgsqlConnectionStringBuilder(dataSource.Value.ConnectionString);
+        Assert.Equal("replay_observer", builder.Username);
+        Assert.Equal(2, builder.MaxPoolSize);
     }
 
     [Fact]
@@ -990,6 +997,56 @@ public sealed class PersistenceStoreTests
         using var provider = services.BuildServiceProvider();
         Assert.IsType<NullAwsSigV4ReplayObservationPublisher>(
             provider.GetRequiredService<IAwsSigV4ReplayObservationPublisher>());
+    }
+
+    [Fact]
+    public void AddOpenJiboCloud_EnabledReplayObservationNeverFallsBackToStateConnection()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:State:Backend"] = "PostgreSql",
+                ["OpenJibo:State:ConnectionString"] =
+                    "Host=localhost;Database=openjibo_di_test;Username=broad_state;Password=test",
+                ["OpenJibo:Security:SigV4ReplayObservation:Enabled"] = "true",
+                ["OpenJibo:Security:SigV4ReplayHmacKey"] =
+                    Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        services.AddOpenJiboCloud(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        Assert.IsType<NullAwsSigV4ReplayObservationPublisher>(
+            provider.GetRequiredService<IAwsSigV4ReplayObservationPublisher>());
+        Assert.Null(provider.GetService<PostgreSqlAwsSigV4ReplayDataSource>());
+    }
+
+    [Fact]
+    public void AddOpenJiboCloud_DedicatedReplayConnectionIsIndependentOfStateBackend()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:State:Backend"] = "File",
+                ["OpenJibo:Security:SigV4ReplayObservation:Enabled"] = "true",
+                ["OpenJibo:Security:SigV4ReplayObservation:ConnectionString"] =
+                    "Host=localhost;Database=openjibo_di_test;Username=replay_observer;Password=test",
+                ["OpenJibo:Security:SigV4ReplayHmacKey"] =
+                    Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        services.AddOpenJiboCloud(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        Assert.IsType<AwsSigV4ReplayObservationPublisher>(
+            provider.GetRequiredService<IAwsSigV4ReplayObservationPublisher>());
+        Assert.NotNull(provider.GetRequiredService<PostgreSqlAwsSigV4ReplayDataSource>());
     }
 
     [Fact]

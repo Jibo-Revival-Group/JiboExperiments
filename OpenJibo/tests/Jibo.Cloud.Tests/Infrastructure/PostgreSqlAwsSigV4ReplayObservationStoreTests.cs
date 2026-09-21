@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Security.Cryptography;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Infrastructure.Persistence;
@@ -13,11 +12,11 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
     public async Task ObserveAsync_AtomicallyClassifiesConcurrentReplicasAndResetsExpiredDigest()
     {
         await using var database = await ReplayTestDatabase.CreateAsync();
-        await using var firstSource = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
-        await using var secondSource = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
+        await using var firstSource = new PostgreSqlAwsSigV4ReplayDataSource(database.ConnectionString, 2);
+        await using var secondSource = new PostgreSqlAwsSigV4ReplayDataSource(database.ConnectionString, 2);
         var firstStore = new PostgreSqlAwsSigV4ReplayObservationStore(firstSource);
         var secondStore = new PostgreSqlAwsSigV4ReplayObservationStore(secondSource);
-        var digest = SHA256.HashData("opaque-replay-sentinel"u8);
+        var digest = database.Digest;
 
         var observations = await Task.WhenAll(Enumerable.Range(0, 32).Select(index =>
             (index & 1) == 0
@@ -29,40 +28,41 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
         Assert.Equal(31, observations.Count(observation =>
             observation.Status == AwsSigV4ReplayObservationStatus.Repeat));
         Assert.Equal(32, await database.ExecuteScalarAsync<long>(
-            "SELECT ObservationCount FROM AwsSigV4ReplayObservations"));
+            "SELECT ObservationCount FROM public.AwsSigV4ReplayObservations WHERE ReplayDigest = @digest"));
         Assert.Equal(1, await database.ExecuteScalarAsync<long>(
-            "SELECT COUNT(*) FROM AwsSigV4ReplayObservations"));
+            "SELECT COUNT(*) FROM public.AwsSigV4ReplayObservations WHERE ReplayDigest = @digest"));
 
         var preExpiryRotation = await firstStore.ObserveAsync(
             digest, 2, "Notification.NewRobotToken");
         Assert.Equal(AwsSigV4ReplayObservationStatus.Repeat, preExpiryRotation.Status);
         Assert.Equal(33, preExpiryRotation.ObservationCount);
         Assert.Equal(1, await database.ExecuteScalarAsync<short>(
-            "SELECT KeyVersion FROM AwsSigV4ReplayObservations"));
+            "SELECT KeyVersion FROM public.AwsSigV4ReplayObservations WHERE ReplayDigest = @digest"));
         Assert.Equal("Account.CreateHubToken", await database.ExecuteScalarAsync<string>(
-            "SELECT Operation FROM AwsSigV4ReplayObservations"));
+            "SELECT Operation FROM public.AwsSigV4ReplayObservations WHERE ReplayDigest = @digest"));
 
         await database.ExecuteAsync(
             """
-            UPDATE AwsSigV4ReplayObservations
+            UPDATE public.AwsSigV4ReplayObservations
             SET FirstSeenUtc = clock_timestamp() - INTERVAL '3 seconds',
                 LastSeenUtc = clock_timestamp() - INTERVAL '2 seconds',
                 ExpiresUtc = clock_timestamp() - INTERVAL '1 second'
-            """);
+            WHERE ReplayDigest = @digest
+            """, includeDigest: true);
         var reset = await firstStore.ObserveAsync(digest, 2, "Notification.NewRobotToken");
 
         Assert.Equal(AwsSigV4ReplayObservationStatus.FirstSeen, reset.Status);
         Assert.Equal(1, reset.ObservationCount);
         Assert.Equal(2, await database.ExecuteScalarAsync<short>(
-            "SELECT KeyVersion FROM AwsSigV4ReplayObservations"));
+            "SELECT KeyVersion FROM public.AwsSigV4ReplayObservations WHERE ReplayDigest = @digest"));
         Assert.Equal("Notification.NewRobotToken", await database.ExecuteScalarAsync<string>(
-            "SELECT Operation FROM AwsSigV4ReplayObservations"));
+            "SELECT Operation FROM public.AwsSigV4ReplayObservations WHERE ReplayDigest = @digest"));
     }
 
     [Fact]
     public async Task ObserveAsync_RejectsInvalidMaterialBeforeOpeningDatabase()
     {
-        await using var source = new PostgreSqlCloudStateDataSource(
+        await using var source = new PostgreSqlAwsSigV4ReplayDataSource(
             "Host=127.0.0.1;Port=1;Database=unused;Username=unused;Password=unused;Timeout=1");
         var store = new PostgreSqlAwsSigV4ReplayObservationStore(source);
 
@@ -77,42 +77,35 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
     private sealed class ReplayTestDatabase : IAsyncDisposable
     {
         private const string ConnectionVariable = "OPENJIBO_TEST_POSTGRES_CONNECTION_STRING";
-        private readonly string _adminConnectionString;
-        private readonly string _schemaName;
+        private readonly byte[] _digest = RandomNumberGenerator.GetBytes(32);
 
-        private ReplayTestDatabase(string adminConnectionString, string schemaName)
+        private ReplayTestDatabase(string adminConnectionString)
         {
-            _adminConnectionString = adminConnectionString;
-            _schemaName = schemaName;
             ConnectionString = new NpgsqlConnectionStringBuilder(adminConnectionString)
             {
-                SearchPath = schemaName,
                 ApplicationName = "OpenJibo.SigV4Replay.IntegrationTests",
                 MaxPoolSize = 4
             }.ConnectionString;
         }
 
         internal string ConnectionString { get; }
+        internal byte[] Digest => _digest;
 
         internal static async Task<ReplayTestDatabase> CreateAsync()
         {
             var admin = Environment.GetEnvironmentVariable(ConnectionVariable)
                         ?? throw new InvalidOperationException($"Set {ConnectionVariable}.");
-            var schema = $"openjibo_sigv4_replay_test_{Guid.NewGuid():N}";
-            var database = new ReplayTestDatabase(admin, schema);
-            await using (var connection = new NpgsqlConnection(admin))
-            {
-                await connection.OpenAsync();
-                await using var command = connection.CreateCommand();
-                command.CommandText = $"CREATE SCHEMA {QuoteIdentifier(schema)}";
-                await command.ExecuteNonQueryAsync();
-            }
+            var database = new ReplayTestDatabase(admin);
 
             try
             {
-                var path = Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
+                var directory = Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql");
+                var path = Path.Combine(directory,
                     "013_create_sigv4_replay_observations.state.sql");
                 await database.ExecuteAsync(await File.ReadAllTextAsync(path));
+                path = Path.Combine(directory, "014_harden_sigv4_replay_observer.state.sql");
+                await database.ExecuteAsync(await File.ReadAllTextAsync(path));
+                await database.DeleteTestDigestAsync();
                 return database;
             }
             catch
@@ -122,12 +115,14 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
             }
         }
 
-        internal async Task ExecuteAsync(string sql)
+        internal async Task ExecuteAsync(string sql, bool includeDigest = false)
         {
             await using var connection = new NpgsqlConnection(ConnectionString);
             await connection.OpenAsync();
             await using var command = connection.CreateCommand();
             command.CommandText = sql;
+            if (includeDigest)
+                command.Parameters.AddWithValue("digest", _digest);
             await command.ExecuteNonQueryAsync();
         }
 
@@ -137,23 +132,24 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
             await connection.OpenAsync();
             await using var command = connection.CreateCommand();
             command.CommandText = sql;
+            command.Parameters.AddWithValue("digest", _digest);
             var value = await command.ExecuteScalarAsync();
             return (T)Convert.ChangeType(value!, typeof(T), System.Globalization.CultureInfo.InvariantCulture);
         }
 
         public async ValueTask DisposeAsync()
         {
-            await using var connection = new NpgsqlConnection(_adminConnectionString);
-            await connection.OpenAsync();
-            await using var command = connection.CreateCommand();
-            command.CommandText = $"DROP SCHEMA {QuoteIdentifier(_schemaName)} CASCADE";
-            await command.ExecuteNonQueryAsync();
+            await DeleteTestDigestAsync();
         }
 
-        private static string QuoteIdentifier(string identifier)
+        private async Task DeleteTestDigestAsync()
         {
-            Debug.Assert(identifier.StartsWith("openjibo_sigv4_replay_test_", StringComparison.Ordinal));
-            return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+            await using var connection = new NpgsqlConnection(ConnectionString);
+            await connection.OpenAsync();
+            await using var command = connection.CreateCommand();
+            command.CommandText = "DELETE FROM public.AwsSigV4ReplayObservations WHERE ReplayDigest = @digest";
+            command.Parameters.AddWithValue("digest", _digest);
+            await command.ExecuteNonQueryAsync();
         }
     }
 }

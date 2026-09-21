@@ -24,6 +24,7 @@ param(
     [switch]$RunSmoke,
     [switch]$SkipHostnameBinding,
     [switch]$EnablePeerSync,
+    [switch]$EnableSigV4ReplayObservation,
     [string]$PeerSyncAllowedHosts = ""
 )
 
@@ -93,6 +94,7 @@ $searchFallback = ""
 $portalStatusPassword = az keyvault secret show --vault-name $KeyVaultName --name openjibo-portal-status-password --query value -o tsv
 $peerSyncSharedKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-peer-sync-shared-key --query value -o tsv
 $sigV4ReplayHmacKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-sigv4-replay-hmac --query value -o tsv
+$sigV4ReplayObserverConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-sigv4-replay-observer-connection-string --query value -o tsv 2>$null
 $userEncryptionPassphrase = az keyvault secret show --vault-name $KeyVaultName --name openjibo-user-encrypt --query value -o tsv
 $userEncryptionSalt = az keyvault secret show --vault-name $KeyVaultName --name openjibo-user-salt --query value -o tsv
 
@@ -102,6 +104,14 @@ if ([string]::IsNullOrWhiteSpace($userEncryptionPassphrase) -or [string]::IsNull
 
 if (-not (Test-OpenJiboBase64UrlSecret -Value $sigV4ReplayHmacKey)) {
     throw "Managed SigV4 replay HMAC secret is missing, malformed, or shorter than 32 decoded bytes in Key Vault '$KeyVaultName'."
+}
+
+if ($EnableSigV4ReplayObservation -and -not $RunMigration) {
+    throw "RunMigration is required when EnableSigV4ReplayObservation is set."
+}
+
+if ($EnableSigV4ReplayObservation -and [string]::IsNullOrWhiteSpace($sigV4ReplayObserverConnectionString)) {
+    throw "Managed SigV4 replay observer connection is missing from Key Vault '$KeyVaultName'."
 }
 
 function Get-OptionalKeyVaultSecretValue {
@@ -207,6 +217,7 @@ function Set-ContainerAppSecretsFromKeyVault {
         [string]$PortalStatusPassword,
         [string]$PeerSyncSharedKey,
         [string]$SigV4ReplayHmacKey,
+        [string]$SigV4ReplayObserverConnectionString,
         [string]$UserEncryptionPassphrase,
         [string]$UserEncryptionSalt
     )
@@ -229,6 +240,10 @@ function Set-ContainerAppSecretsFromKeyVault {
             "user-encryption-passphrase=$UserEncryptionPassphrase",
             "user-encryption-salt=$UserEncryptionSalt"
         )
+
+    if (-not [string]::IsNullOrWhiteSpace($SigV4ReplayObserverConnectionString)) {
+        $secretArgs += "sigv4-replay-observer-connection-string=$SigV4ReplayObserverConnectionString"
+    }
 
     if (-not [string]::IsNullOrWhiteSpace($SearchBackend)) {
         $secretArgs += "search-backend=$SearchBackend"
@@ -349,6 +364,8 @@ $arguments = @(
     "--parameters", "portalStatusPassword=$portalStatusPassword",
     "--parameters", "peerSyncSharedKey=$peerSyncSharedKey",
     "--parameters", "sigV4ReplayHmacKey=$sigV4ReplayHmacKey",
+    "--parameters", "sigV4ReplayObservationConnectionString=$sigV4ReplayObserverConnectionString",
+    "--parameters", "sigV4ReplayObservationEnabled=$($EnableSigV4ReplayObservation.IsPresent.ToString().ToLowerInvariant())",
     "--parameters", "peerSyncEnabled=$($EnablePeerSync.IsPresent.ToString().ToLowerInvariant())",
     "--parameters", "allowedPeerHosts=$PeerSyncAllowedHosts",
     "--parameters", "userEncryptionPassphrase=$userEncryptionPassphrase",
@@ -392,14 +409,20 @@ if ($RunMigration) {
     try {
         [Environment]::SetEnvironmentVariable("OPENJIBO_USER_ENCRYPT", $userEncryptionPassphrase, "Process")
         [Environment]::SetEnvironmentVariable("OPENJIBO_USER_SALT", $userEncryptionSalt, "Process")
-        & $migrationScript `
-            -Target all `
-            -StateConnectionString $stateConnectionString `
-            -PersonalMemoryConnectionString $personalMemoryConnectionString `
-            -MediaConnectionString $mediaConnectionString `
-            -ImportLegacyCloudState `
-            -ImportLegacyPersonalMemory `
-            -Verify
+        $migrationParameters = @{
+            Target = "all"
+            StateConnectionString = $stateConnectionString
+            PersonalMemoryConnectionString = $personalMemoryConnectionString
+            MediaConnectionString = $mediaConnectionString
+            ImportLegacyCloudState = $true
+            ImportLegacyPersonalMemory = $true
+            Verify = $true
+        }
+        if (-not [string]::IsNullOrWhiteSpace($sigV4ReplayObserverConnectionString)) {
+            $migrationParameters.ReplayObserverConnectionString = $sigV4ReplayObserverConnectionString
+            $migrationParameters.ProvisionSigV4ReplayObserver = $true
+        }
+        & $migrationScript @migrationParameters
     }
     finally {
         [Environment]::SetEnvironmentVariable("OPENJIBO_USER_ENCRYPT", $previousEncrypt, "Process")
@@ -496,7 +519,7 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
 
 $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
 $personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-personal-memory-connection-string --query value -o tsv
-Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString -SearchBackend $searchBackend -SearchFallback $searchFallback -PortalStatusPassword $portalStatusPassword -PeerSyncSharedKey $peerSyncSharedKey -SigV4ReplayHmacKey $sigV4ReplayHmacKey -UserEncryptionPassphrase $userEncryptionPassphrase -UserEncryptionSalt $userEncryptionSalt
+Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString -SearchBackend $searchBackend -SearchFallback $searchFallback -PortalStatusPassword $portalStatusPassword -PeerSyncSharedKey $peerSyncSharedKey -SigV4ReplayHmacKey $sigV4ReplayHmacKey -SigV4ReplayObserverConnectionString $sigV4ReplayObserverConnectionString -UserEncryptionPassphrase $userEncryptionPassphrase -UserEncryptionSalt $userEncryptionSalt
 Restart-ContainerAppRevision -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value
 Start-Sleep -Seconds 20
 

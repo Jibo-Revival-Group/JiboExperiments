@@ -50,6 +50,7 @@ jobs:
         run: dotnet test tests/Jibo.Cloud.Tests/Jibo.Cloud.Tests.csproj
         env:
           OPENJIBO_TEST_POSTGRES_CONNECTION_STRING: Host=localhost;Port=5432;Database=openjibo_tests;Username=openjibo_tests;Password=openjibo_tests
+          OPENJIBO_TEST_POSTGRES_PRIVILEGED_CONNECTION_STRING: Host=localhost;Port=5432;Database=openjibo_tests;Username=openjibo_tests;Password=openjibo_tests
 
   smoke:
     runs-on: ubuntu-latest

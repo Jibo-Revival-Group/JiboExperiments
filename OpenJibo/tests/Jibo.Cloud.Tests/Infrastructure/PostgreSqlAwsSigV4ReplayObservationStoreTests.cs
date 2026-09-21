@@ -12,8 +12,8 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
     public async Task ObserveAsync_AtomicallyClassifiesConcurrentReplicasAndResetsExpiredDigest()
     {
         await using var database = await ReplayTestDatabase.CreateAsync();
-        await using var firstSource = new PostgreSqlAwsSigV4ReplayDataSource(database.ConnectionString, 2);
-        await using var secondSource = new PostgreSqlAwsSigV4ReplayDataSource(database.ConnectionString, 2);
+        await using var firstSource = new PostgreSqlAwsSigV4ReplayDataSource(database.ConnectionString);
+        await using var secondSource = new PostgreSqlAwsSigV4ReplayDataSource(database.ConnectionString);
         var firstStore = new PostgreSqlAwsSigV4ReplayObservationStore(firstSource);
         var secondStore = new PostgreSqlAwsSigV4ReplayObservationStore(secondSource);
         var digest = database.Digest;
@@ -57,6 +57,38 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
             "SELECT KeyVersion FROM public.AwsSigV4ReplayObservations WHERE ReplayDigest = @digest"));
         Assert.Equal("Notification.NewRobotToken", await database.ExecuteScalarAsync<string>(
             "SELECT Operation FROM public.AwsSigV4ReplayObservations WHERE ReplayDigest = @digest"));
+
+    }
+
+    [PostgreSqlPrivilegedIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
+    public async Task ProvisionedObserver_CanOnlyExecuteReplayObservationFunction()
+    {
+        await using var database = await ReplayTestDatabase.CreateAsync(
+            "OPENJIBO_TEST_POSTGRES_PRIVILEGED_CONNECTION_STRING");
+        var observerConnection = new NpgsqlConnectionStringBuilder(database.ConnectionString)
+        {
+            Username = PostgreSqlAwsSigV4ReplayRoleProvisioner.LoginRole,
+            Password = $"test-{Guid.NewGuid():N}",
+            MaxPoolSize = 1
+        }.ConnectionString;
+        await PostgreSqlAwsSigV4ReplayRoleProvisioner.ProvisionAsync(
+            database.ConnectionString, observerConnection);
+        await PostgreSqlAwsSigV4ReplayRoleProvisioner.ProvisionAsync(
+            database.ConnectionString, observerConnection);
+
+        await using var observerSource = new PostgreSqlAwsSigV4ReplayDataSource(observerConnection);
+        var observerStore = new PostgreSqlAwsSigV4ReplayObservationStore(observerSource);
+        var observerResult = await observerStore.ObserveAsync(
+            database.Digest, 1, "Account.CreateHubToken");
+        Assert.Equal(AwsSigV4ReplayObservationStatus.FirstSeen, observerResult.Status);
+
+        await Assert.ThrowsAsync<PostgresException>(() => database.ExecuteAsObserverAsync(
+            observerConnection, "SELECT COUNT(*) FROM public.AwsSigV4ReplayObservations"));
+        await Assert.ThrowsAsync<PostgresException>(() => database.ExecuteAsObserverAsync(
+            observerConnection, "CREATE TABLE public.SigV4ReplayPrivilegeEscape(Id INTEGER)"));
+        await Assert.ThrowsAsync<PostgresException>(() => database.ExecuteAsObserverAsync(
+            observerConnection, $"SET ROLE {PostgreSqlAwsSigV4ReplayRoleProvisioner.OwnerRole}"));
     }
 
     [Fact]
@@ -76,7 +108,7 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
 
     private sealed class ReplayTestDatabase : IAsyncDisposable
     {
-        private const string ConnectionVariable = "OPENJIBO_TEST_POSTGRES_CONNECTION_STRING";
+        private const string DefaultConnectionVariable = "OPENJIBO_TEST_POSTGRES_CONNECTION_STRING";
         private readonly byte[] _digest = RandomNumberGenerator.GetBytes(32);
 
         private ReplayTestDatabase(string adminConnectionString)
@@ -91,10 +123,11 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
         internal string ConnectionString { get; }
         internal byte[] Digest => _digest;
 
-        internal static async Task<ReplayTestDatabase> CreateAsync()
+        internal static async Task<ReplayTestDatabase> CreateAsync(
+            string connectionVariable = DefaultConnectionVariable)
         {
-            var admin = Environment.GetEnvironmentVariable(ConnectionVariable)
-                        ?? throw new InvalidOperationException($"Set {ConnectionVariable}.");
+            var admin = Environment.GetEnvironmentVariable(connectionVariable)
+                        ?? throw new InvalidOperationException($"Set {connectionVariable}.");
             var database = new ReplayTestDatabase(admin);
 
             try
@@ -135,6 +168,15 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
             command.Parameters.AddWithValue("digest", _digest);
             var value = await command.ExecuteScalarAsync();
             return (T)Convert.ChangeType(value!, typeof(T), System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        internal static async Task ExecuteAsObserverAsync(string connectionString, string sql)
+        {
+            await using var connection = new NpgsqlConnection(connectionString);
+            await connection.OpenAsync();
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            await command.ExecuteNonQueryAsync();
         }
 
         public async ValueTask DisposeAsync()

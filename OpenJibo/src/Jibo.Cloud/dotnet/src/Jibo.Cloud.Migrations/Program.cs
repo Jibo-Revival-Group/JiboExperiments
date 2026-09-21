@@ -188,6 +188,22 @@ try
             await VerifyTargetAsync(connection, target);
     }
 
+    if (options.ProvisionSigV4ReplayObserver && !options.PreviewOnly)
+    {
+        var stateConnectionString = options.ResolveConnectionString(MigrationTarget.State);
+        if (string.IsNullOrWhiteSpace(stateConnectionString) ||
+            string.IsNullOrWhiteSpace(options.ReplayObserverConnectionString))
+        {
+            Log.Error("Both state administrator and replay observer connection strings are required for role provisioning.");
+            return 1;
+        }
+
+        await PostgreSqlAwsSigV4ReplayRoleProvisioner.ProvisionAsync(
+            stateConnectionString,
+            options.ReplayObserverConnectionString);
+        Log.Information("Provisioned the least-privilege SigV4 replay observer database role.");
+    }
+
     return 0;
 }
 finally
@@ -665,6 +681,8 @@ internal sealed record MigrationOptions(
     bool RecoveryConfirmation,
     string? SourceStateConnectionString,
     string? TargetStateConnectionString,
+    bool ProvisionSigV4ReplayObserver,
+    string? ReplayObserverConnectionString,
     bool ShowHelp)
 {
     public static string HelpText =>
@@ -700,6 +718,10 @@ internal sealed record MigrationOptions(
                                   Current normalized PostgreSQL target
           --confirm-recover-missing-devices
                                   Required with --apply for recovery mutations
+          --provision-sigv4-replay-observer
+                                  Provision the fixed least-privilege replay database roles
+          --replay-observer-connection
+                                  Dedicated replay observer login connection string
           --verbose               Print already-applied scripts too
           --help                  Show this help
         """;
@@ -733,6 +755,9 @@ internal sealed record MigrationOptions(
         var recoveryConfirmation = false;
         string? sourceStateConnectionString = Environment.GetEnvironmentVariable("OPENJIBO_SOURCE_STATE_CONNECTION_STRING");
         string? targetStateConnectionString = Environment.GetEnvironmentVariable("OPENJIBO_TARGET_STATE_CONNECTION_STRING");
+        var provisionSigV4ReplayObserver = false;
+        string? replayObserverConnectionString = Environment.GetEnvironmentVariable(
+            "OpenJibo__Security__SigV4ReplayObservation__ConnectionString");
 
         for (var index = 0; index < args.Length; index += 1)
         {
@@ -772,6 +797,12 @@ internal sealed record MigrationOptions(
                     break;
                 case "--confirm-recover-missing-devices":
                     recoveryConfirmation = true;
+                    break;
+                case "--provision-sigv4-replay-observer":
+                    provisionSigV4ReplayObserver = true;
+                    break;
+                case "--replay-observer-connection":
+                    replayObserverConnectionString = GetValue(args, ref index, "--replay-observer-connection");
                     break;
                 case "--source-state-connection":
                     sourceStateConnectionString = GetValue(args, ref index, "--source-state-connection");
@@ -818,6 +849,8 @@ internal sealed record MigrationOptions(
             recoveryConfirmation,
             sourceStateConnectionString,
             targetStateConnectionString,
+            provisionSigV4ReplayObserver,
+            replayObserverConnectionString,
             showHelp);
     }
 

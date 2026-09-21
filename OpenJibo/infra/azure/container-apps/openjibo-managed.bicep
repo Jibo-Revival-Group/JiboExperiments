@@ -98,6 +98,13 @@ param peerSyncSharedKey string = ''
 @secure()
 param sigV4ReplayHmacKey string = ''
 
+@description('Dedicated least-privilege PostgreSQL connection used only for SigV4 replay observation.')
+@secure()
+param sigV4ReplayObservationConnectionString string = ''
+
+@description('Explicitly enables observe-only SigV4 replay collection. Disabled by default.')
+param sigV4ReplayObservationEnabled bool = false
+
 @description('Explicitly enables fleet peer synchronization. Disabled by default, including staging.')
 param peerSyncEnabled bool = false
 
@@ -170,12 +177,18 @@ var searchFallbackSecretEntries = !empty(searchFallback) ? [
     value: searchFallback
   }
 ] : []
+var sigV4ReplayObserverSecretEntries = !empty(sigV4ReplayObservationConnectionString) ? [
+  {
+    name: 'sigv4-replay-observer-connection-string'
+    value: sigV4ReplayObservationConnectionString
+  }
+] : []
 var managedSecrets = concat([
   {
     name: 'acr-password'
     value: registryCredentials.passwords[0].value
   }
-], azureSpeechSecretEntries, searchSecretEntries, searchFallbackSecretEntries, [
+], azureSpeechSecretEntries, searchSecretEntries, searchFallbackSecretEntries, sigV4ReplayObserverSecretEntries, [
   {
     name: 'state-connection-string'
     value: stateConnectionString
@@ -245,6 +258,12 @@ var searchFallbackEnvEntries = !empty(searchFallback) ? [
   {
     name: 'OPENJIBO_SEARCH_FALLBACK'
     secretRef: 'search-fallback'
+  }
+] : []
+var sigV4ReplayObserverEnvEntries = !empty(sigV4ReplayObservationConnectionString) ? [
+  {
+    name: 'OpenJibo__Security__SigV4ReplayObservation__ConnectionString'
+    secretRef: 'sigv4-replay-observer-connection-string'
   }
 ] : []
 var managedEnvVars = concat([
@@ -402,6 +421,10 @@ var managedEnvVars = concat([
     secretRef: 'sigv4-replay-hmac-key'
   }
   {
+    name: 'OpenJibo__Security__SigV4ReplayObservation__Enabled'
+    value: string(sigV4ReplayObservationEnabled)
+  }
+  {
     name: 'OpenJibo__FleetNetwork__PeerSyncEnabled'
     value: string(peerSyncEnabled)
   }
@@ -421,7 +444,7 @@ var managedEnvVars = concat([
     name: 'OPENJIBO_USER_REQUIRED_LOGIN'
     value: 'false'
   }
-], azureSpeechEnvEntries, searchEnvEntries, searchFallbackEnvEntries)
+], azureSpeechEnvEntries, searchEnvEntries, searchFallbackEnvEntries, sigV4ReplayObserverEnvEntries)
 
 resource managedEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: managedEnvironmentName

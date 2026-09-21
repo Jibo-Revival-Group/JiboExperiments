@@ -10,7 +10,7 @@ public sealed class PostgreSqlAwsSigV4ReplayDataSource : IDisposable, IAsyncDisp
 {
     internal NpgsqlDataSource Value { get; }
 
-    public PostgreSqlAwsSigV4ReplayDataSource(string connectionString, int maxPoolSize = 2)
+    public PostgreSqlAwsSigV4ReplayDataSource(string connectionString)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new ArgumentException("A replay-observation PostgreSQL connection string is required.",
@@ -18,7 +18,7 @@ public sealed class PostgreSqlAwsSigV4ReplayDataSource : IDisposable, IAsyncDisp
 
         var builder = new NpgsqlConnectionStringBuilder(connectionString)
         {
-            MaxPoolSize = Math.Clamp(maxPoolSize, 1, 2),
+            MaxPoolSize = 1,
             ApplicationName = "OpenJibo.SigV4ReplayObserver"
         };
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.ConnectionString)

@@ -281,11 +281,11 @@ public static class ServiceCollectionExtensions
             services.AddSingleton(replayDigestKey);
             services.AddSingleton(provider =>
             {
-                var boundedMaxPoolSize = Math.Clamp(replayObservationOptions.MaxPoolSize, 1, 2);
+                const int boundedMaxPoolSize = 1;
                 provider.GetRequiredService<ITransportMetrics>()
                     .PostgreSqlPoolConfigured("sigv4_replay_observer", boundedMaxPoolSize);
                 return new PostgreSqlAwsSigV4ReplayDataSource(
-                    replayObservationOptions.ConnectionString!, boundedMaxPoolSize);
+                    replayObservationOptions.ConnectionString!);
             });
             services.AddSingleton<IAwsSigV4ReplayObservationStore,
                 PostgreSqlAwsSigV4ReplayObservationStore>();

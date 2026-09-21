@@ -18,15 +18,62 @@ public enum AwsSigV4VerificationOutcome
     VerifiedPayloadAndTarget
 }
 
+public enum AwsSigV4ScopeClassification
+{
+    NotEvaluated,
+    Match,
+    Mismatch
+}
+
+public enum AwsSigV4TargetClassification
+{
+    NotEvaluated,
+    MatchSigned,
+    MatchUnsigned,
+    Missing,
+    Mismatch
+}
+
+public enum AwsSigV4PayloadClassification
+{
+    NotEvaluated,
+    Bound,
+    Mismatch
+}
+
+public enum AwsSigV4HostClassification
+{
+    NotEvaluated,
+    Match,
+    Missing,
+    Mismatch
+}
+
+public sealed record AwsSigV4OperationPolicy(
+    string Operation,
+    string Region,
+    string Service,
+    IReadOnlyList<string> Targets,
+    IReadOnlyList<string> Hosts);
+
 public sealed record AwsSigV4Verification(
     AwsSigV4VerificationOutcome Outcome,
     string? AccessKeyFingerprint = null,
     DateTimeOffset? SignedAt = null,
     bool PayloadBound = false,
-    bool TargetBound = false)
+    bool TargetBound = false,
+    AwsSigV4ScopeClassification ScopeClassification = AwsSigV4ScopeClassification.NotEvaluated,
+    AwsSigV4TargetClassification TargetClassification = AwsSigV4TargetClassification.NotEvaluated,
+    AwsSigV4PayloadClassification PayloadClassification = AwsSigV4PayloadClassification.NotEvaluated,
+    AwsSigV4HostClassification HostClassification = AwsSigV4HostClassification.NotEvaluated)
 {
     public bool CredentialAuthenticated => Outcome is AwsSigV4VerificationOutcome.VerifiedCredentialOnly or
         AwsSigV4VerificationOutcome.VerifiedPayloadAndTarget;
+
+    public bool OperationAuthenticated => CredentialAuthenticated && PayloadBound &&
+        ScopeClassification == AwsSigV4ScopeClassification.Match &&
+        TargetClassification == AwsSigV4TargetClassification.MatchSigned &&
+        HostClassification == AwsSigV4HostClassification.Match;
 }
 
 /// <summary>
@@ -43,7 +90,7 @@ public sealed partial class AwsSigV4RequestVerifier(
     public static readonly TimeSpan MaximumClockSkew = TimeSpan.FromMinutes(5);
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
-    public AwsSigV4Verification Verify(ProtocolEnvelope envelope)
+    public AwsSigV4Verification Verify(ProtocolEnvelope envelope, AwsSigV4OperationPolicy? policy = null)
     {
         if (!envelope.Headers.TryGetValue("Authorization", out var authorization) ||
             string.IsNullOrWhiteSpace(authorization))
@@ -130,14 +177,63 @@ public sealed partial class AwsSigV4RequestVerifier(
         var actualPayloadHash = HexSha256(envelope.BodyBytes ?? Encoding.UTF8.GetBytes(envelope.BodyText));
         var payloadBound = actualPayloadHash.Equals(presentedPayloadHash, StringComparison.OrdinalIgnoreCase);
         var targetBound = signedHeaders.Contains("x-amz-target", StringComparer.Ordinal);
+        var scopeClassification = policy is null
+            ? AwsSigV4ScopeClassification.NotEvaluated
+            : region.Equals(policy.Region, StringComparison.Ordinal) &&
+              service.Equals(policy.Service, StringComparison.Ordinal)
+                ? AwsSigV4ScopeClassification.Match
+                : AwsSigV4ScopeClassification.Mismatch;
+        var targetClassification = ClassifyTarget(envelope, signedHeaders, policy);
+        var hostClassification = ClassifyHost(envelope, policy);
+        var payloadClassification = payloadBound
+            ? AwsSigV4PayloadClassification.Bound
+            : AwsSigV4PayloadClassification.Mismatch;
+        var fullyBound = payloadBound && targetBound &&
+                         (policy is null || scopeClassification == AwsSigV4ScopeClassification.Match &&
+                             targetClassification == AwsSigV4TargetClassification.MatchSigned &&
+                             hostClassification == AwsSigV4HostClassification.Match);
         return new AwsSigV4Verification(
-            payloadBound && targetBound
+            fullyBound
                 ? AwsSigV4VerificationOutcome.VerifiedPayloadAndTarget
                 : AwsSigV4VerificationOutcome.VerifiedCredentialOnly,
             fingerprint,
             signedAt,
             payloadBound,
-            targetBound);
+            targetBound,
+            scopeClassification,
+            targetClassification,
+            payloadClassification,
+            hostClassification);
+    }
+
+    private static AwsSigV4TargetClassification ClassifyTarget(
+        ProtocolEnvelope envelope,
+        IReadOnlyList<string> signedHeaders,
+        AwsSigV4OperationPolicy? policy)
+    {
+        if (policy is null) return AwsSigV4TargetClassification.NotEvaluated;
+        if (!TryGetHeader(envelope, "x-amz-target", out var target) || string.IsNullOrWhiteSpace(target))
+            return AwsSigV4TargetClassification.Missing;
+        if (!policy.Targets.Contains(target, StringComparer.Ordinal))
+            return AwsSigV4TargetClassification.Mismatch;
+        return signedHeaders.Contains("x-amz-target", StringComparer.Ordinal)
+            ? AwsSigV4TargetClassification.MatchSigned
+            : AwsSigV4TargetClassification.MatchUnsigned;
+    }
+
+    private static AwsSigV4HostClassification ClassifyHost(
+        ProtocolEnvelope envelope,
+        AwsSigV4OperationPolicy? policy)
+    {
+        if (policy is null) return AwsSigV4HostClassification.NotEvaluated;
+        if (!TryGetHeader(envelope, "host", out var host) || string.IsNullOrWhiteSpace(host))
+            return AwsSigV4HostClassification.Missing;
+        var normalized = host.EndsWith(":443", StringComparison.Ordinal)
+            ? host[..^4]
+            : host;
+        return policy.Hosts.Contains(normalized, StringComparer.OrdinalIgnoreCase)
+            ? AwsSigV4HostClassification.Match
+            : AwsSigV4HostClassification.Mismatch;
     }
 
     private static bool TryReadSignedAt(ProtocolEnvelope envelope, string credentialDate,

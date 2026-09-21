@@ -53,6 +53,33 @@ if ($EnablePeerSync -and [string]::IsNullOrWhiteSpace($PeerSyncAllowedHosts)) {
     throw "PeerSyncAllowedHosts is required when EnablePeerSync is set."
 }
 
+function Test-OpenJiboBase64UrlSecret {
+    param(
+        [AllowEmptyString()]
+        [string]$Value,
+        [int]$MinimumDecodedBytes = 32
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value) -or $Value -notmatch '^[A-Za-z0-9_-]+$') {
+        return $false
+    }
+
+    $normalized = $Value.Replace('-', '+').Replace('_', '/')
+    switch ($normalized.Length % 4) {
+        0 { }
+        2 { $normalized += '==' }
+        3 { $normalized += '=' }
+        default { return $false }
+    }
+
+    try {
+        return ([Convert]::FromBase64String($normalized).Length -ge $MinimumDecodedBytes)
+    }
+    catch {
+        return $false
+    }
+}
+
 $RegistryLoginServer = "$RegistryName.azurecr.io"
 $deploymentName = "openjibo-managed-{0}" -f ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
 
@@ -65,11 +92,16 @@ $searchBackend = ""
 $searchFallback = ""
 $portalStatusPassword = az keyvault secret show --vault-name $KeyVaultName --name openjibo-portal-status-password --query value -o tsv
 $peerSyncSharedKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-peer-sync-shared-key --query value -o tsv
+$sigV4ReplayHmacKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-sigv4-replay-hmac --query value -o tsv
 $userEncryptionPassphrase = az keyvault secret show --vault-name $KeyVaultName --name openjibo-user-encrypt --query value -o tsv
 $userEncryptionSalt = az keyvault secret show --vault-name $KeyVaultName --name openjibo-user-salt --query value -o tsv
 
 if ([string]::IsNullOrWhiteSpace($userEncryptionPassphrase) -or [string]::IsNullOrWhiteSpace($userEncryptionSalt)) {
-    throw "Managed user encryption secrets are missing from Key Vault '$KeyVaultName'."
+    throw "Managed encryption or replay-observation secrets are missing from Key Vault '$KeyVaultName'."
+}
+
+if (-not (Test-OpenJiboBase64UrlSecret -Value $sigV4ReplayHmacKey)) {
+    throw "Managed SigV4 replay HMAC secret is missing, malformed, or shorter than 32 decoded bytes in Key Vault '$KeyVaultName'."
 }
 
 function Get-OptionalKeyVaultSecretValue {
@@ -174,6 +206,7 @@ function Set-ContainerAppSecretsFromKeyVault {
         [string]$SearchFallback,
         [string]$PortalStatusPassword,
         [string]$PeerSyncSharedKey,
+        [string]$SigV4ReplayHmacKey,
         [string]$UserEncryptionPassphrase,
         [string]$UserEncryptionSalt
     )
@@ -192,6 +225,7 @@ function Set-ContainerAppSecretsFromKeyVault {
             "personal-memory-connection-string=$PersonalMemoryConnectionString",
             "portal-status-password=$PortalStatusPassword",
             "peer-sync-shared-key=$PeerSyncSharedKey",
+            "sigv4-replay-hmac-key=$SigV4ReplayHmacKey",
             "user-encryption-passphrase=$UserEncryptionPassphrase",
             "user-encryption-salt=$UserEncryptionSalt"
         )
@@ -314,6 +348,7 @@ $arguments = @(
     "--parameters", "newsApiKey=$newsApiKey",
     "--parameters", "portalStatusPassword=$portalStatusPassword",
     "--parameters", "peerSyncSharedKey=$peerSyncSharedKey",
+    "--parameters", "sigV4ReplayHmacKey=$sigV4ReplayHmacKey",
     "--parameters", "peerSyncEnabled=$($EnablePeerSync.IsPresent.ToString().ToLowerInvariant())",
     "--parameters", "allowedPeerHosts=$PeerSyncAllowedHosts",
     "--parameters", "userEncryptionPassphrase=$userEncryptionPassphrase",
@@ -461,7 +496,7 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
 
 $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
 $personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-personal-memory-connection-string --query value -o tsv
-Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString -SearchBackend $searchBackend -SearchFallback $searchFallback -PortalStatusPassword $portalStatusPassword -PeerSyncSharedKey $peerSyncSharedKey -UserEncryptionPassphrase $userEncryptionPassphrase -UserEncryptionSalt $userEncryptionSalt
+Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString -SearchBackend $searchBackend -SearchFallback $searchFallback -PortalStatusPassword $portalStatusPassword -PeerSyncSharedKey $peerSyncSharedKey -SigV4ReplayHmacKey $sigV4ReplayHmacKey -UserEncryptionPassphrase $userEncryptionPassphrase -UserEncryptionSalt $userEncryptionSalt
 Restart-ContainerAppRevision -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value
 Start-Sleep -Seconds 20
 

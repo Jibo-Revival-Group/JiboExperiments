@@ -124,6 +124,7 @@ $requiredManagedMarkers = @(
     "param searchBackend string = ''",
     "param searchFallback string = ''",
     "param portalStatusPassword string = ''",
+    "param sigV4ReplayHmacKey string = ''",
     "value: stateConnectionString",
     "value: personalMemoryConnectionString",
     "value: mediaConnectionString",
@@ -133,7 +134,9 @@ $requiredManagedMarkers = @(
     "value: searchFallback",
     "value: portalStatusPassword",
     "OpenJibo__Portal__StatusPassword",
+    "OpenJibo__Security__SigV4ReplayHmacKey",
     "portal-status-password",
+    "sigv4-replay-hmac-key",
     "search-backend",
     "search-fallback",
     "var logAnalyticsWorkspaceKey",
@@ -191,11 +194,11 @@ foreach ($marker in $requiredWorkflowMarkers) {
     Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing expected marker"
 }
 
-foreach ($marker in @("openjibo-media-connection-string", "azure-speech-subscription-key", "cognitiveservices account keys list", "speechServicesAccountName", "openjibo-postgres-admin-password", "openjibo-search-backend", "openjibo-search-fallback", "openjibo-portal-status-password", "openjibo-peer-sync-shared-key", "postgresFullyQualifiedDomainName", "Invoke-OpenJiboAzWithRetry", "seedPrincipalObjectId")) {
+foreach ($marker in @("openjibo-media-connection-string", "azure-speech-subscription-key", "cognitiveservices account keys list", "speechServicesAccountName", "openjibo-postgres-admin-password", "openjibo-search-backend", "openjibo-search-fallback", "openjibo-portal-status-password", "openjibo-peer-sync-shared-key", "openjibo-sigv4-replay-hmac", "postgresFullyQualifiedDomainName", "Invoke-OpenJiboAzWithRetry", "seedPrincipalObjectId")) {
     Assert-ContainsMarker -Text $foundationScriptText -Marker $marker -FailurePrefix "Foundation script is missing expected marker"
 }
 
-foreach ($marker in @("RegistryName", "ApiHostname", "SocketHostname", "NeoHubHostname", "NativeCompatibilityApiHostname", "NativeCompatibilitySocketHostname", "AdditionalCompatibilityApiHostname", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "api.jibo.pro", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding", "EnableAzureSpeech", "AzureSpeechRegion", "portalStatusPassword", "openjibo-portal-status-password", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
+foreach ($marker in @("RegistryName", "ApiHostname", "SocketHostname", "NeoHubHostname", "NativeCompatibilityApiHostname", "NativeCompatibilitySocketHostname", "AdditionalCompatibilityApiHostname", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "api.jibo.pro", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding", "EnableAzureSpeech", "AzureSpeechRegion", "portalStatusPassword", "openjibo-portal-status-password", "sigV4ReplayHmacKey", "sigv4-replay-hmac-key", "Test-OpenJiboBase64UrlSecret", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing expected marker"
 }
 
@@ -207,14 +210,14 @@ foreach ($marker in @("containerapp env show", "firewall-rule create", "firewall
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing firewall marker"
 }
 
-foreach ($marker in @("--log-analytics-workspace-name", "--container-registry-name", "--key-vault-name", "--storage-account-name", "--postgres-server-name", "--speech-services-account-name", 'f"--value={value}"', "seedPrincipalObjectId", "openjibo-media-connection-string", "openjibo-postgres-admin-password", "postgresFullyQualifiedDomainName", "run_command_with_retry")) {
+foreach ($marker in @("--log-analytics-workspace-name", "--container-registry-name", "--key-vault-name", "--storage-account-name", "--postgres-server-name", "--speech-services-account-name", 'f"--value={value}"', "seedPrincipalObjectId", "openjibo-media-connection-string", "openjibo-postgres-admin-password", "openjibo-sigv4-replay-hmac", "postgresFullyQualifiedDomainName", "run_command_with_retry")) {
     Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker $marker -FailurePrefix "Linux foundation script is missing expected marker"
 }
 
 Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker '"az", "storage", "account", "show-connection-string"' -FailurePrefix "Linux foundation script does not resolve the storage connection string outside Bicep outputs"
 Assert-ContainsMarker -Text $linuxPublishScriptText -Marker "az acr build" -FailurePrefix "Linux publish script is missing the ACR build path"
 
-foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "--socket-hostname", "--neohub-hostname", "--native-compatibility-api-hostname", "--native-compatibility-socket-hostname", "--additional-compatibility-api-hostname", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "api.jibo.pro", "az containerapp hostname add", "az containerapp hostname bind", "--skip-hostname-binding", "--enable-peer-sync", "--disable-peer-sync", "--peer-sync-allowed-hosts", "peerSyncEnabled", "allowedPeerHosts", "portal-status-password", "openjibo-portal-status-password", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
+foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "--socket-hostname", "--neohub-hostname", "--native-compatibility-api-hostname", "--native-compatibility-socket-hostname", "--additional-compatibility-api-hostname", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "api.jibo.pro", "az containerapp hostname add", "az containerapp hostname bind", "--skip-hostname-binding", "--enable-peer-sync", "--disable-peer-sync", "--peer-sync-allowed-hosts", "peerSyncEnabled", "allowedPeerHosts", "portal-status-password", "openjibo-portal-status-password", "sigv4_replay_hmac_key", "sigV4ReplayHmacKey", "sigv4-replay-hmac-key", "validate_base64url_secret", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing expected marker"
 }
 
@@ -269,7 +272,7 @@ foreach ($marker in @("OPENJIBO_USER_ENCRYPT", "OPENJIBO_USER_SALT", "user-encry
     Assert-ContainsMarker -Text $managedText -Marker $marker -FailurePrefix "Managed template is missing encryption marker"
 }
 
-foreach ($marker in @("openjibo-user-encrypt", "openjibo-user-salt", "openjibo-portal-status-password", "openjibo-peer-sync-shared-key")) {
+foreach ($marker in @("openjibo-user-encrypt", "openjibo-user-salt", "openjibo-portal-status-password", "openjibo-peer-sync-shared-key", "openjibo-sigv4-replay-hmac")) {
     Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker $marker -FailurePrefix "Linux foundation script is missing managed secret provisioning"
 }
 

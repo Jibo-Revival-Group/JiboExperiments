@@ -132,6 +132,7 @@ required_managed_markers=(
   "param searchBackend string = ''"
   "param searchFallback string = ''"
   "param portalStatusPassword string = ''"
+  "param sigV4ReplayHmacKey string = ''"
   "value: stateConnectionString"
   "value: personalMemoryConnectionString"
   "value: mediaConnectionString"
@@ -141,7 +142,9 @@ required_managed_markers=(
   "value: searchFallback"
   "value: portalStatusPassword"
   "OpenJibo__Portal__StatusPassword"
+  "OpenJibo__Security__SigV4ReplayHmacKey"
   "portal-status-password"
+  "sigv4-replay-hmac-key"
   "search-backend"
   "search-fallback"
   "var logAnalyticsWorkspaceKey"
@@ -276,7 +279,7 @@ if [[ "$workflow_text" == *"--show-values"* || "$workflow_text" == *"mapfile -t 
   exit 1
 fi
 
-for marker in "openjibo-media-connection-string" "azure-speech-subscription-key" "cognitiveservices account keys list" "speechServicesAccountName" "openjibo-postgres-admin-password" "openjibo-search-backend" "openjibo-search-fallback" "openjibo-portal-status-password" "openjibo-peer-sync-shared-key" "postgresFullyQualifiedDomainName" "Invoke-OpenJiboAzWithRetry"; do
+for marker in "openjibo-media-connection-string" "azure-speech-subscription-key" "cognitiveservices account keys list" "speechServicesAccountName" "openjibo-postgres-admin-password" "openjibo-search-backend" "openjibo-search-fallback" "openjibo-portal-status-password" "openjibo-peer-sync-shared-key" "openjibo-sigv4-replay-hmac" "postgresFullyQualifiedDomainName" "Invoke-OpenJiboAzWithRetry"; do
   if [[ "$foundation_script_text" != *"$marker"* ]]; then
     echo "Foundation script is missing expected marker: $marker" >&2
     exit 1
@@ -320,7 +323,7 @@ if [[ "$linux_publish_script_text" != *"az acr build"* ]]; then
   exit 1
 fi
 
-for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostname" "--neohub-hostname" "--native-compatibility-api-hostname" "--native-compatibility-socket-hostname" "--additional-compatibility-api-hostname" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "api.jibo.pro" "az containerapp hostname add" "az containerapp hostname bind" 'prepare-openjibo-managed-databases.sh' "--skip-hostname-binding" "--enable-peer-sync" "--disable-peer-sync" "--peer-sync-allowed-hosts" "peerSyncEnabled" "allowedPeerHosts" "portal-status-password" "openjibo-portal-status-password" "searchBackend" "searchFallback" "openjibo-search-backend" "openjibo-search-fallback" "run_command_with_retry" "parse_postgres_database_name" "stateDatabaseName" "personalMemoryDatabaseName"; do
+for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostname" "--neohub-hostname" "--native-compatibility-api-hostname" "--native-compatibility-socket-hostname" "--additional-compatibility-api-hostname" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "api.jibo.pro" "az containerapp hostname add" "az containerapp hostname bind" 'prepare-openjibo-managed-databases.sh' "--skip-hostname-binding" "--enable-peer-sync" "--disable-peer-sync" "--peer-sync-allowed-hosts" "peerSyncEnabled" "allowedPeerHosts" "portal-status-password" "openjibo-portal-status-password" "sigv4_replay_hmac_key" "sigV4ReplayHmacKey" "sigv4-replay-hmac-key" "validate_base64url_secret" "searchBackend" "searchFallback" "openjibo-search-backend" "openjibo-search-fallback" "run_command_with_retry" "parse_postgres_database_name" "stateDatabaseName" "personalMemoryDatabaseName"; do
   if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
     echo "Linux managed deploy script is missing expected marker: $marker" >&2
     exit 1
@@ -393,7 +396,7 @@ for marker in "OPENJIBO_USER_ENCRYPT" "OPENJIBO_USER_SALT" "user-encryption-pass
   fi
 done
 
-for marker in "openjibo-user-encrypt" "openjibo-user-salt" "openjibo-portal-status-password" "openjibo-peer-sync-shared-key"; do
+for marker in "openjibo-user-encrypt" "openjibo-user-salt" "openjibo-portal-status-password" "openjibo-peer-sync-shared-key" "openjibo-sigv4-replay-hmac"; do
   if [[ "$linux_foundation_script_text" != *"$marker"* ]]; then
     echo "Linux foundation script is missing managed secret provisioning: $marker" >&2
     exit 1

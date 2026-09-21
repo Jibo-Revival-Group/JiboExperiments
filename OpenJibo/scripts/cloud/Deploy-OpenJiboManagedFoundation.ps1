@@ -335,5 +335,6 @@ $null = Get-OrCreateOpenJiboRandomSecret -VaultName $outputs.keyVaultName.value 
 $null = Get-OrCreateOpenJiboRandomSecret -VaultName $outputs.keyVaultName.value -Name openjibo-user-salt -ByteCount 24
 $null = Get-OrCreateOpenJiboRandomSecret -VaultName $outputs.keyVaultName.value -Name openjibo-portal-status-password -ByteCount 32
 $null = Get-OrCreateOpenJiboRandomSecret -VaultName $outputs.keyVaultName.value -Name openjibo-peer-sync-shared-key -ByteCount 48
+$null = Get-OrCreateOpenJiboRandomSecret -VaultName $outputs.keyVaultName.value -Name openjibo-sigv4-replay-hmac -ByteCount 32
 
 $deploymentJson

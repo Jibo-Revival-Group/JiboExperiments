@@ -94,6 +94,10 @@ param portalStatusPassword string = ''
 @secure()
 param peerSyncSharedKey string = ''
 
+@description('Dedicated base64url HMAC key for opaque SigV4 replay-observation digests.')
+@secure()
+param sigV4ReplayHmacKey string = ''
+
 @description('Explicitly enables fleet peer synchronization. Disabled by default, including staging.')
 param peerSyncEnabled bool = false
 
@@ -199,6 +203,10 @@ var managedSecrets = concat([
   {
     name: 'peer-sync-shared-key'
     value: peerSyncSharedKey
+  }
+  {
+    name: 'sigv4-replay-hmac-key'
+    value: sigV4ReplayHmacKey
   }
   {
     name: 'user-encryption-passphrase'
@@ -388,6 +396,10 @@ var managedEnvVars = concat([
   {
     name: 'OpenJibo__FleetNetwork__PeerSyncSharedKey'
     secretRef: 'peer-sync-shared-key'
+  }
+  {
+    name: 'OpenJibo__Security__SigV4ReplayHmacKey'
+    secretRef: 'sigv4-replay-hmac-key'
   }
   {
     name: 'OpenJibo__FleetNetwork__PeerSyncEnabled'

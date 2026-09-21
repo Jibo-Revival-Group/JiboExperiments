@@ -414,6 +414,7 @@ get_or_create_random_secret("openjibo-user-encrypt", 48)
 get_or_create_random_secret("openjibo-user-salt", 24)
 get_or_create_random_secret("openjibo-portal-status-password", 32)
 get_or_create_random_secret("openjibo-peer-sync-shared-key", 48)
+get_or_create_random_secret("openjibo-sigv4-replay-hmac", 32)
 
 print(json.dumps(deployment_json, indent=2))
 PY

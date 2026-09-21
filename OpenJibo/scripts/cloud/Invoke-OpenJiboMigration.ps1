@@ -7,6 +7,8 @@ param(
     [string]$PersonalMemoryConnectionString,
     [string]$MediaConnectionString,
     [string]$MediaContainer = "openjibo-media",
+    [string]$ReplayObserverConnectionString,
+    [switch]$ProvisionSigV4ReplayObserver,
     [switch]$ImportLegacyCloudState,
     [switch]$ImportLegacyPersonalMemory,
     [switch]$Verify,
@@ -47,6 +49,14 @@ if (-not [string]::IsNullOrWhiteSpace($PersonalMemoryConnectionString)) {
 
 if (-not [string]::IsNullOrWhiteSpace($MediaConnectionString)) {
     $arguments += @("--media-connection", $MediaConnectionString, "--media-container", $MediaContainer)
+}
+
+if (-not [string]::IsNullOrWhiteSpace($ReplayObserverConnectionString)) {
+    $arguments += @("--replay-observer-connection", $ReplayObserverConnectionString)
+}
+
+if ($ProvisionSigV4ReplayObserver) {
+    $arguments += "--provision-sigv4-replay-observer"
 }
 
 if ($ImportLegacyCloudState) {

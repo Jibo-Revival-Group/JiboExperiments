@@ -125,6 +125,8 @@ $requiredManagedMarkers = @(
     "param searchFallback string = ''",
     "param portalStatusPassword string = ''",
     "param sigV4ReplayHmacKey string = ''",
+    "param sigV4ReplayObservationConnectionString string = ''",
+    "param sigV4ReplayObservationEnabled bool = false",
     "value: stateConnectionString",
     "value: personalMemoryConnectionString",
     "value: mediaConnectionString",
@@ -135,8 +137,11 @@ $requiredManagedMarkers = @(
     "value: portalStatusPassword",
     "OpenJibo__Portal__StatusPassword",
     "OpenJibo__Security__SigV4ReplayHmacKey",
+    "OpenJibo__Security__SigV4ReplayObservation__ConnectionString",
+    "OpenJibo__Security__SigV4ReplayObservation__Enabled",
     "portal-status-password",
     "sigv4-replay-hmac-key",
+    "sigv4-replay-observer-connection-string",
     "search-backend",
     "search-fallback",
     "var logAnalyticsWorkspaceKey",
@@ -194,11 +199,11 @@ foreach ($marker in $requiredWorkflowMarkers) {
     Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing expected marker"
 }
 
-foreach ($marker in @("openjibo-media-connection-string", "azure-speech-subscription-key", "cognitiveservices account keys list", "speechServicesAccountName", "openjibo-postgres-admin-password", "openjibo-search-backend", "openjibo-search-fallback", "openjibo-portal-status-password", "openjibo-peer-sync-shared-key", "openjibo-sigv4-replay-hmac", "postgresFullyQualifiedDomainName", "Invoke-OpenJiboAzWithRetry", "seedPrincipalObjectId")) {
+foreach ($marker in @("openjibo-media-connection-string", "azure-speech-subscription-key", "cognitiveservices account keys list", "speechServicesAccountName", "openjibo-postgres-admin-password", "openjibo-search-backend", "openjibo-search-fallback", "openjibo-portal-status-password", "openjibo-peer-sync-shared-key", "openjibo-sigv4-replay-hmac", "openjibo-sigv4-replay-observer-password", "openjibo-sigv4-replay-observer-connection-string", "postgresFullyQualifiedDomainName", "Invoke-OpenJiboAzWithRetry", "seedPrincipalObjectId")) {
     Assert-ContainsMarker -Text $foundationScriptText -Marker $marker -FailurePrefix "Foundation script is missing expected marker"
 }
 
-foreach ($marker in @("RegistryName", "ApiHostname", "SocketHostname", "NeoHubHostname", "NativeCompatibilityApiHostname", "NativeCompatibilitySocketHostname", "AdditionalCompatibilityApiHostname", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "api.jibo.pro", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding", "EnableAzureSpeech", "AzureSpeechRegion", "portalStatusPassword", "openjibo-portal-status-password", "sigV4ReplayHmacKey", "sigv4-replay-hmac-key", "Test-OpenJiboBase64UrlSecret", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
+foreach ($marker in @("RegistryName", "ApiHostname", "SocketHostname", "NeoHubHostname", "NativeCompatibilityApiHostname", "NativeCompatibilitySocketHostname", "AdditionalCompatibilityApiHostname", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "api.jibo.pro", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding", "EnableAzureSpeech", "AzureSpeechRegion", "portalStatusPassword", "openjibo-portal-status-password", "sigV4ReplayHmacKey", "sigv4-replay-hmac-key", "EnableSigV4ReplayObservation", "sigV4ReplayObservationEnabled", "openjibo-sigv4-replay-observer-connection-string", "ProvisionSigV4ReplayObserver", "ReplayObserverConnectionString", "Test-OpenJiboBase64UrlSecret", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing expected marker"
 }
 
@@ -280,7 +285,7 @@ foreach ($marker in @("prepare-openjibo-managed-databases.sh", "--smoke-generate
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing pre-deploy safeguard"
 }
 
-foreach ($marker in @("--import-legacy-cloud-state", "--import-legacy-personal-memory", "--verify", "openjibo-user-encrypt", "openjibo-user-salt")) {
+foreach ($marker in @("--import-legacy-cloud-state", "--import-legacy-personal-memory", "--verify", "--provision-sigv4-replay-observer", "--replay-observer-connection", "openjibo-user-encrypt", "openjibo-user-salt")) {
     Assert-ContainsMarker -Text $linuxPrepareScriptText -Marker $marker -FailurePrefix "Managed database preparation script is missing expected marker"
 }
 

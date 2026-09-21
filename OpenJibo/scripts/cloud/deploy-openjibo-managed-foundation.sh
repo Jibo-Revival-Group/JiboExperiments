@@ -346,10 +346,34 @@ def get_or_create_random_secret(name: str, byte_count: int = 32) -> str:
     return value
 
 
-def postgres_connection_string(database_name: str) -> str:
+def postgres_connection_string(
+    database_name: str,
+    username: str | None = None,
+    password: str | None = None,
+) -> str:
     return (
         f"Host={postgres_host};Port=5432;Database={database_name};"
-        f"Username={postgres_login};Password={postgres_admin_password};"
+        f"Username={username or postgres_login};Password={password or postgres_admin_password};"
+        "SSL Mode=Require;Trust Server Certificate=true"
+    )
+
+
+def replay_observer_connection_string(state_value: str, password: str) -> str:
+    values: dict[str, str] = {}
+    for segment in state_value.split(";"):
+        key, separator, value = segment.partition("=")
+        if separator and value.strip():
+            values[key.strip().lower()] = value.strip()
+
+    host = values.get("host") or values.get("server")
+    database = values.get("database") or values.get("initial catalog")
+    port = values.get("port", "5432")
+    if not host or not database:
+        raise SystemExit("Could not derive the replay observer endpoint from the state connection string.")
+
+    return (
+        f"Host={host};Port={port};Database={database};"
+        f"Username=openjibo_sigv4_replay_observer;Password={password};"
         "SSL Mode=Require;Trust Server Certificate=true"
     )
 
@@ -401,8 +425,18 @@ speech_subscription_key = run_command_with_retry(
 
 sync_postgres_admin_password()
 
-set_secret_if_changed("openjibo-state-connection-string", state_connection_string or postgres_connection_string(state_database_name))
+resolved_state_connection_string = state_connection_string or postgres_connection_string(state_database_name)
+set_secret_if_changed("openjibo-state-connection-string", resolved_state_connection_string)
 set_secret_if_changed("openjibo-personal-memory-connection-string", personal_memory_connection_string or postgres_connection_string(personal_memory_database_name))
+sigv4_replay_observer_password = get_or_create_random_secret(
+    "openjibo-sigv4-replay-observer-password", 32
+)
+set_secret_if_changed(
+    "openjibo-sigv4-replay-observer-connection-string",
+    replay_observer_connection_string(
+        resolved_state_connection_string, sigv4_replay_observer_password
+    ),
+)
 set_secret_if_changed("openjibo-media-connection-string", storage_connection_string)
 set_secret_if_changed("azure-speech-subscription-key", speech_subscription_key)
 set_secret_if_changed("openjibo-postgres-admin-password", postgres_admin_password)

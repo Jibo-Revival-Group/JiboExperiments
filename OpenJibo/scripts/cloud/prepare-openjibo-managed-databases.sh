@@ -56,6 +56,7 @@ export OPENJIBO_USER_ENCRYPT
 OPENJIBO_USER_ENCRYPT="$(read_required_secret openjibo-user-encrypt)"
 export OPENJIBO_USER_SALT
 OPENJIBO_USER_SALT="$(read_required_secret openjibo-user-salt)"
+replay_observer_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-sigv4-replay-observer-connection-string --query value --output tsv 2>/dev/null || true)"
 
 arguments=(
   --target all
@@ -63,6 +64,13 @@ arguments=(
   --import-legacy-personal-memory
   --verify
 )
+
+if [[ -n "$replay_observer_connection_string" ]]; then
+  arguments+=(
+    --replay-observer-connection "$replay_observer_connection_string"
+    --provision-sigv4-replay-observer
+  )
+fi
 
 if [[ "$verbose" == true ]]; then
   arguments+=(--verbose)

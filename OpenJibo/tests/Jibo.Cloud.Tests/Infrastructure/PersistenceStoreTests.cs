@@ -955,7 +955,6 @@ public sealed class PersistenceStoreTests
                 ["OpenJibo:Security:SigV4ReplayObservation:Enabled"] = "true",
                 ["OpenJibo:Security:SigV4ReplayObservation:ConnectionString"] =
                     "Host=localhost;Database=openjibo_di_test;Username=replay_observer;Password=test",
-                ["OpenJibo:Security:SigV4ReplayObservation:MaxPoolSize"] = "9",
                 ["OpenJibo:Security:SigV4ReplayHmacKey"] =
                     Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
             })
@@ -973,7 +972,7 @@ public sealed class PersistenceStoreTests
         var dataSource = provider.GetRequiredService<PostgreSqlAwsSigV4ReplayDataSource>();
         var builder = new NpgsqlConnectionStringBuilder(dataSource.Value.ConnectionString);
         Assert.Equal("replay_observer", builder.Username);
-        Assert.Equal(2, builder.MaxPoolSize);
+        Assert.Equal(1, builder.MaxPoolSize);
     }
 
     [Fact]

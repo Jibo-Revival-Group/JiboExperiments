@@ -22,6 +22,7 @@ smoke_generated_fqdn=false
 skip_hostname_binding=false
 peer_sync_enabled=false
 allowed_peer_hosts=""
+sigv4_replay_observation_enabled=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -117,6 +118,14 @@ while [[ $# -gt 0 ]]; do
       allowed_peer_hosts="${2:-}"
       shift 2
       ;;
+    --enable-sigv4-replay-observation)
+      sigv4_replay_observation_enabled=true
+      shift
+      ;;
+    --disable-sigv4-replay-observation)
+      sigv4_replay_observation_enabled=false
+      shift
+      ;;
     *)
       echo "Unknown argument: $1" >&2
       exit 2
@@ -126,6 +135,11 @@ done
 
 if [[ "$peer_sync_enabled" == true && -z "$allowed_peer_hosts" ]]; then
   echo "--peer-sync-allowed-hosts is required when --enable-peer-sync is used" >&2
+  exit 2
+fi
+
+if [[ "$sigv4_replay_observation_enabled" == true && "$run_migration" != true ]]; then
+  echo "--run-migration is required when --enable-sigv4-replay-observation is used" >&2
   exit 2
 fi
 
@@ -322,6 +336,7 @@ search_fallback="$(az keyvault secret show --vault-name "$key_vault_name" --name
 portal_status_password="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-portal-status-password --query value -o tsv)"
 peer_sync_shared_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-peer-sync-shared-key --query value -o tsv)"
 sigv4_replay_hmac_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-sigv4-replay-hmac --query value -o tsv)"
+sigv4_replay_observer_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-sigv4-replay-observer-connection-string --query value -o tsv 2>/dev/null || true)"
 user_encryption_passphrase="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-user-encrypt --query value -o tsv)"
 user_encryption_salt="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-user-salt --query value -o tsv)"
 
@@ -332,6 +347,11 @@ fi
 
 if ! validate_base64url_secret "$sigv4_replay_hmac_key"; then
   echo "Managed SigV4 replay HMAC secret is missing, malformed, or shorter than 32 decoded bytes in Key Vault '$key_vault_name'." >&2
+  exit 1
+fi
+
+if [[ "$sigv4_replay_observation_enabled" == true && -z "$sigv4_replay_observer_connection_string" ]]; then
+  echo "Managed SigV4 replay observer connection is missing from Key Vault '$key_vault_name'." >&2
   exit 1
 fi
 
@@ -366,6 +386,8 @@ deployment_args=(
   --parameters "portalStatusPassword=${portal_status_password}"
   --parameters "peerSyncSharedKey=${peer_sync_shared_key}"
   --parameters "sigV4ReplayHmacKey=${sigv4_replay_hmac_key}"
+  --parameters "sigV4ReplayObservationConnectionString=${sigv4_replay_observer_connection_string}"
+  --parameters "sigV4ReplayObservationEnabled=${sigv4_replay_observation_enabled}"
   --parameters "peerSyncEnabled=${peer_sync_enabled}"
   --parameters "allowedPeerHosts=${allowed_peer_hosts}"
   --parameters "userEncryptionPassphrase=${user_encryption_passphrase}"
@@ -520,6 +542,10 @@ if [[ -n "${container_app_name:-}" ]]; then
     "user-encryption-passphrase=${user_encryption_passphrase}"
     "user-encryption-salt=${user_encryption_salt}"
   )
+
+  if [[ -n "$sigv4_replay_observer_connection_string" ]]; then
+    secret_args+=("sigv4-replay-observer-connection-string=${sigv4_replay_observer_connection_string}")
+  fi
 
   if [[ -n "$search_backend" ]]; then
     secret_args+=("search-backend=${search_backend}")

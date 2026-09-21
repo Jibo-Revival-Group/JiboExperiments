@@ -226,14 +226,34 @@ $speechSubscriptionKey = Invoke-OpenJiboAzWithRetry `
 
 function New-OpenJiboPostgresConnectionString {
     param(
-        [string]$DatabaseName
+        [string]$DatabaseName,
+        [string]$Username = $outputs.postgresAdministratorLogin.value,
+        [string]$Password = $PostgresAdminPassword
     )
 
-    "Host=$($outputs.postgresFullyQualifiedDomainName.value);Port=5432;Database=$DatabaseName;Username=$($outputs.postgresAdministratorLogin.value);Password=$PostgresAdminPassword;SSL Mode=Require;Trust Server Certificate=true"
+    "Host=$($outputs.postgresFullyQualifiedDomainName.value);Port=5432;Database=$DatabaseName;Username=$Username;Password=$Password;SSL Mode=Require;Trust Server Certificate=true"
 }
 
 $resolvedStateConnectionString = if ([string]::IsNullOrWhiteSpace($StateConnectionString)) { New-OpenJiboPostgresConnectionString -DatabaseName $outputs.postgresStateDatabaseName.value } else { $StateConnectionString }
 $resolvedPersonalMemoryConnectionString = if ([string]::IsNullOrWhiteSpace($PersonalMemoryConnectionString)) { New-OpenJiboPostgresConnectionString -DatabaseName $outputs.postgresPersonalMemoryDatabaseName.value } else { $PersonalMemoryConnectionString }
+
+function New-OpenJiboReplayObserverConnectionString {
+    param(
+        [string]$StateConnectionString,
+        [string]$Password
+    )
+
+    $builder = [System.Data.Common.DbConnectionStringBuilder]::new()
+    $builder.ConnectionString = $StateConnectionString
+    foreach ($key in @("Username", "User ID", "UserID", "UID", "Password", "PWD")) {
+        if ($builder.ContainsKey($key)) { $builder.Remove($key) }
+    }
+    $builder["Username"] = "openjibo_sigv4_replay_observer"
+    $builder["Password"] = $Password
+    $builder["SSL Mode"] = "Require"
+    $builder["Trust Server Certificate"] = "true"
+    $builder.ConnectionString
+}
 
 function Set-OpenJiboKeyVaultSecretWithRetry {
     param(
@@ -316,6 +336,12 @@ function Get-OrCreateOpenJiboRandomSecret {
 Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-state-connection-string -Value $resolvedStateConnectionString
 
 Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-personal-memory-connection-string -Value $resolvedPersonalMemoryConnectionString
+
+$sigV4ReplayObserverPassword = Get-OrCreateOpenJiboRandomSecret -VaultName $outputs.keyVaultName.value -Name openjibo-sigv4-replay-observer-password -ByteCount 32
+$sigV4ReplayObserverConnectionString = New-OpenJiboReplayObserverConnectionString `
+    -StateConnectionString $resolvedStateConnectionString `
+    -Password $sigV4ReplayObserverPassword
+Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-sigv4-replay-observer-connection-string -Value $sigV4ReplayObserverConnectionString
 
 Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-media-connection-string -Value $storageConnectionString
 

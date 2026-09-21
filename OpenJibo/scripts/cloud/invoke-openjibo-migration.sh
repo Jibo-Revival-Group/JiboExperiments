@@ -8,6 +8,8 @@ state_connection_string=""
 personal_memory_connection_string=""
 media_connection_string=""
 media_container="openjibo-media"
+replay_observer_connection_string=""
+provision_sigv4_replay_observer=false
 import_legacy_cloud_state=false
 import_legacy_personal_memory=false
 verify=false
@@ -43,6 +45,14 @@ while [[ $# -gt 0 ]]; do
     --media-container)
       media_container="${2:-openjibo-media}"
       shift 2
+      ;;
+    --replay-observer-connection)
+      replay_observer_connection_string="${2:-}"
+      shift 2
+      ;;
+    --provision-sigv4-replay-observer)
+      provision_sigv4_replay_observer=true
+      shift
       ;;
     --import-legacy-cloud-state)
       import_legacy_cloud_state=true
@@ -114,6 +124,14 @@ fi
 
 if [[ -n "$media_connection_string" ]]; then
   arguments+=(--media-connection "$media_connection_string" --media-container "$media_container")
+fi
+
+if [[ -n "$replay_observer_connection_string" ]]; then
+  arguments+=(--replay-observer-connection "$replay_observer_connection_string")
+fi
+
+if [[ "$provision_sigv4_replay_observer" == true ]]; then
+  arguments+=(--provision-sigv4-replay-observer)
 fi
 
 if [[ "$import_legacy_cloud_state" == true ]]; then

@@ -13,6 +13,8 @@ public sealed class AwsSigV4ReplayObservationOptions
     public string? HmacKey { get; set; }
     public short KeyVersion { get; set; } = 1;
     public int Capacity { get; set; } = 256;
+    public string? ConnectionString { get; set; }
+    public int MaxPoolSize { get; set; } = 2;
 }
 
 /// <summary>

@@ -4,7 +4,7 @@ using NpgsqlTypes;
 
 namespace Jibo.Cloud.Infrastructure.Persistence;
 
-public sealed class PostgreSqlAwsSigV4ReplayObservationStore(PostgreSqlCloudStateDataSource dataSource)
+public sealed class PostgreSqlAwsSigV4ReplayObservationStore(PostgreSqlAwsSigV4ReplayDataSource dataSource)
     : IAwsSigV4ReplayObservationStore
 {
     public async Task<AwsSigV4ReplayObservation> ObserveAsync(
@@ -22,7 +22,7 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStore(PostgreSqlCloudStat
         await using var connection = await dataSource.Value.OpenConnectionAsync(cancellationToken);
         await using var command = new NpgsqlCommand(
             "SELECT WasReplay, ObservationCount, FirstSeenUtc, LastSeenUtc, ExpiresUtc " +
-            "FROM ObserveAwsSigV4Replay(@digest, @keyVersion, @operation)", connection);
+            "FROM public.ObserveAwsSigV4Replay(@digest, @keyVersion, @operation)", connection);
         command.Parameters.AddWithValue("digest", NpgsqlDbType.Bytea, replayDigest.ToArray());
         command.Parameters.AddWithValue("keyVersion", NpgsqlDbType.Smallint, keyVersion);
         command.Parameters.AddWithValue("operation", NpgsqlDbType.Text, operation.Trim());

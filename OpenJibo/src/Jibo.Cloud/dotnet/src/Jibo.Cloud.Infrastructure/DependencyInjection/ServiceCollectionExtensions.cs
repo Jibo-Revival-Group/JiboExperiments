@@ -256,11 +256,13 @@ public static class ServiceCollectionExtensions
             .Bind(replayObservationOptions);
         replayObservationOptions.HmacKey ??=
             configuration?["OpenJibo:Security:SigV4ReplayHmacKey"];
+        replayObservationOptions.ConnectionString ??=
+            configuration?["OpenJibo:Security:SigV4ReplayObservation:ConnectionString"];
 
         AwsSigV4ReplayDigestKey? replayDigestKey = null;
         if (replayObservationOptions.Enabled &&
-            stateBackendKind == PersistenceBackendKind.PostgreSql &&
-            !string.IsNullOrWhiteSpace(replayObservationOptions.HmacKey))
+            !string.IsNullOrWhiteSpace(replayObservationOptions.HmacKey) &&
+            !string.IsNullOrWhiteSpace(replayObservationOptions.ConnectionString))
         {
             try
             {
@@ -277,6 +279,14 @@ public static class ServiceCollectionExtensions
         if (replayDigestKey is not null)
         {
             services.AddSingleton(replayDigestKey);
+            services.AddSingleton(provider =>
+            {
+                var boundedMaxPoolSize = Math.Clamp(replayObservationOptions.MaxPoolSize, 1, 2);
+                provider.GetRequiredService<ITransportMetrics>()
+                    .PostgreSqlPoolConfigured("sigv4_replay_observer", boundedMaxPoolSize);
+                return new PostgreSqlAwsSigV4ReplayDataSource(
+                    replayObservationOptions.ConnectionString!, boundedMaxPoolSize);
+            });
             services.AddSingleton<IAwsSigV4ReplayObservationStore,
                 PostgreSqlAwsSigV4ReplayObservationStore>();
             services.AddSingleton(provider => new AwsSigV4ReplayObservationPublisher(
@@ -299,7 +309,7 @@ public static class ServiceCollectionExtensions
                     provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>()
                         .CreateLogger("Jibo.Cloud.SigV4ReplayObservation")
                         .LogWarning(
-                            "Legacy SigV4 replay observation is disabled because PostgreSQL or a valid HMAC key is unavailable.");
+                            "Legacy SigV4 replay observation is disabled because PostgreSQL, a dedicated observer connection, or a valid HMAC key is unavailable.");
                 }
 
                 return NullAwsSigV4ReplayObservationPublisher.Instance;

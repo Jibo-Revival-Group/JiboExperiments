@@ -148,4 +148,18 @@ public sealed class CloudStateMigrationSchemaTests
         Assert.DoesNotContain("AccessKeyId", migration, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("DeviceId", migration, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void SigV4ReplayObservation_HardenedFunctionUsesRestrictedSearchPath()
+    {
+        var migration = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
+            "014_harden_sigv4_replay_observer.state.sql"));
+
+        Assert.Contains("SECURITY DEFINER", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("SET search_path = pg_catalog, pg_temp", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("public.AwsSigV4ReplayObservations", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("REVOKE ALL ON FUNCTION public.ObserveAwsSigV4Replay", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("GRANT EXECUTE", migration, StringComparison.OrdinalIgnoreCase);
+    }
 }

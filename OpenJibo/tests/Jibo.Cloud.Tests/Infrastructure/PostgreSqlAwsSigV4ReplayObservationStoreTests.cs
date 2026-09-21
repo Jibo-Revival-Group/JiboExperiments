@@ -43,7 +43,12 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
             "SELECT Operation FROM AwsSigV4ReplayObservations"));
 
         await database.ExecuteAsync(
-            "UPDATE AwsSigV4ReplayObservations SET ExpiresUtc = clock_timestamp() - INTERVAL '1 second'");
+            """
+            UPDATE AwsSigV4ReplayObservations
+            SET FirstSeenUtc = clock_timestamp() - INTERVAL '3 seconds',
+                LastSeenUtc = clock_timestamp() - INTERVAL '2 seconds',
+                ExpiresUtc = clock_timestamp() - INTERVAL '1 second'
+            """);
         var reset = await firstStore.ObserveAsync(digest, 2, "Notification.NewRobotToken");
 
         Assert.Equal(AwsSigV4ReplayObservationStatus.FirstSeen, reset.Status);

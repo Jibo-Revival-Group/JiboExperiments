@@ -312,6 +312,117 @@ public sealed class AwsSigV4RequestVerifierTests
     }
 
     [Fact]
+    public void Verify_AcceptsExplicitAdditionalCredentialWithoutChangingDefaultAccount()
+    {
+        var store = new InMemoryCloudStateStore();
+        var probeAccount = new AccountProfile
+        {
+            AccessKeyId = "staging-probe-access-key",
+            SecretAccessKey = "staging-probe-secret-key"
+        };
+        var envelope = Sign(
+            probeAccount,
+            "{}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"]);
+
+        var verifier = new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt));
+        var withoutAdditionalCredential = verifier.Verify(envelope);
+        var withAdditionalCredential = verifier.Verify(
+            envelope,
+            additionalCredential: new AwsSigV4Credential(
+                probeAccount.AccessKeyId,
+                probeAccount.SecretAccessKey));
+
+        Assert.Equal(AwsSigV4VerificationOutcome.UnknownCredential, withoutAdditionalCredential.Outcome);
+        Assert.Equal(AwsSigV4VerificationOutcome.VerifiedPayloadAndTarget, withAdditionalCredential.Outcome);
+        Assert.Equal("openjibo-access-key", store.GetAccount().AccessKeyId);
+    }
+
+    [Fact]
+    public void HandleNotification_UsesProbeCredentialOnlyForFullyAuthorizedDeploymentSmokeDevice()
+    {
+        var store = new InMemoryCloudStateStore();
+        var probeAccount = new AccountProfile
+        {
+            AccessKeyId = "staging-probe-access-key",
+            SecretAccessKey = "staging-probe-secret-key"
+        };
+        var body = "{\"deviceId\":\"open-jibo-smoke-staging-primary\"}";
+        var envelope = Sign(
+            probeAccount,
+            body,
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"]);
+        envelope.Headers["X-OpenJibo-Registration-Source"] = RobotRegistrationSources.DeploymentSmoke;
+        envelope.Headers[ReleaseSmokeAuthorizationOptions.SecretHeaderName] = "release-smoke-secret";
+        var publisher = new RecordingReplayPublisher();
+        var handler = new CloudAuthProtocolHandler(
+            store,
+            releaseSmokeAuthorization: new ReleaseSmokeAuthorizationOptions
+            {
+                Enabled = true,
+                Secret = "release-smoke-secret",
+                SigV4ReplayProbe = new SigV4ReplayProbeCredentialOptions
+                {
+                    Enabled = true,
+                    AccessKeyId = probeAccount.AccessKeyId,
+                    SecretAccessKey = probeAccount.SecretAccessKey
+                }
+            },
+            awsSigV4Verifier: new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt)),
+            awsSigV4ReplayObservationPublisher: publisher);
+
+        var response = handler.HandleNotification("NewRobotToken", envelope);
+
+        Assert.Equal(200, response.StatusCode);
+        Assert.Equal(["Notification.NewRobotToken"], publisher.Operations);
+    }
+
+    [Theory]
+    [InlineData(false, "deployment-smoke")]
+    [InlineData(true, "ordinary-registration")]
+    public void HandleNotification_DoesNotUseProbeCredentialOutsideExactSmokeGates(
+        bool includeCorrectSecret,
+        string registrationSource)
+    {
+        var store = new InMemoryCloudStateStore();
+        var probeAccount = new AccountProfile
+        {
+            AccessKeyId = "staging-probe-access-key",
+            SecretAccessKey = "staging-probe-secret-key"
+        };
+        var envelope = Sign(
+            probeAccount,
+            "{\"deviceId\":\"open-jibo-smoke-staging-primary\"}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"]);
+        envelope.Headers["X-OpenJibo-Registration-Source"] = registrationSource;
+        if (includeCorrectSecret)
+            envelope.Headers[ReleaseSmokeAuthorizationOptions.SecretHeaderName] = "release-smoke-secret";
+        var publisher = new RecordingReplayPublisher();
+        var handler = new CloudAuthProtocolHandler(
+            store,
+            releaseSmokeAuthorization: new ReleaseSmokeAuthorizationOptions
+            {
+                Enabled = true,
+                Secret = "release-smoke-secret",
+                SigV4ReplayProbe = new SigV4ReplayProbeCredentialOptions
+                {
+                    Enabled = true,
+                    AccessKeyId = probeAccount.AccessKeyId,
+                    SecretAccessKey = probeAccount.SecretAccessKey
+                }
+            },
+            awsSigV4Verifier: new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt)),
+            awsSigV4ReplayObservationPublisher: publisher);
+
+        handler.HandleNotification("NewRobotToken", envelope);
+
+        Assert.Empty(publisher.Operations);
+    }
+
+    [Fact]
     public void Verify_RejectsNonCanonicalSignedHeaderList()
     {
         var store = new InMemoryCloudStateStore();

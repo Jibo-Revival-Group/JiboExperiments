@@ -79,6 +79,60 @@ public sealed class AwsSigV4ReplayObservationPublisherTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_RecordsFirstSeenAndRepeatOutcomesWithoutIdentifiers()
+    {
+        var outcomes = new System.Collections.Concurrent.ConcurrentQueue<
+            (string Instrument, string? Operation, string? KeySlot, string? Outcome)>();
+        using var listener = new MeterListener
+        {
+            InstrumentPublished = (instrument, meterListener) =>
+            {
+                if (instrument.Meter.Name == AwsSigV4ReplayObservationPublisher.MeterName)
+                    meterListener.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((instrument, _, tags, _) =>
+        {
+            var values = tags.ToArray().ToDictionary(tag => tag.Key, tag => tag.Value?.ToString());
+            values.TryGetValue("operation", out var operation);
+            values.TryGetValue("key_slot", out var keySlot);
+            values.TryGetValue("outcome", out var outcome);
+            outcomes.Enqueue((instrument.Name, operation, keySlot, outcome));
+        });
+        listener.Start();
+
+        var store = new SequencedRecordingStore();
+        var publisher = new AwsSigV4ReplayObservationPublisher(
+            store,
+            Key,
+            4,
+            NullLogger<AwsSigV4ReplayObservationPublisher>.Instance);
+        var proof = CreateProof();
+
+        await publisher.StartAsync(CancellationToken.None);
+        try
+        {
+            Assert.True(publisher.TryPublish(proof, "Account.CreateHubToken"));
+            Assert.True(publisher.TryPublish(proof, "Account.CreateHubToken"));
+            await store.SecondObservation.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            await publisher.StopAsync(CancellationToken.None);
+            publisher.Dispose();
+        }
+
+        Assert.Equal(1, outcomes.Count(item => item.Outcome == "first_seen"));
+        Assert.Equal(1, outcomes.Count(item => item.Outcome == "repeat"));
+        Assert.All(outcomes.Where(item => item.Outcome is "first_seen" or "repeat"), item =>
+        {
+            Assert.Equal("openjibo.sigv4_replay_observation.outcomes", item.Instrument);
+            Assert.Equal("Account.CreateHubToken", item.Operation);
+            Assert.Equal("current", item.KeySlot);
+        });
+    }
+
+    [Fact]
     public async Task ExecuteAsync_CoalescesOutageWarningsAndReportsRecovery()
     {
         var measurements = new System.Collections.Concurrent.ConcurrentQueue<
@@ -244,6 +298,31 @@ public sealed class AwsSigV4ReplayObservationPublisherTests
             return Task.FromResult(new AwsSigV4ReplayObservation(
                 AwsSigV4ReplayObservationStatus.FirstSeen,
                 1,
+                now,
+                now,
+                now.AddMinutes(15)));
+        }
+    }
+
+    private sealed class SequencedRecordingStore : IAwsSigV4ReplayObservationStore
+    {
+        private int _calls;
+
+        public TaskCompletionSource SecondObservation { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<AwsSigV4ReplayObservation> ObserveAsync(
+            ReadOnlyMemory<byte> replayDigest,
+            short keyVersion,
+            string operation,
+            CancellationToken cancellationToken = default)
+        {
+            var call = Interlocked.Increment(ref _calls);
+            if (call == 2) SecondObservation.TrySetResult();
+            var now = DateTimeOffset.UtcNow;
+            return Task.FromResult(new AwsSigV4ReplayObservation(
+                call == 1 ? AwsSigV4ReplayObservationStatus.FirstSeen : AwsSigV4ReplayObservationStatus.Repeat,
+                call,
                 now,
                 now,
                 now.AddMinutes(15)));

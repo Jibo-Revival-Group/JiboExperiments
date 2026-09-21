@@ -60,6 +60,35 @@ public sealed class AwsSigV4ReplayDigestFactoryTests
             AwsSigV4ReplayDigestKey.FromBase64Url(Convert.ToBase64String(new byte[16])));
     }
 
+    [Fact]
+    public void Create_ProducesDistinctDigestForRotationKey()
+    {
+        var previous = new AwsSigV4ReplayDigestKey(
+            SHA256.HashData("previous-environment-key"u8), 6);
+
+        Assert.NotEqual(Create(), AwsSigV4ReplayDigestFactory.Create(
+            previous,
+            "Account.CreateHubToken",
+            "credential-sentinel",
+            "20260920",
+            "api",
+            "jibo",
+            "20260920T123456Z",
+            Signature));
+    }
+
+    [Fact]
+    public void KeyMaterialComparison_DoesNotDependOnVersion()
+    {
+        var material = SHA256.HashData("same-material"u8);
+        var first = new AwsSigV4ReplayDigestKey(material, 1);
+        var second = new AwsSigV4ReplayDigestKey(material, 2);
+        var different = new AwsSigV4ReplayDigestKey(SHA256.HashData("different-material"u8), 1);
+
+        Assert.True(first.HasSameMaterial(second));
+        Assert.False(first.HasSameMaterial(different));
+    }
+
     private static byte[] Create() => AwsSigV4ReplayDigestFactory.Create(
         Key,
         "Account.CreateHubToken",

@@ -12,6 +12,8 @@ public sealed class AwsSigV4ReplayObservationOptions
     public bool Enabled { get; set; }
     public string? HmacKey { get; set; }
     public short KeyVersion { get; set; } = 1;
+    public string? PreviousHmacKey { get; set; }
+    public short PreviousKeyVersion { get; set; }
     public int Capacity { get; set; } = 256;
     public string? ConnectionString { get; set; }
 }
@@ -34,7 +36,7 @@ public sealed class AwsSigV4ReplayObservationPublisher : BackgroundService,
     ];
 
     private readonly IAwsSigV4ReplayObservationStore _store;
-    private readonly AwsSigV4ReplayDigestKey _key;
+    private readonly ReplayDigestKeySlot[] _keys;
     private readonly Channel<ObservationWorkItem> _channel;
     private readonly ILogger<AwsSigV4ReplayObservationPublisher> _logger;
 
@@ -42,10 +44,19 @@ public sealed class AwsSigV4ReplayObservationPublisher : BackgroundService,
         IAwsSigV4ReplayObservationStore store,
         AwsSigV4ReplayDigestKey key,
         int capacity,
-        ILogger<AwsSigV4ReplayObservationPublisher> logger)
+        ILogger<AwsSigV4ReplayObservationPublisher> logger,
+        AwsSigV4ReplayDigestKey? previousKey = null)
     {
         _store = store;
-        _key = key;
+        if (previousKey is not null && previousKey.Version == key.Version)
+            throw new ArgumentException("Current and previous replay digest key versions must differ.",
+                nameof(previousKey));
+        if (previousKey is not null && previousKey.HasSameMaterial(key))
+            throw new ArgumentException("Current and previous replay digest keys must use different material.",
+                nameof(previousKey));
+        _keys = previousKey is null
+            ? [new ReplayDigestKeySlot("current", key)]
+            : [new ReplayDigestKeySlot("current", key), new ReplayDigestKeySlot("previous", previousKey)];
         _logger = logger;
         _channel = Channel.CreateBounded<ObservationWorkItem>(new BoundedChannelOptions(
             Math.Clamp(capacity, 1, 4096))
@@ -63,12 +74,14 @@ public sealed class AwsSigV4ReplayObservationPublisher : BackgroundService,
         if (!SupportedOperations.Contains(operation))
             throw new ArgumentException("Replay observation operation is not supported.", nameof(operation));
 
-        var item = new ObservationWorkItem(
-            proof.CreateReplayDigest(_key, operation),
-            _key.Version,
-            operation);
+        var observations = _keys.Select(slot => new ReplayDigestObservation(
+            proof.CreateReplayDigest(slot.Key, operation),
+            slot.Key.Version,
+            slot.Name)).ToArray();
+        var item = new ObservationWorkItem(observations, operation);
         var accepted = _channel.Writer.TryWrite(item);
-        Record(operation, accepted ? "enqueued" : "dropped");
+        foreach (var observation in observations)
+            Record(operation, observation.KeySlot, accepted ? "enqueued" : "dropped");
         return accepted;
     }
 
@@ -80,23 +93,34 @@ public sealed class AwsSigV4ReplayObservationPublisher : BackgroundService,
             {
                 try
                 {
-                    await _store.ObserveAsync(
-                        item.Digest,
-                        item.KeyVersion,
-                        item.Operation,
-                        stoppingToken);
-                    Record(item.Operation, "persisted");
+                    foreach (var observation in item.Observations)
+                    {
+                        try
+                        {
+                            await _store.ObserveAsync(
+                                observation.Digest,
+                                observation.KeyVersion,
+                                item.Operation,
+                                stoppingToken);
+                            Record(item.Operation, observation.KeySlot, "persisted");
+                        }
+                        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                        {
+                            return;
+                        }
+                        catch (Exception exception)
+                        {
+                            Record(item.Operation, observation.KeySlot, "failed");
+                            _logger.LogWarning(exception,
+                                "Legacy SigV4 replay observation persistence failed operation={Operation} keySlot={KeySlot} shadow=true",
+                                item.Operation,
+                                observation.KeySlot);
+                        }
+                    }
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
                     return;
-                }
-                catch (Exception exception)
-                {
-                    Record(item.Operation, "failed");
-                    _logger.LogWarning(exception,
-                        "Legacy SigV4 replay observation persistence failed operation={Operation} shadow=true",
-                        item.Operation);
                 }
             }
         }
@@ -111,9 +135,12 @@ public sealed class AwsSigV4ReplayObservationPublisher : BackgroundService,
         return base.StopAsync(cancellationToken);
     }
 
-    private static void Record(string operation, string outcome) => Outcomes.Add(1,
+    private static void Record(string operation, string keySlot, string outcome) => Outcomes.Add(1,
         new KeyValuePair<string, object?>("operation", operation),
+        new KeyValuePair<string, object?>("key_slot", keySlot),
         new KeyValuePair<string, object?>("outcome", outcome));
 
-    private sealed record ObservationWorkItem(byte[] Digest, short KeyVersion, string Operation);
+    private sealed record ReplayDigestKeySlot(string Name, AwsSigV4ReplayDigestKey Key);
+    private sealed record ReplayDigestObservation(byte[] Digest, short KeyVersion, string KeySlot);
+    private sealed record ObservationWorkItem(ReplayDigestObservation[] Observations, string Operation);
 }

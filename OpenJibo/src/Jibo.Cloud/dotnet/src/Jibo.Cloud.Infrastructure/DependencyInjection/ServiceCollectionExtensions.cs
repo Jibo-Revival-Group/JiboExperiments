@@ -260,6 +260,7 @@ public static class ServiceCollectionExtensions
             configuration?["OpenJibo:Security:SigV4ReplayObservation:ConnectionString"];
 
         AwsSigV4ReplayDigestKey? replayDigestKey = null;
+        AwsSigV4ReplayDigestKey? previousReplayDigestKey = null;
         if (replayObservationOptions.Enabled &&
             !string.IsNullOrWhiteSpace(replayObservationOptions.HmacKey) &&
             !string.IsNullOrWhiteSpace(replayObservationOptions.ConnectionString))
@@ -269,10 +270,31 @@ public static class ServiceCollectionExtensions
                 replayDigestKey = AwsSigV4ReplayDigestKey.FromBase64Url(
                     replayObservationOptions.HmacKey,
                     replayObservationOptions.KeyVersion);
+                var hasPreviousKey = !string.IsNullOrWhiteSpace(replayObservationOptions.PreviousHmacKey);
+                if (replayObservationOptions.PreviousKeyVersion < 0)
+                    throw new ArgumentOutOfRangeException(
+                        nameof(replayObservationOptions.PreviousKeyVersion));
+                var hasPreviousVersion = replayObservationOptions.PreviousKeyVersion > 0;
+                if (hasPreviousKey != hasPreviousVersion)
+                    throw new ArgumentException(
+                        "Previous replay HMAC key and version must be configured together.");
+                if (hasPreviousKey)
+                {
+                    previousReplayDigestKey = AwsSigV4ReplayDigestKey.FromBase64Url(
+                        replayObservationOptions.PreviousHmacKey!,
+                        replayObservationOptions.PreviousKeyVersion);
+                    if (previousReplayDigestKey.Version == replayDigestKey.Version)
+                        throw new ArgumentException(
+                            "Current and previous replay HMAC key versions must differ.");
+                    if (previousReplayDigestKey.HasSameMaterial(replayDigestKey))
+                        throw new ArgumentException(
+                            "Current and previous replay HMAC keys must use different material.");
+                }
             }
             catch (ArgumentException)
             {
                 replayDigestKey = null;
+                previousReplayDigestKey = null;
             }
         }
 
@@ -294,7 +316,8 @@ public static class ServiceCollectionExtensions
                 provider.GetRequiredService<AwsSigV4ReplayDigestKey>(),
                 replayObservationOptions.Capacity,
                 provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<
-                    AwsSigV4ReplayObservationPublisher>>()));
+                    AwsSigV4ReplayObservationPublisher>>(),
+                previousReplayDigestKey));
             services.AddSingleton<IAwsSigV4ReplayObservationPublisher>(provider =>
                 provider.GetRequiredService<AwsSigV4ReplayObservationPublisher>());
             services.AddHostedService(provider =>

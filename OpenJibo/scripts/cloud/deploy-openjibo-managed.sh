@@ -216,6 +216,19 @@ raise SystemExit(0 if len(decoded) >= 32 else 1)
 PY
 }
 
+base64url_secrets_equal() {
+  OPENJIBO_CURRENT_SECRET="$1" OPENJIBO_PREVIOUS_SECRET="$2" python3 - <<'PY'
+import base64
+import os
+
+def decode(name):
+    value = os.environ[name]
+    return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+
+raise SystemExit(0 if decode("OPENJIBO_CURRENT_SECRET") == decode("OPENJIBO_PREVIOUS_SECRET") else 1)
+PY
+}
+
 ensure_postgres_firewall_rule() {
   local postgres_server_name="$1"
   local rule_name="$2"
@@ -336,6 +349,9 @@ search_fallback="$(az keyvault secret show --vault-name "$key_vault_name" --name
 portal_status_password="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-portal-status-password --query value -o tsv)"
 peer_sync_shared_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-peer-sync-shared-key --query value -o tsv)"
 sigv4_replay_hmac_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-sigv4-replay-hmac --query value -o tsv)"
+sigv4_replay_hmac_key_previous="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-sigv4-replay-hmac-previous --query value -o tsv 2>/dev/null || true)"
+sigv4_replay_observation_key_version="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-sigv4-replay-hmac-key-version --query value -o tsv)"
+sigv4_replay_observation_previous_key_version="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-sigv4-replay-hmac-previous-key-version --query value -o tsv 2>/dev/null || true)"
 sigv4_replay_observer_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-sigv4-replay-observer-connection-string --query value -o tsv 2>/dev/null || true)"
 user_encryption_passphrase="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-user-encrypt --query value -o tsv)"
 user_encryption_salt="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-user-salt --query value -o tsv)"
@@ -348,6 +364,36 @@ fi
 if ! validate_base64url_secret "$sigv4_replay_hmac_key"; then
   echo "Managed SigV4 replay HMAC secret is missing, malformed, or shorter than 32 decoded bytes in Key Vault '$key_vault_name'." >&2
   exit 1
+fi
+
+if ! [[ "$sigv4_replay_observation_key_version" =~ ^[1-9][0-9]*$ ]] || (( sigv4_replay_observation_key_version > 32767 )); then
+  echo "Key Vault metadata openjibo-sigv4-replay-hmac-key-version must be an integer between 1 and 32767." >&2
+  exit 2
+fi
+if ! [[ "$sigv4_replay_observation_previous_key_version" =~ ^[0-9]+$ ]] || (( sigv4_replay_observation_previous_key_version > 32767 )); then
+  echo "Key Vault metadata openjibo-sigv4-replay-hmac-previous-key-version must be 0 or an integer between 1 and 32767." >&2
+  exit 2
+fi
+if [[ -n "$sigv4_replay_hmac_key_previous" ]]; then
+  if (( sigv4_replay_observation_previous_key_version == 0 )); then
+    echo "A previous SigV4 replay HMAC secret requires nonzero Key Vault metadata openjibo-sigv4-replay-hmac-previous-key-version." >&2
+    exit 2
+  fi
+  if (( sigv4_replay_observation_previous_key_version == sigv4_replay_observation_key_version )); then
+    echo "Current and previous SigV4 replay HMAC key versions must differ." >&2
+    exit 2
+  fi
+  if ! validate_base64url_secret "$sigv4_replay_hmac_key_previous"; then
+    echo "Managed previous SigV4 replay HMAC secret is malformed or shorter than 32 decoded bytes in Key Vault '$key_vault_name'." >&2
+    exit 1
+  fi
+  if base64url_secrets_equal "$sigv4_replay_hmac_key" "$sigv4_replay_hmac_key_previous"; then
+    echo "Managed current and previous SigV4 replay HMAC secrets must differ in decoded key material." >&2
+    exit 1
+  fi
+elif (( sigv4_replay_observation_previous_key_version != 0 )); then
+  echo "Nonzero Key Vault metadata openjibo-sigv4-replay-hmac-previous-key-version requires the optional previous secret '$key_vault_name/openjibo-sigv4-replay-hmac-previous'." >&2
+  exit 2
 fi
 
 if [[ "$sigv4_replay_observation_enabled" == true && -z "$sigv4_replay_observer_connection_string" ]]; then
@@ -386,6 +432,9 @@ deployment_args=(
   --parameters "portalStatusPassword=${portal_status_password}"
   --parameters "peerSyncSharedKey=${peer_sync_shared_key}"
   --parameters "sigV4ReplayHmacKey=${sigv4_replay_hmac_key}"
+  --parameters "sigV4ReplayHmacKeyPrevious=${sigv4_replay_hmac_key_previous}"
+  --parameters "sigV4ReplayObservationKeyVersion=${sigv4_replay_observation_key_version}"
+  --parameters "sigV4ReplayObservationPreviousKeyVersion=${sigv4_replay_observation_previous_key_version}"
   --parameters "sigV4ReplayObservationConnectionString=${sigv4_replay_observer_connection_string}"
   --parameters "sigV4ReplayObservationEnabled=${sigv4_replay_observation_enabled}"
   --parameters "peerSyncEnabled=${peer_sync_enabled}"
@@ -542,6 +591,10 @@ if [[ -n "${container_app_name:-}" ]]; then
     "user-encryption-passphrase=${user_encryption_passphrase}"
     "user-encryption-salt=${user_encryption_salt}"
   )
+
+  if [[ -n "$sigv4_replay_hmac_key_previous" ]]; then
+    secret_args+=("sigv4-replay-hmac-key-previous=${sigv4_replay_hmac_key_previous}")
+  fi
 
   if [[ -n "$sigv4_replay_observer_connection_string" ]]; then
     secret_args+=("sigv4-replay-observer-connection-string=${sigv4_replay_observer_connection_string}")

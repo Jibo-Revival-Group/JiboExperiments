@@ -24,7 +24,7 @@ public sealed class PostgreSqlAwsSigV4ReplayRoleProvisionerTests
     public async Task ProvisionAsync_RejectsDifferentServerOrDatabaseBeforeConnecting()
     {
         var observer =
-            $"Host=other.example;Port=5432;Database=openjibo_state;Username={PostgreSqlAwsSigV4ReplayRoleProvisioner.LoginRole};Password=secret";
+            $"Host=other.example;Port=5432;Database=openjibo_state;Username={PostgreSqlAwsSigV4ReplayRoleProvisioner.LoginRole};Password=secret;SSL Mode=Require";
 
         var error = await Assert.ThrowsAsync<ArgumentException>(() =>
             PostgreSqlAwsSigV4ReplayRoleProvisioner.ProvisionAsync(Administrator, observer));

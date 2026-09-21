@@ -36,6 +36,8 @@ public sealed class FileProtocolTelemetrySink(
         "secret",
         "clientSecret",
         "client_secret",
+        "accessKeyId",
+        "access_key_id",
         "secretAccessKey",
         "password",
         "currentPassword",

@@ -62,6 +62,7 @@ public sealed class FileProtocolTelemetrySinkTests : IDisposable
         var response = ProtocolDispatchResult.Ok(new
         {
             token = "token-robot-123",
+            accessKeyId = "account-access-key",
             nested = new { refreshToken = "refresh-robot-123" }
         });
         response.Headers["Set-Cookie"] = "session=private-cookie";
@@ -91,6 +92,7 @@ public sealed class FileProtocolTelemetrySinkTests : IDisposable
         Assert.DoesNotContain("request-password", contents);
         Assert.DoesNotContain("account-secret", contents);
         Assert.DoesNotContain("token-robot-123", contents);
+        Assert.DoesNotContain("account-access-key", contents);
         Assert.DoesNotContain("refresh-robot-123", contents);
         Assert.DoesNotContain("private-cookie", contents);
         Assert.DoesNotContain("form-secret", contents);

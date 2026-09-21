@@ -13,6 +13,18 @@ public sealed class CloudAuthProtocolHandler(
     ReleaseSmokeAuthorizationOptions? releaseSmokeAuthorization = null,
     AwsSigV4RequestVerifier? awsSigV4Verifier = null) : ICloudAuthProtocolHandler
 {
+    private static readonly AwsSigV4OperationPolicy CreateHubTokenPolicy = new(
+        "Account.CreateHubToken",
+        "api",
+        "jibo",
+        ["Account_20151111.CreateHubToken", "Account_20160715.CreateHubToken"],
+        ["api.jibo.com", "api.openjibo.com", "open-jibo.jibo.pro", "api.jibo.pro"]);
+    private static readonly AwsSigV4OperationPolicy NewRobotTokenPolicy = new(
+        "Notification.NewRobotToken",
+        "us-east-1",
+        "jibo",
+        ["Notification_20150505.NewRobotToken", "Notification_20160715.NewRobotToken"],
+        ["api.jibo.com", "api.openjibo.com", "open-jibo.jibo.pro", "api.jibo.pro"]);
     private readonly ILogger _logger = logger ?? NullLogger<CloudAuthProtocolHandler>.Instance;
     private readonly ReleaseSmokeAuthorizationOptions _releaseSmokeAuthorization =
         releaseSmokeAuthorization ?? new ReleaseSmokeAuthorizationOptions();
@@ -25,7 +37,7 @@ public sealed class CloudAuthProtocolHandler(
 
         if (operation.Equals("CreateHubToken", StringComparison.OrdinalIgnoreCase))
         {
-            ObserveLegacyCredential("Account.CreateHubToken", envelope);
+            ObserveLegacyCredential(envelope, CreateHubTokenPolicy);
             var deviceId = !string.IsNullOrWhiteSpace(envelope.DeviceId)
                 ? envelope.DeviceId!
                 : ReadString(body, "deviceId")
@@ -207,7 +219,7 @@ public sealed class CloudAuthProtocolHandler(
         if (!operation.Equals("NewRobotToken", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(new { ok = true, operation });
 
-        ObserveLegacyCredential("Notification.NewRobotToken", envelope);
+        ObserveLegacyCredential(envelope, NewRobotTokenPolicy);
 
         var body = envelope.TryParseBody();
         var presentedDeviceId = ReadString(body, "deviceId")
@@ -282,24 +294,27 @@ public sealed class CloudAuthProtocolHandler(
         return null;
     }
 
-    private void ObserveLegacyCredential(string operation, ProtocolEnvelope envelope)
+    private void ObserveLegacyCredential(ProtocolEnvelope envelope, AwsSigV4OperationPolicy policy)
     {
-        var verification = _awsSigV4Verifier.Verify(envelope);
+        var verification = _awsSigV4Verifier.Verify(envelope, policy);
         if (verification.Outcome == AwsSigV4VerificationOutcome.NotPresented)
         {
-            _logger.LogDebug("Legacy SigV4 was not presented operation={Operation}", operation);
+            _logger.LogDebug("Legacy SigV4 was not presented operation={Operation}", policy.Operation);
             return;
         }
 
         if (verification.CredentialAuthenticated)
         {
             _logger.LogInformation(
-                "Legacy credential signature valid operation={Operation} outcome={Outcome} credentialFingerprint={CredentialFingerprint} payloadBound={PayloadBound} targetBound={TargetBound} robotIdentityProof=false",
-                operation,
+                "Legacy credential signature valid operation={Operation} outcome={Outcome} credentialFingerprint={CredentialFingerprint} scope={ScopeClassification} target={TargetClassification} payload={PayloadClassification} host={HostClassification} operationAuthenticated={OperationAuthenticated} robotIdentityProof=false shadow=true",
+                policy.Operation,
                 verification.Outcome,
                 verification.AccessKeyFingerprint,
-                verification.PayloadBound,
-                verification.TargetBound);
+                verification.ScopeClassification,
+                verification.TargetClassification,
+                verification.PayloadClassification,
+                verification.HostClassification,
+                verification.OperationAuthenticated);
             return;
         }
 
@@ -307,7 +322,7 @@ public sealed class CloudAuthProtocolHandler(
         // remains closed until captured stock-robot traffic and cross-replica replay controls pass.
         _logger.LogWarning(
             "Legacy SigV4 did not verify operation={Operation} outcome={Outcome} credentialFingerprint={CredentialFingerprint}",
-            operation,
+            policy.Operation,
             verification.Outcome,
             verification.AccessKeyFingerprint);
     }

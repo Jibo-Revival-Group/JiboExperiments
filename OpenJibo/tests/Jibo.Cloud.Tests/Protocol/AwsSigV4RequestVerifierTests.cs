@@ -13,24 +13,39 @@ public sealed class AwsSigV4RequestVerifierTests
     private static readonly DateTimeOffset SignedAt =
         new(2026, 9, 20, 12, 34, 56, TimeSpan.Zero);
 
-    [Fact]
-    public void Verify_AcceptsPayloadAndTargetBoundRequest()
+    [Theory]
+    [InlineData("Notification_20150505.NewRobotToken", "api.jibo.com")]
+    [InlineData("Notification_20160715.NewRobotToken", "api.openjibo.com")]
+    [InlineData("Notification_20150505.NewRobotToken", "open-jibo.jibo.pro")]
+    [InlineData("Notification_20160715.NewRobotToken", "api.jibo.pro")]
+    public void Verify_AcceptsPayloadAndTargetBoundKnownVersionAndHost(string target, string host)
     {
         var store = new InMemoryCloudStateStore();
         var envelope = Sign(
             store.GetAccount(),
             "{}",
             SignedAt,
-            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"]);
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"],
+            target: target,
+            host: host);
 
         var result = new AwsSigV4RequestVerifier(
             store,
-            new FixedTimeProvider(SignedAt.AddMinutes(1))).Verify(envelope);
+            new FixedTimeProvider(SignedAt.AddMinutes(1))).Verify(envelope, new AwsSigV4OperationPolicy(
+            "Notification.NewRobotToken",
+            "us-east-1",
+            "jibo",
+            ["Notification_20150505.NewRobotToken", "Notification_20160715.NewRobotToken"],
+            ["api.jibo.com", "api.openjibo.com", "open-jibo.jibo.pro", "api.jibo.pro"]));
 
         Assert.Equal(AwsSigV4VerificationOutcome.VerifiedPayloadAndTarget, result.Outcome);
         Assert.True(result.CredentialAuthenticated);
         Assert.True(result.PayloadBound);
         Assert.True(result.TargetBound);
+        Assert.Equal(AwsSigV4ScopeClassification.Match, result.ScopeClassification);
+        Assert.Equal(AwsSigV4TargetClassification.MatchSigned, result.TargetClassification);
+        Assert.Equal(AwsSigV4HostClassification.Match, result.HostClassification);
+        Assert.True(result.OperationAuthenticated);
         Assert.NotNull(result.AccessKeyFingerprint);
     }
 
@@ -47,12 +62,188 @@ public sealed class AwsSigV4RequestVerifierTests
 
         var result = new AwsSigV4RequestVerifier(
             store,
-            new FixedTimeProvider(SignedAt)).Verify(envelope);
+            new FixedTimeProvider(SignedAt)).Verify(envelope, new AwsSigV4OperationPolicy(
+            "Notification.NewRobotToken",
+            "us-east-1",
+            "jibo",
+            ["Notification_20150505.NewRobotToken", "Notification_20160715.NewRobotToken"],
+            ["api.jibo.com"]));
 
         Assert.Equal(AwsSigV4VerificationOutcome.VerifiedCredentialOnly, result.Outcome);
         Assert.True(result.CredentialAuthenticated);
         Assert.False(result.PayloadBound);
         Assert.False(result.TargetBound);
+        Assert.Equal(AwsSigV4ScopeClassification.Match, result.ScopeClassification);
+        Assert.Equal(AwsSigV4TargetClassification.MatchUnsigned, result.TargetClassification);
+        Assert.Equal(AwsSigV4PayloadClassification.Mismatch, result.PayloadClassification);
+        Assert.False(result.OperationAuthenticated);
+    }
+
+    [Fact]
+    public void Verify_ClassifiesCapturedCreateHubTokenScopeWithoutAuthenticatingUnsignedTarget()
+    {
+        var store = new InMemoryCloudStateStore();
+        var policy = new AwsSigV4OperationPolicy(
+            "Account.CreateHubToken",
+            "api",
+            "jibo",
+            ["Account_20151111.CreateHubToken", "Account_20160715.CreateHubToken"],
+            ["api.jibo.com"]);
+        var envelope = Sign(
+            store.GetAccount(),
+            "{}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date"],
+            advertisedPayloadHash: HexSha256([]),
+            region: "api",
+            target: "Account_20151111.CreateHubToken");
+
+        var result = new AwsSigV4RequestVerifier(
+            store,
+            new FixedTimeProvider(SignedAt)).Verify(envelope, policy);
+
+        Assert.Equal(AwsSigV4VerificationOutcome.VerifiedCredentialOnly, result.Outcome);
+        Assert.Equal(AwsSigV4ScopeClassification.Match, result.ScopeClassification);
+        Assert.Equal(AwsSigV4TargetClassification.MatchUnsigned, result.TargetClassification);
+        Assert.Equal(AwsSigV4PayloadClassification.Mismatch, result.PayloadClassification);
+        Assert.False(result.OperationAuthenticated);
+    }
+
+    [Theory]
+    [InlineData("wrong-region", "jibo")]
+    [InlineData("us-east-1", "wrong-service")]
+    public void Verify_ClassifiesSignedScopeMismatchWithoutRejectingCredential(string region, string service)
+    {
+        var store = new InMemoryCloudStateStore();
+        var policy = new AwsSigV4OperationPolicy(
+            "Notification.NewRobotToken",
+            "us-east-1",
+            "jibo",
+            ["Notification_20150505.NewRobotToken", "Notification_20160715.NewRobotToken"],
+            ["api.jibo.com"]);
+        var envelope = Sign(
+            store.GetAccount(),
+            "{}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"],
+            region: region,
+            service: service);
+
+        var result = new AwsSigV4RequestVerifier(
+            store,
+            new FixedTimeProvider(SignedAt)).Verify(envelope, policy);
+
+        Assert.True(result.CredentialAuthenticated);
+        Assert.Equal(AwsSigV4VerificationOutcome.VerifiedCredentialOnly, result.Outcome);
+        Assert.Equal(AwsSigV4ScopeClassification.Mismatch, result.ScopeClassification);
+        Assert.Equal(AwsSigV4TargetClassification.MatchSigned, result.TargetClassification);
+        Assert.False(result.OperationAuthenticated);
+    }
+
+    [Fact]
+    public void Verify_ClassifiesSignedTargetMismatchWithoutAuthenticatingOperation()
+    {
+        var store = new InMemoryCloudStateStore();
+        var policy = new AwsSigV4OperationPolicy(
+            "Notification.NewRobotToken",
+            "us-east-1",
+            "jibo",
+            ["Notification_20150505.NewRobotToken", "Notification_20160715.NewRobotToken"],
+            ["api.jibo.com"]);
+        var envelope = Sign(
+            store.GetAccount(),
+            "{}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"],
+            target: "Notification_20150505.OtherOperation");
+
+        var result = new AwsSigV4RequestVerifier(
+            store,
+            new FixedTimeProvider(SignedAt)).Verify(envelope, policy);
+
+        Assert.True(result.CredentialAuthenticated);
+        Assert.Equal(AwsSigV4TargetClassification.Mismatch, result.TargetClassification);
+        Assert.False(result.OperationAuthenticated);
+    }
+
+    [Fact]
+    public void Verify_ClassifiesUnsignedTargetMismatchWithoutAuthenticatingOperation()
+    {
+        var store = new InMemoryCloudStateStore();
+        var policy = new AwsSigV4OperationPolicy(
+            "Notification.NewRobotToken",
+            "us-east-1",
+            "jibo",
+            ["Notification_20150505.NewRobotToken", "Notification_20160715.NewRobotToken"],
+            ["api.jibo.com"]);
+        var envelope = Sign(
+            store.GetAccount(),
+            "{}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date"],
+            target: "Notification_20150505.OtherOperation");
+
+        var result = new AwsSigV4RequestVerifier(
+            store,
+            new FixedTimeProvider(SignedAt)).Verify(envelope, policy);
+
+        Assert.True(result.CredentialAuthenticated);
+        Assert.Equal(AwsSigV4VerificationOutcome.VerifiedCredentialOnly, result.Outcome);
+        Assert.Equal(AwsSigV4TargetClassification.Mismatch, result.TargetClassification);
+        Assert.False(result.OperationAuthenticated);
+    }
+
+    [Fact]
+    public void Verify_ClassifiesMissingUnsignedTarget()
+    {
+        var store = new InMemoryCloudStateStore();
+        var policy = new AwsSigV4OperationPolicy(
+            "Notification.NewRobotToken",
+            "us-east-1",
+            "jibo",
+            ["Notification_20150505.NewRobotToken", "Notification_20160715.NewRobotToken"],
+            ["api.jibo.com"]);
+        var envelope = Sign(
+            store.GetAccount(),
+            "{}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date"]);
+        envelope.Headers.Remove("X-Amz-Target");
+
+        var result = new AwsSigV4RequestVerifier(
+            store,
+            new FixedTimeProvider(SignedAt)).Verify(envelope, policy);
+
+        Assert.True(result.CredentialAuthenticated);
+        Assert.Equal(AwsSigV4TargetClassification.Missing, result.TargetClassification);
+        Assert.False(result.OperationAuthenticated);
+    }
+
+    [Fact]
+    public void Verify_ClassifiesSignedUnexpectedHostWithoutAuthenticatingOperation()
+    {
+        var store = new InMemoryCloudStateStore();
+        var policy = new AwsSigV4OperationPolicy(
+            "Notification.NewRobotToken",
+            "us-east-1",
+            "jibo",
+            ["Notification_20150505.NewRobotToken", "Notification_20160715.NewRobotToken"],
+            ["api.jibo.com", "api.openjibo.com"]);
+        var envelope = Sign(
+            store.GetAccount(),
+            "{}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"],
+            host: "unexpected.invalid");
+
+        var result = new AwsSigV4RequestVerifier(
+            store,
+            new FixedTimeProvider(SignedAt)).Verify(envelope, policy);
+
+        Assert.True(result.CredentialAuthenticated);
+        Assert.Equal(AwsSigV4HostClassification.Mismatch, result.HostClassification);
+        Assert.Equal(AwsSigV4VerificationOutcome.VerifiedCredentialOnly, result.Outcome);
+        Assert.False(result.OperationAuthenticated);
     }
 
     [Fact]
@@ -238,22 +429,140 @@ public sealed class AwsSigV4RequestVerifierTests
         Assert.DoesNotContain(unknown.SecretAccessKey, messages, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("Account_20151111.CreateHubToken")]
+    [InlineData("Account_20160715.CreateHubToken")]
+    public void HandleAccount_LogsBoundedCapturedShapeWithoutChangingTokenIssuance(string target)
+    {
+        var store = new InMemoryCloudStateStore();
+        var envelope = Sign(
+            store.GetAccount(),
+            "{}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date"],
+            advertisedPayloadHash: HexSha256([]),
+            region: "api",
+            target: target);
+        var logger = new ListLogger<CloudAuthProtocolHandler>();
+        var handler = new CloudAuthProtocolHandler(
+            store,
+            logger,
+            awsSigV4Verifier: new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt)));
+
+        var response = handler.HandleAccount("CreateHubToken", envelope);
+        var messages = string.Join('\n', logger.Messages);
+
+        Assert.Equal(200, response.StatusCode);
+        Assert.Contains("operation=Account.CreateHubToken", messages, StringComparison.Ordinal);
+        Assert.Contains("scope=Match", messages, StringComparison.Ordinal);
+        Assert.Contains("target=MatchUnsigned", messages, StringComparison.Ordinal);
+        Assert.Contains("payload=Mismatch", messages, StringComparison.Ordinal);
+        Assert.Contains("host=Match", messages, StringComparison.Ordinal);
+        Assert.Contains("operationAuthenticated=False", messages, StringComparison.Ordinal);
+        Assert.Contains("shadow=true", messages, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HandleAccount_LogsOperationAuthenticatedForFullyBoundKnownRequest()
+    {
+        var store = new InMemoryCloudStateStore();
+        var envelope = Sign(
+            store.GetAccount(),
+            "{}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"],
+            region: "api",
+            target: "Account_20160715.CreateHubToken",
+            host: "api.jibo.pro");
+        var logger = new ListLogger<CloudAuthProtocolHandler>();
+        var handler = new CloudAuthProtocolHandler(
+            store,
+            logger,
+            awsSigV4Verifier: new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt)));
+
+        var response = handler.HandleAccount("CreateHubToken", envelope);
+        var messages = string.Join('\n', logger.Messages);
+
+        Assert.Equal(200, response.StatusCode);
+        Assert.Contains("host=Match", messages, StringComparison.Ordinal);
+        Assert.Contains("operationAuthenticated=True", messages, StringComparison.Ordinal);
+        Assert.Contains("shadow=true", messages, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HandleNotification_LogsBoundedCapturedShapeWithoutChangingTokenIssuance()
+    {
+        var store = new InMemoryCloudStateStore();
+        var body = "{\"deviceId\":\"captured-shape-robot\"}";
+        var envelope = Sign(
+            store.GetAccount(),
+            body,
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date"],
+            advertisedPayloadHash: HexSha256([]));
+        var logger = new ListLogger<CloudAuthProtocolHandler>();
+        var handler = new CloudAuthProtocolHandler(
+            store,
+            logger,
+            awsSigV4Verifier: new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt)));
+
+        var response = handler.HandleNotification("NewRobotToken", envelope);
+        var messages = string.Join('\n', logger.Messages);
+
+        Assert.Equal(200, response.StatusCode);
+        Assert.Contains("scope=Match", messages, StringComparison.Ordinal);
+        Assert.Contains("target=MatchUnsigned", messages, StringComparison.Ordinal);
+        Assert.Contains("payload=Mismatch", messages, StringComparison.Ordinal);
+        Assert.Contains("operationAuthenticated=False", messages, StringComparison.Ordinal);
+        Assert.Contains("shadow=true", messages, StringComparison.Ordinal);
+        Assert.DoesNotContain(store.GetAccount().AccessKeyId, messages, StringComparison.Ordinal);
+        Assert.DoesNotContain(store.GetAccount().SecretAccessKey, messages, StringComparison.Ordinal);
+        Assert.DoesNotContain(envelope.Headers["Authorization"], messages, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HandleNotification_LogsOperationAuthenticatedForFullyBoundKnownRequest()
+    {
+        var store = new InMemoryCloudStateStore();
+        var envelope = Sign(
+            store.GetAccount(),
+            "{\"deviceId\":\"fully-bound-robot\"}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"],
+            target: "Notification_20160715.NewRobotToken",
+            host: "open-jibo.jibo.pro");
+        var logger = new ListLogger<CloudAuthProtocolHandler>();
+        var handler = new CloudAuthProtocolHandler(
+            store,
+            logger,
+            awsSigV4Verifier: new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt)));
+
+        var response = handler.HandleNotification("NewRobotToken", envelope);
+        var messages = string.Join('\n', logger.Messages);
+
+        Assert.Equal(200, response.StatusCode);
+        Assert.Contains("host=Match", messages, StringComparison.Ordinal);
+        Assert.Contains("operationAuthenticated=True", messages, StringComparison.Ordinal);
+        Assert.Contains("shadow=true", messages, StringComparison.Ordinal);
+    }
+
     private static ProtocolEnvelope Sign(
         AccountProfile account,
         string body,
         DateTimeOffset signedAt,
         IReadOnlyList<string> signedHeaders,
-        string? advertisedPayloadHash = null)
+        string? advertisedPayloadHash = null,
+        string region = "us-east-1",
+        string service = "jibo",
+        string target = "Notification_20150505.NewRobotToken",
+        string host = "api.jibo.com")
     {
-        const string region = "us-east-1";
-        const string service = "jibo";
-        const string target = "Notification_20150505.NewRobotToken";
         var timestamp = signedAt.UtcDateTime.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture);
         var date = signedAt.UtcDateTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         var payloadHash = advertisedPayloadHash ?? HexSha256(Encoding.UTF8.GetBytes(body));
         var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["Host"] = "api.jibo.com",
+            ["Host"] = host,
             ["X-Amz-Date"] = timestamp,
             ["X-Amz-Content-Sha256"] = payloadHash,
             ["X-Amz-Target"] = target

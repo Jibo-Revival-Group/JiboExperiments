@@ -170,7 +170,7 @@ public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
             return (T)Convert.ChangeType(value!, typeof(T), System.Globalization.CultureInfo.InvariantCulture);
         }
 
-        internal static async Task ExecuteAsObserverAsync(string connectionString, string sql)
+        internal async Task ExecuteAsObserverAsync(string connectionString, string sql)
         {
             await using var connection = new NpgsqlConnection(connectionString);
             await connection.OpenAsync();

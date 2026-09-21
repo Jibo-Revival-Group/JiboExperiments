@@ -129,4 +129,23 @@ public sealed class CloudStateMigrationSchemaTests
         Assert.DoesNotContain("Transcript", migration, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("AudioContent", migration, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void SigV4ReplayObservation_IsShortLivedOpaqueAndOwnerOnly()
+    {
+        var migration = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
+            "013_create_sigv4_replay_observations.state.sql"));
+
+        Assert.Contains("AwsSigV4ReplayObservations", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OCTET_LENGTH(ReplayDigest) = 32", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("INTERVAL '15 minutes'", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ON CONFLICT (ReplayDigest) DO UPDATE", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("LIMIT 256", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("REVOKE ALL ON FUNCTION ObserveAwsSigV4Replay", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("GRANT EXECUTE", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Authorization", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("AccessKeyId", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("DeviceId", migration, StringComparison.OrdinalIgnoreCase);
+    }
 }

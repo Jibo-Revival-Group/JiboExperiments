@@ -51,6 +51,7 @@ public interface ICloudStateStore
     string IssueRobotToken(string deviceId);
     string IssueDeploymentSmokeRobotToken(string deviceId);
     string IssueDeploymentSmokeHubToken(string deviceId);
+    void RevokeDeploymentSmokeTokens(string deviceId);
     CloudSession? FindIssuedToken(string token);
     CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path);
     void CloseSession(string sessionId);

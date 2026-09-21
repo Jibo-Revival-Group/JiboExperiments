@@ -2,6 +2,7 @@ using Azure.Monitor.OpenTelemetry.Exporter;
 using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
+using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.DependencyInjection;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Cloud.Infrastructure.Telemetry;
@@ -183,6 +184,44 @@ app.MapGet("/health/replica", (HttpContext context, ReleaseSmokeAuthorizationOpt
         revision,
         replica,
         instanceId = $"{revision}/{replica}"
+    });
+});
+
+app.MapPost("/health/sigv4-replay-proof", async (
+    HttpContext context,
+    IServiceProvider services,
+    CancellationToken cancellationToken) =>
+{
+    var proofService = services.GetService<AwsSigV4ReplayProbeProofService>();
+    if (proofService is null) return Results.NotFound();
+
+    var requestEnvelope = await ApiRequestEnvelopeFactory.CreateAsync(context, cancellationToken);
+    var signedEnvelope = new ProtocolEnvelope
+    {
+        RequestId = requestEnvelope.RequestId,
+        Transport = requestEnvelope.Transport,
+        Method = requestEnvelope.Method,
+        HostName = requestEnvelope.HostName,
+        Path = "/",
+        ServicePrefix = requestEnvelope.ServicePrefix,
+        Operation = requestEnvelope.Operation,
+        DeviceId = requestEnvelope.DeviceId,
+        CorrelationId = requestEnvelope.CorrelationId,
+        FirmwareVersion = requestEnvelope.FirmwareVersion,
+        ApplicationVersion = requestEnvelope.ApplicationVersion,
+        BodyText = requestEnvelope.BodyText,
+        BodyBytes = requestEnvelope.BodyBytes,
+        Headers = requestEnvelope.Headers,
+        QueryParameters = requestEnvelope.QueryParameters
+    };
+    var proof = await proofService.ProveAsync(signedEnvelope, cancellationToken);
+    if (!proof.Verified) return Results.StatusCode(StatusCodes.Status409Conflict);
+
+    context.Response.Headers.CacheControl = "no-store";
+    return Results.Json(new
+    {
+        verified = true,
+        priorObservationCount = proof.PriorObservationCount
     });
 });
 

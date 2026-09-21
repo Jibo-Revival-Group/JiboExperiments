@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   collectDistinctReplicaReplayEvidence,
   createSignedReplayRequest,
+  provePersistedReplay,
   validateProbeTarget,
 } from "../../scripts/cloud/invoke-sigv4-replay-probe.mjs";
 
@@ -74,4 +75,25 @@ test("target validation rejects mismatches and production", () => {
     /does not match/);
   assert.throws(() => validateProbeTarget("https://api.openjibo.com", "api.openjibo.com"),
     /refuses production/);
+});
+
+test("persistence proof requires two prior observations", async () => {
+  const request = createSignedReplayRequest(requestOptions);
+  const proof = await provePersistedReplay({
+    baseUrl: requestOptions.baseUrl,
+    request,
+    fetchImpl: async () => new Response(JSON.stringify({
+      verified: true,
+      priorObservationCount: 2,
+    })),
+  });
+  assert.deepEqual(proof, { verified: true, priorObservationCount: 2 });
+  await assert.rejects(() => provePersistedReplay({
+    baseUrl: requestOptions.baseUrl,
+    request,
+    fetchImpl: async () => new Response(JSON.stringify({
+      verified: true,
+      priorObservationCount: 1,
+    })),
+  }), /did not confirm two prior observations/);
 });

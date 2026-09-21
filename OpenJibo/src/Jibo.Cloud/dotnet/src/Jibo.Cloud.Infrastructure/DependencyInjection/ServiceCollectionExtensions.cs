@@ -342,6 +342,8 @@ public static class ServiceCollectionExtensions
         var releaseSmokeAuthorization = new ReleaseSmokeAuthorizationOptions();
         configuration?.GetSection("OpenJibo:ReleaseSmoke").Bind(releaseSmokeAuthorization);
         services.AddSingleton(releaseSmokeAuthorization);
+        if (replayDigestKey is not null)
+            services.AddSingleton<AwsSigV4ReplayProbeProofService>();
         services.AddSingleton<ICloudAuthProtocolHandler, CloudAuthProtocolHandler>();
         services.AddSingleton<IPersonalMemoryStore>(provider =>
         {

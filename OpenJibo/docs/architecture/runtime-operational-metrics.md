@@ -61,6 +61,14 @@ one warning when the publisher enters the degraded state, continues counting eve
 coalesces later warnings until a fully successful work item records recovery and the suppressed-failure count.
 Request authorization and token issuance do not depend on replay persistence.
 
+When the staging deployment explicitly enables replay observation, release smoke creates a random, per-run
+SigV4 credential behind the existing deployment-smoke device, source, and secret gates. The probe sends one
+identically signed request through two distinct replicas, then calls the gated proof endpoint exactly once. That
+final atomic observation succeeds only when the dedicated PostgreSQL observer reports that two observations were
+already durable. The workflow removes the probe environment references, waits for the disabled revision to become
+healthy, and deletes all three temporary smoke secrets in its unconditional cleanup path. Production never
+receives or enables the probe credential.
+
 ## Collection And Provider Metrics
 
 Managed Azure deployments provision a workspace-backed Application Insights resource and register the Azure

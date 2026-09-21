@@ -125,6 +125,9 @@ $requiredManagedMarkers = @(
     "param searchFallback string = ''",
     "param portalStatusPassword string = ''",
     "param sigV4ReplayHmacKey string = ''",
+    "param sigV4ReplayHmacKeyPrevious string = ''",
+    "param sigV4ReplayObservationKeyVersion int = 1",
+    "param sigV4ReplayObservationPreviousKeyVersion int = 0",
     "param sigV4ReplayObservationConnectionString string = ''",
     "param sigV4ReplayObservationEnabled bool = false",
     "value: stateConnectionString",
@@ -139,8 +142,12 @@ $requiredManagedMarkers = @(
     "OpenJibo__Security__SigV4ReplayHmacKey",
     "OpenJibo__Security__SigV4ReplayObservation__ConnectionString",
     "OpenJibo__Security__SigV4ReplayObservation__Enabled",
+    "OpenJibo__Security__SigV4ReplayObservation__KeyVersion",
+    "OpenJibo__Security__SigV4ReplayObservation__PreviousKeyVersion",
+    "OpenJibo__Security__SigV4ReplayObservation__PreviousHmacKey",
     "portal-status-password",
     "sigv4-replay-hmac-key",
+    "sigv4-replay-hmac-key-previous",
     "sigv4-replay-observer-connection-string",
     "search-backend",
     "search-fallback",
@@ -199,11 +206,11 @@ foreach ($marker in $requiredWorkflowMarkers) {
     Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing expected marker"
 }
 
-foreach ($marker in @("openjibo-media-connection-string", "azure-speech-subscription-key", "cognitiveservices account keys list", "speechServicesAccountName", "openjibo-postgres-admin-password", "openjibo-search-backend", "openjibo-search-fallback", "openjibo-portal-status-password", "openjibo-peer-sync-shared-key", "openjibo-sigv4-replay-hmac", "openjibo-sigv4-replay-observer-password", "openjibo-sigv4-replay-observer-connection-string", "postgresFullyQualifiedDomainName", "Invoke-OpenJiboAzWithRetry", "seedPrincipalObjectId")) {
+foreach ($marker in @("openjibo-media-connection-string", "azure-speech-subscription-key", "cognitiveservices account keys list", "speechServicesAccountName", "openjibo-postgres-admin-password", "openjibo-search-backend", "openjibo-search-fallback", "openjibo-portal-status-password", "openjibo-peer-sync-shared-key", "openjibo-sigv4-replay-hmac", "openjibo-sigv4-replay-hmac-key-version", "openjibo-sigv4-replay-hmac-previous-key-version", "openjibo-sigv4-replay-observer-password", "openjibo-sigv4-replay-observer-connection-string", "postgresFullyQualifiedDomainName", "Invoke-OpenJiboAzWithRetry", "seedPrincipalObjectId")) {
     Assert-ContainsMarker -Text $foundationScriptText -Marker $marker -FailurePrefix "Foundation script is missing expected marker"
 }
 
-foreach ($marker in @("RegistryName", "ApiHostname", "SocketHostname", "NeoHubHostname", "NativeCompatibilityApiHostname", "NativeCompatibilitySocketHostname", "AdditionalCompatibilityApiHostname", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "api.jibo.pro", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding", "EnableAzureSpeech", "AzureSpeechRegion", "portalStatusPassword", "openjibo-portal-status-password", "sigV4ReplayHmacKey", "sigv4-replay-hmac-key", "EnableSigV4ReplayObservation", "sigV4ReplayObservationEnabled", "openjibo-sigv4-replay-observer-connection-string", "ProvisionSigV4ReplayObserver", "ReplayObserverConnectionString", "Test-OpenJiboBase64UrlSecret", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
+foreach ($marker in @("RegistryName", "ApiHostname", "SocketHostname", "NeoHubHostname", "NativeCompatibilityApiHostname", "NativeCompatibilitySocketHostname", "AdditionalCompatibilityApiHostname", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "api.jibo.pro", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding", "EnableAzureSpeech", "AzureSpeechRegion", "portalStatusPassword", "openjibo-portal-status-password", "sigV4ReplayHmacKey", "sigV4ReplayHmacKeyPrevious", "sigv4-replay-hmac-key", "sigv4-replay-hmac-key-previous", "EnableSigV4ReplayObservation", "sigv4-replay-hmac-key-version", "sigv4-replay-hmac-previous-key-version", "sigV4ReplayObservationEnabled", "sigV4ReplayObservationKeyVersion", "sigV4ReplayObservationPreviousKeyVersion", "openjibo-sigv4-replay-observer-connection-string", "ProvisionSigV4ReplayObserver", "ReplayObserverConnectionString", "Test-OpenJiboBase64UrlSecret", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing expected marker"
 }
 
@@ -279,6 +286,12 @@ foreach ($marker in @("OPENJIBO_USER_ENCRYPT", "OPENJIBO_USER_SALT", "user-encry
 
 foreach ($marker in @("openjibo-user-encrypt", "openjibo-user-salt", "openjibo-portal-status-password", "openjibo-peer-sync-shared-key", "openjibo-sigv4-replay-hmac")) {
     Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker $marker -FailurePrefix "Linux foundation script is missing managed secret provisioning"
+}
+if ($linuxFoundationScriptText.Contains('get_or_create_random_secret("openjibo-sigv4-replay-hmac-previous"')) {
+    throw "Linux foundation script must not generate or rotate the optional previous SigV4 replay HMAC secret."
+}
+if ($foundationScriptText.Contains("-Name openjibo-sigv4-replay-hmac-previous -ByteCount")) {
+    throw "PowerShell foundation script must not generate or rotate the optional previous SigV4 replay HMAC secret."
 }
 
 foreach ($marker in @("prepare-openjibo-managed-databases.sh", "--smoke-generated-fqdn", "user-encryption-passphrase", "user-encryption-salt")) {

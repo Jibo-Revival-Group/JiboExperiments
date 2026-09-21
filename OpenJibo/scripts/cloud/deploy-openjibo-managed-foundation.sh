@@ -346,6 +346,27 @@ def get_or_create_random_secret(name: str, byte_count: int = 32) -> str:
     return value
 
 
+def get_or_create_literal_secret(name: str, value: str) -> str:
+    result = subprocess.run(
+        [
+            "az", "keyvault", "secret", "show",
+            "--vault-name", key_vault_name,
+            "--name", name,
+            "--query", "value",
+            "--output", "tsv",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    existing_value = result.stdout.strip() if result.returncode == 0 else ""
+    if existing_value:
+        return existing_value
+
+    set_secret(name, value)
+    print(f"Initialized managed metadata secret '{name}'.", file=sys.stderr)
+    return value
+
+
 def postgres_connection_string(
     database_name: str,
     username: str | None = None,
@@ -449,6 +470,8 @@ get_or_create_random_secret("openjibo-user-salt", 24)
 get_or_create_random_secret("openjibo-portal-status-password", 32)
 get_or_create_random_secret("openjibo-peer-sync-shared-key", 48)
 get_or_create_random_secret("openjibo-sigv4-replay-hmac", 32)
+get_or_create_literal_secret("openjibo-sigv4-replay-hmac-key-version", "1")
+get_or_create_literal_secret("openjibo-sigv4-replay-hmac-previous-key-version", "0")
 
 print(json.dumps(deployment_json, indent=2))
 PY

@@ -37,6 +37,35 @@ The workflow now:
 The migration is additive. It preserves `PersistenceSnapshots/cloud-state` and
 `PersistenceSnapshots/personal-memory`.
 
+## SigV4 Replay HMAC Rotation
+
+SigV4 replay observation remains disabled unless explicitly enabled. The current
+key is stored in Key Vault as `openjibo-sigv4-replay-hmac`. The deployment
+metadata is persisted in `openjibo-sigv4-replay-hmac-key-version` and
+`openjibo-sigv4-replay-hmac-previous-key-version`. During rotation, an operator
+may stage the old key as `openjibo-sigv4-replay-hmac-previous`; the foundation
+scripts initialize the version metadata only when absent and never generate or
+refresh the previous-key secret. After initialization, they preserve both
+version values exactly as the operator set them.
+
+1. As one operator change, stage the replacement as the current key, retain the
+   old value as the previous key, and update both version metadata secrets: the
+   current version increments and the previous version becomes the old current
+   version. Do not put either secret value in shell history. Do not deploy until
+   all four Key Vault values are present and mutually consistent.
+2. Deploy with the replay observer enabled and with migration enabled. The
+   Linux and PowerShell deploy helpers read the optional previous secret and
+   fail closed if its version is missing, malformed, or equal to the current
+   version.
+3. Keep both keys available for at least the 15-minute replay-observation TTL,
+   plus the bounded publisher queue/drain and revision-rollout margin. Review
+   observation metrics before retiring the old key.
+4. Remove the previous Key Vault secret, set its version to `0`, and redeploy.
+   Never remove the current key until the replacement revision is healthy.
+
+If replay observation is not needed in a self-hosted or managed environment,
+leave it disabled and do not create a previous-key secret.
+
 ## One-Time Staging Setup
 
 ### 1. Create an Azure resource group

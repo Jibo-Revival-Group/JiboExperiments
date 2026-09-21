@@ -94,6 +94,9 @@ $searchFallback = ""
 $portalStatusPassword = az keyvault secret show --vault-name $KeyVaultName --name openjibo-portal-status-password --query value -o tsv
 $peerSyncSharedKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-peer-sync-shared-key --query value -o tsv
 $sigV4ReplayHmacKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-sigv4-replay-hmac --query value -o tsv
+$sigV4ReplayHmacKeyPrevious = az keyvault secret show --vault-name $KeyVaultName --name openjibo-sigv4-replay-hmac-previous --query value -o tsv 2>$null
+$sigV4ReplayKeyVersion = [int](az keyvault secret show --vault-name $KeyVaultName --name openjibo-sigv4-replay-hmac-key-version --query value -o tsv)
+$sigV4ReplayPreviousKeyVersion = [int](az keyvault secret show --vault-name $KeyVaultName --name openjibo-sigv4-replay-hmac-previous-key-version --query value -o tsv 2>$null)
 $sigV4ReplayObserverConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-sigv4-replay-observer-connection-string --query value -o tsv 2>$null
 $userEncryptionPassphrase = az keyvault secret show --vault-name $KeyVaultName --name openjibo-user-encrypt --query value -o tsv
 $userEncryptionSalt = az keyvault secret show --vault-name $KeyVaultName --name openjibo-user-salt --query value -o tsv
@@ -104,6 +107,32 @@ if ([string]::IsNullOrWhiteSpace($userEncryptionPassphrase) -or [string]::IsNull
 
 if (-not (Test-OpenJiboBase64UrlSecret -Value $sigV4ReplayHmacKey)) {
     throw "Managed SigV4 replay HMAC secret is missing, malformed, or shorter than 32 decoded bytes in Key Vault '$KeyVaultName'."
+}
+
+if ($SigV4ReplayKeyVersion -lt 1 -or $SigV4ReplayKeyVersion -gt 32767) {
+    throw "SigV4ReplayKeyVersion must be between 1 and 32767."
+}
+if ($SigV4ReplayPreviousKeyVersion -lt 0 -or $SigV4ReplayPreviousKeyVersion -gt 32767) {
+    throw "SigV4ReplayPreviousKeyVersion must be 0 or between 1 and 32767."
+}
+if (-not [string]::IsNullOrWhiteSpace($sigV4ReplayHmacKeyPrevious)) {
+    if ($SigV4ReplayPreviousKeyVersion -eq 0) {
+        throw "The optional previous SigV4 replay HMAC secret requires SigV4ReplayPreviousKeyVersion."
+    }
+    if ($SigV4ReplayPreviousKeyVersion -eq $SigV4ReplayKeyVersion) {
+        throw "Current and previous SigV4 replay HMAC key versions must differ."
+    }
+    if (-not (Test-OpenJiboBase64UrlSecret -Value $sigV4ReplayHmacKeyPrevious)) {
+        throw "Managed previous SigV4 replay HMAC secret is malformed or shorter than 32 decoded bytes in Key Vault '$KeyVaultName'."
+    }
+    $currentBytes = [Convert]::FromBase64String(($sigV4ReplayHmacKey.Replace('-', '+').Replace('_', '/') + ('=' * ((4 - $sigV4ReplayHmacKey.Length % 4) % 4))))
+    $previousBytes = [Convert]::FromBase64String(($sigV4ReplayHmacKeyPrevious.Replace('-', '+').Replace('_', '/') + ('=' * ((4 - $sigV4ReplayHmacKeyPrevious.Length % 4) % 4))))
+    if ([Convert]::ToBase64String($currentBytes) -eq [Convert]::ToBase64String($previousBytes)) {
+        throw "Managed current and previous SigV4 replay HMAC secrets must differ in decoded key material."
+    }
+}
+elseif ($SigV4ReplayPreviousKeyVersion -ne 0) {
+    throw "SigV4ReplayPreviousKeyVersion requires the optional Key Vault secret '$KeyVaultName/openjibo-sigv4-replay-hmac-previous'."
 }
 
 if ($EnableSigV4ReplayObservation -and -not $RunMigration) {
@@ -217,6 +246,7 @@ function Set-ContainerAppSecretsFromKeyVault {
         [string]$PortalStatusPassword,
         [string]$PeerSyncSharedKey,
         [string]$SigV4ReplayHmacKey,
+        [string]$SigV4ReplayHmacKeyPrevious,
         [string]$SigV4ReplayObserverConnectionString,
         [string]$UserEncryptionPassphrase,
         [string]$UserEncryptionSalt
@@ -243,6 +273,10 @@ function Set-ContainerAppSecretsFromKeyVault {
 
     if (-not [string]::IsNullOrWhiteSpace($SigV4ReplayObserverConnectionString)) {
         $secretArgs += "sigv4-replay-observer-connection-string=$SigV4ReplayObserverConnectionString"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($SigV4ReplayHmacKeyPrevious)) {
+        $secretArgs += "sigv4-replay-hmac-key-previous=$SigV4ReplayHmacKeyPrevious"
     }
 
     if (-not [string]::IsNullOrWhiteSpace($SearchBackend)) {
@@ -364,6 +398,9 @@ $arguments = @(
     "--parameters", "portalStatusPassword=$portalStatusPassword",
     "--parameters", "peerSyncSharedKey=$peerSyncSharedKey",
     "--parameters", "sigV4ReplayHmacKey=$sigV4ReplayHmacKey",
+    "--parameters", "sigV4ReplayHmacKeyPrevious=$sigV4ReplayHmacKeyPrevious",
+    "--parameters", "sigV4ReplayObservationKeyVersion=$sigV4ReplayKeyVersion",
+    "--parameters", "sigV4ReplayObservationPreviousKeyVersion=$sigV4ReplayPreviousKeyVersion",
     "--parameters", "sigV4ReplayObservationConnectionString=$sigV4ReplayObserverConnectionString",
     "--parameters", "sigV4ReplayObservationEnabled=$($EnableSigV4ReplayObservation.IsPresent.ToString().ToLowerInvariant())",
     "--parameters", "peerSyncEnabled=$($EnablePeerSync.IsPresent.ToString().ToLowerInvariant())",
@@ -519,7 +556,7 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
 
 $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
 $personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-personal-memory-connection-string --query value -o tsv
-Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString -SearchBackend $searchBackend -SearchFallback $searchFallback -PortalStatusPassword $portalStatusPassword -PeerSyncSharedKey $peerSyncSharedKey -SigV4ReplayHmacKey $sigV4ReplayHmacKey -SigV4ReplayObserverConnectionString $sigV4ReplayObserverConnectionString -UserEncryptionPassphrase $userEncryptionPassphrase -UserEncryptionSalt $userEncryptionSalt
+Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString -SearchBackend $searchBackend -SearchFallback $searchFallback -PortalStatusPassword $portalStatusPassword -PeerSyncSharedKey $peerSyncSharedKey -SigV4ReplayHmacKey $sigV4ReplayHmacKey -SigV4ReplayHmacKeyPrevious $sigV4ReplayHmacKeyPrevious -SigV4ReplayObserverConnectionString $sigV4ReplayObserverConnectionString -UserEncryptionPassphrase $userEncryptionPassphrase -UserEncryptionSalt $userEncryptionSalt
 Restart-ContainerAppRevision -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value
 Start-Sleep -Seconds 20
 

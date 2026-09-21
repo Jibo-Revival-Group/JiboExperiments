@@ -998,6 +998,93 @@ public sealed class PersistenceStoreTests
             provider.GetRequiredService<IAwsSigV4ReplayObservationPublisher>());
     }
 
+    [Theory]
+    [InlineData("not-a-valid-key", "2")]
+    [InlineData(null, "2")]
+    [InlineData("valid", null)]
+    [InlineData("valid", "1")]
+    public void AddOpenJiboCloud_InvalidPreviousReplayKeyDisablesWholeObserver(
+        string? previousKey,
+        string? previousVersion)
+    {
+        var currentKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        if (previousKey == "valid")
+            previousKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:Security:SigV4ReplayObservation:Enabled"] = "true",
+                ["OpenJibo:Security:SigV4ReplayObservation:ConnectionString"] =
+                    "Host=localhost;Database=openjibo_di_test;Username=replay_observer;Password=test",
+                ["OpenJibo:Security:SigV4ReplayHmacKey"] = currentKey,
+                ["OpenJibo:Security:SigV4ReplayObservation:KeyVersion"] = "1",
+                ["OpenJibo:Security:SigV4ReplayObservation:PreviousHmacKey"] = previousKey,
+                ["OpenJibo:Security:SigV4ReplayObservation:PreviousKeyVersion"] = previousVersion
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        services.AddOpenJiboCloud(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        Assert.IsType<NullAwsSigV4ReplayObservationPublisher>(
+            provider.GetRequiredService<IAwsSigV4ReplayObservationPublisher>());
+    }
+
+    [Fact]
+    public void AddOpenJiboCloud_AcceptsCompletePreviousReplayKeyPair()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:Security:SigV4ReplayObservation:Enabled"] = "true",
+                ["OpenJibo:Security:SigV4ReplayObservation:ConnectionString"] =
+                    "Host=localhost;Database=openjibo_di_test;Username=replay_observer;Password=test",
+                ["OpenJibo:Security:SigV4ReplayHmacKey"] =
+                    Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
+                ["OpenJibo:Security:SigV4ReplayObservation:KeyVersion"] = "2",
+                ["OpenJibo:Security:SigV4ReplayObservation:PreviousHmacKey"] =
+                    Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
+                ["OpenJibo:Security:SigV4ReplayObservation:PreviousKeyVersion"] = "1"
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        services.AddOpenJiboCloud(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        Assert.IsType<AwsSigV4ReplayObservationPublisher>(
+            provider.GetRequiredService<IAwsSigV4ReplayObservationPublisher>());
+    }
+
+    [Fact]
+    public void AddOpenJiboCloud_SameReplayKeyMaterialDisablesWholeObserver()
+    {
+        var key = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:Security:SigV4ReplayObservation:Enabled"] = "true",
+                ["OpenJibo:Security:SigV4ReplayObservation:ConnectionString"] =
+                    "Host=localhost;Database=openjibo_di_test;Username=replay_observer;Password=test",
+                ["OpenJibo:Security:SigV4ReplayHmacKey"] = key,
+                ["OpenJibo:Security:SigV4ReplayObservation:KeyVersion"] = "2",
+                ["OpenJibo:Security:SigV4ReplayObservation:PreviousHmacKey"] = key,
+                ["OpenJibo:Security:SigV4ReplayObservation:PreviousKeyVersion"] = "1"
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        services.AddOpenJiboCloud(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        Assert.IsType<NullAwsSigV4ReplayObservationPublisher>(
+            provider.GetRequiredService<IAwsSigV4ReplayObservationPublisher>());
+    }
+
     [Fact]
     public void AddOpenJiboCloud_EnabledReplayObservationNeverFallsBackToStateConnection()
     {

@@ -20,6 +20,13 @@ public sealed class AwsSigV4ReplayDigestKey
 
     public short Version { get; }
 
+    public bool HasSameMaterial(AwsSigV4ReplayDigestKey other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        return _key.Length == other._key.Length &&
+               CryptographicOperations.FixedTimeEquals(_key, other._key);
+    }
+
     public static AwsSigV4ReplayDigestKey FromBase64Url(string encoded, short version = 1)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(encoded);

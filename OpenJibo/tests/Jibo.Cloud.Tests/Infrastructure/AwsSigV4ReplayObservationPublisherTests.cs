@@ -11,11 +11,13 @@ public sealed class AwsSigV4ReplayObservationPublisherTests
 {
     private static readonly AwsSigV4ReplayDigestKey Key = new(
         SHA256.HashData("replay-publisher-key"u8), 3);
+    private static readonly AwsSigV4ReplayDigestKey PreviousKey = new(
+        SHA256.HashData("previous-replay-publisher-key"u8), 2);
 
     [Fact]
     public void TryPublish_DropsWhenBoundedQueueIsFull()
     {
-        var outcomes = new List<(string Operation, string Outcome)>();
+        var outcomes = new List<(string Operation, string KeySlot, string Outcome)>();
         using var listener = new MeterListener
         {
             InstrumentPublished = (instrument, meterListener) =>
@@ -27,7 +29,7 @@ public sealed class AwsSigV4ReplayObservationPublisherTests
         listener.SetMeasurementEventCallback<long>((_, _, tags, _) =>
         {
             var values = tags.ToArray().ToDictionary(tag => tag.Key, tag => tag.Value?.ToString());
-            outcomes.Add((values["operation"]!, values["outcome"]!));
+            outcomes.Add((values["operation"]!, values["key_slot"]!, values["outcome"]!));
         });
         listener.Start();
         var publisher = new AwsSigV4ReplayObservationPublisher(
@@ -39,8 +41,8 @@ public sealed class AwsSigV4ReplayObservationPublisherTests
 
         Assert.True(publisher.TryPublish(proof, "Account.CreateHubToken"));
         Assert.False(publisher.TryPublish(proof, "Account.CreateHubToken"));
-        Assert.Contains(("Account.CreateHubToken", "enqueued"), outcomes);
-        Assert.Contains(("Account.CreateHubToken", "dropped"), outcomes);
+        Assert.Contains(("Account.CreateHubToken", "current", "enqueued"), outcomes);
+        Assert.Contains(("Account.CreateHubToken", "current", "dropped"), outcomes);
     }
 
     [Fact]
@@ -73,6 +75,64 @@ public sealed class AwsSigV4ReplayObservationPublisherTests
         Assert.Equal(expectedDigest, persisted.Digest);
         Assert.Equal(3, persisted.KeyVersion);
         Assert.Equal("Notification.NewRobotToken", persisted.Operation);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_DualPublishesDistinctCurrentAndPreviousDigests()
+    {
+        var store = new RecordingStore();
+        var publisher = new AwsSigV4ReplayObservationPublisher(
+            store,
+            Key,
+            2,
+            NullLogger<AwsSigV4ReplayObservationPublisher>.Instance,
+            PreviousKey);
+        var proof = CreateProof();
+
+        await publisher.StartAsync(CancellationToken.None);
+        try
+        {
+            Assert.True(publisher.TryPublish(proof, "Account.CreateHubToken"));
+            await store.SecondObservation.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            await publisher.StopAsync(CancellationToken.None);
+            publisher.Dispose();
+        }
+
+        Assert.Collection(store.Observations,
+            current => Assert.Equal(3, current.KeyVersion),
+            previous => Assert.Equal(2, previous.KeyVersion));
+        Assert.NotEqual(store.Observations[0].Digest, store.Observations[1].Digest);
+    }
+
+    [Fact]
+    public void Constructor_RejectsVersionCollision()
+    {
+        var duplicateVersion = new AwsSigV4ReplayDigestKey(
+            SHA256.HashData("different-material"u8), Key.Version);
+
+        Assert.Throws<ArgumentException>(() => new AwsSigV4ReplayObservationPublisher(
+            new RecordingStore(),
+            Key,
+            1,
+            NullLogger<AwsSigV4ReplayObservationPublisher>.Instance,
+            duplicateVersion));
+    }
+
+    [Fact]
+    public void Constructor_RejectsSameMaterialWithDifferentVersion()
+    {
+        var sameMaterial = new AwsSigV4ReplayDigestKey(
+            SHA256.HashData("replay-publisher-key"u8), 4);
+
+        Assert.Throws<ArgumentException>(() => new AwsSigV4ReplayObservationPublisher(
+            new RecordingStore(),
+            Key,
+            1,
+            NullLogger<AwsSigV4ReplayObservationPublisher>.Instance,
+            sameMaterial));
     }
 
     [Fact]

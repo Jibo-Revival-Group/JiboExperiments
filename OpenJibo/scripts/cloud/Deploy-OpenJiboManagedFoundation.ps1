@@ -333,6 +333,30 @@ function Get-OrCreateOpenJiboRandomSecret {
     Write-Host "Created managed secret '$Name'."
     return $value
 }
+
+function Get-OrCreateOpenJiboLiteralSecret {
+    param(
+        [string]$VaultName,
+        [string]$Name,
+        [string]$Value
+    )
+
+    try {
+        $existing = Invoke-OpenJiboAzWithRetry `
+            -Arguments @("keyvault", "secret", "show", "--vault-name", $VaultName, "--name", $Name, "--query", "value", "--output", "tsv") `
+            -Description "Key Vault metadata lookup for '$Name'" `
+            -Attempts 4
+        if (-not [string]::IsNullOrWhiteSpace($existing)) {
+            return $existing
+        }
+    }
+    catch {
+    }
+
+    Set-OpenJiboKeyVaultSecretWithRetry -VaultName $VaultName -Name $Name -Value $Value
+    Write-Host "Initialized managed metadata secret '$Name'."
+    return $Value
+}
 Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-state-connection-string -Value $resolvedStateConnectionString
 
 Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-personal-memory-connection-string -Value $resolvedPersonalMemoryConnectionString
@@ -362,5 +386,7 @@ $null = Get-OrCreateOpenJiboRandomSecret -VaultName $outputs.keyVaultName.value 
 $null = Get-OrCreateOpenJiboRandomSecret -VaultName $outputs.keyVaultName.value -Name openjibo-portal-status-password -ByteCount 32
 $null = Get-OrCreateOpenJiboRandomSecret -VaultName $outputs.keyVaultName.value -Name openjibo-peer-sync-shared-key -ByteCount 48
 $null = Get-OrCreateOpenJiboRandomSecret -VaultName $outputs.keyVaultName.value -Name openjibo-sigv4-replay-hmac -ByteCount 32
+$null = Get-OrCreateOpenJiboLiteralSecret -VaultName $outputs.keyVaultName.value -Name openjibo-sigv4-replay-hmac-key-version -Value "1"
+$null = Get-OrCreateOpenJiboLiteralSecret -VaultName $outputs.keyVaultName.value -Name openjibo-sigv4-replay-hmac-previous-key-version -Value "0"
 
 $deploymentJson

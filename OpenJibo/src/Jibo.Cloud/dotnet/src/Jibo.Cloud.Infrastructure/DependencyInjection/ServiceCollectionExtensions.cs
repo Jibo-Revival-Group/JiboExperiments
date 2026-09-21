@@ -18,6 +18,7 @@ using Jibo.Cloud.Infrastructure.Wikipedia;
 using Jibo.Runtime.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 // ReSharper disable UnusedMethodReturnValue.Global
@@ -249,6 +250,62 @@ public static class ServiceCollectionExtensions
                     provider.GetRequiredService<ITransportMetrics>());
             });
         }
+
+        var replayObservationOptions = new AwsSigV4ReplayObservationOptions();
+        configuration?.GetSection("OpenJibo:Security:SigV4ReplayObservation")
+            .Bind(replayObservationOptions);
+        replayObservationOptions.HmacKey ??=
+            configuration?["OpenJibo:Security:SigV4ReplayHmacKey"];
+
+        AwsSigV4ReplayDigestKey? replayDigestKey = null;
+        if (replayObservationOptions.Enabled &&
+            stateBackendKind == PersistenceBackendKind.PostgreSql &&
+            !string.IsNullOrWhiteSpace(replayObservationOptions.HmacKey))
+        {
+            try
+            {
+                replayDigestKey = AwsSigV4ReplayDigestKey.FromBase64Url(
+                    replayObservationOptions.HmacKey,
+                    replayObservationOptions.KeyVersion);
+            }
+            catch (ArgumentException)
+            {
+                replayDigestKey = null;
+            }
+        }
+
+        if (replayDigestKey is not null)
+        {
+            services.AddSingleton(replayDigestKey);
+            services.AddSingleton<IAwsSigV4ReplayObservationStore,
+                PostgreSqlAwsSigV4ReplayObservationStore>();
+            services.AddSingleton(provider => new AwsSigV4ReplayObservationPublisher(
+                provider.GetRequiredService<IAwsSigV4ReplayObservationStore>(),
+                provider.GetRequiredService<AwsSigV4ReplayDigestKey>(),
+                replayObservationOptions.Capacity,
+                provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<
+                    AwsSigV4ReplayObservationPublisher>>()));
+            services.AddSingleton<IAwsSigV4ReplayObservationPublisher>(provider =>
+                provider.GetRequiredService<AwsSigV4ReplayObservationPublisher>());
+            services.AddHostedService(provider =>
+                provider.GetRequiredService<AwsSigV4ReplayObservationPublisher>());
+        }
+        else
+        {
+            services.AddSingleton<IAwsSigV4ReplayObservationPublisher>(provider =>
+            {
+                if (replayObservationOptions.Enabled)
+                {
+                    provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>()
+                        .CreateLogger("Jibo.Cloud.SigV4ReplayObservation")
+                        .LogWarning(
+                            "Legacy SigV4 replay observation is disabled because PostgreSQL or a valid HMAC key is unavailable.");
+                }
+
+                return NullAwsSigV4ReplayObservationPublisher.Instance;
+            });
+        }
+
         var releaseSmokeAuthorization = new ReleaseSmokeAuthorizationOptions();
         configuration?.GetSection("OpenJibo:ReleaseSmoke").Bind(releaseSmokeAuthorization);
         services.AddSingleton(releaseSmokeAuthorization);

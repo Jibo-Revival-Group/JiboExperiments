@@ -3,6 +3,7 @@ using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.DependencyInjection;
+using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Cloud.Infrastructure.Telemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -283,6 +284,7 @@ static void ConfigureOperationalMetrics(WebApplicationBuilder builder)
             serviceInstanceId: $"{revision}/{replica}"))
         .WithMetrics(metrics => metrics
             .AddMeter(TransportMetrics.MeterName)
+            .AddMeter(AwsSigV4ReplayObservationPublisher.MeterName)
             .AddMeter("System.Runtime")
             .AddMeter("Npgsql")
             .AddAzureMonitorMetricExporter(options => options.ConnectionString = connectionString));

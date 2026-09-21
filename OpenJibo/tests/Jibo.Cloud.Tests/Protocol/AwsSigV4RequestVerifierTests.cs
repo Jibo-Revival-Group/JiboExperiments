@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Persistence;
@@ -47,6 +48,8 @@ public sealed class AwsSigV4RequestVerifierTests
         Assert.Equal(AwsSigV4HostClassification.Match, result.HostClassification);
         Assert.True(result.OperationAuthenticated);
         Assert.NotNull(result.AccessKeyFingerprint);
+        Assert.NotNull(result.VerifiedProof);
+        Assert.Equal(nameof(AwsSigV4VerifiedProof), result.VerifiedProof.ToString());
     }
 
     [Fact]
@@ -415,10 +418,12 @@ public sealed class AwsSigV4RequestVerifierTests
             SignedAt,
             ["host", "x-amz-content-sha256", "x-amz-date"]);
         var logger = new ListLogger<CloudAuthProtocolHandler>();
+        var publisher = new RecordingReplayPublisher();
         var handler = new CloudAuthProtocolHandler(
             store,
             logger,
-            awsSigV4Verifier: new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt)));
+            awsSigV4Verifier: new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt)),
+            awsSigV4ReplayObservationPublisher: publisher);
 
         var response = handler.HandleAccount("CreateHubToken", envelope);
         var messages = string.Join('\n', logger.Messages);
@@ -427,6 +432,7 @@ public sealed class AwsSigV4RequestVerifierTests
         Assert.Contains(nameof(AwsSigV4VerificationOutcome.UnknownCredential), messages, StringComparison.Ordinal);
         Assert.DoesNotContain(unknown.AccessKeyId, messages, StringComparison.Ordinal);
         Assert.DoesNotContain(unknown.SecretAccessKey, messages, StringComparison.Ordinal);
+        Assert.Empty(publisher.Operations);
     }
 
     [Theory]
@@ -444,10 +450,12 @@ public sealed class AwsSigV4RequestVerifierTests
             region: "api",
             target: target);
         var logger = new ListLogger<CloudAuthProtocolHandler>();
+        var publisher = new RecordingReplayPublisher();
         var handler = new CloudAuthProtocolHandler(
             store,
             logger,
-            awsSigV4Verifier: new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt)));
+            awsSigV4Verifier: new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt)),
+            awsSigV4ReplayObservationPublisher: publisher);
 
         var response = handler.HandleAccount("CreateHubToken", envelope);
         var messages = string.Join('\n', logger.Messages);
@@ -460,6 +468,7 @@ public sealed class AwsSigV4RequestVerifierTests
         Assert.Contains("host=Match", messages, StringComparison.Ordinal);
         Assert.Contains("operationAuthenticated=False", messages, StringComparison.Ordinal);
         Assert.Contains("shadow=true", messages, StringComparison.Ordinal);
+        Assert.Equal(["Account.CreateHubToken"], publisher.Operations);
     }
 
     [Fact]
@@ -487,6 +496,32 @@ public sealed class AwsSigV4RequestVerifierTests
         Assert.Contains("host=Match", messages, StringComparison.Ordinal);
         Assert.Contains("operationAuthenticated=True", messages, StringComparison.Ordinal);
         Assert.Contains("shadow=true", messages, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HandleAccount_ReplayPublisherFailureDoesNotChangeTokenIssuance()
+    {
+        var store = new InMemoryCloudStateStore();
+        var envelope = Sign(
+            store.GetAccount(),
+            "{}",
+            SignedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date"],
+            advertisedPayloadHash: HexSha256([]),
+            region: "api",
+            target: "Account_20151111.CreateHubToken");
+        var logger = new ListLogger<CloudAuthProtocolHandler>();
+        var handler = new CloudAuthProtocolHandler(
+            store,
+            logger,
+            awsSigV4Verifier: new AwsSigV4RequestVerifier(store, new FixedTimeProvider(SignedAt)),
+            awsSigV4ReplayObservationPublisher: new ThrowingReplayPublisher());
+
+        var response = handler.HandleAccount("CreateHubToken", envelope);
+
+        Assert.Equal(200, response.StatusCode);
+        Assert.Contains(logger.Messages, message =>
+            message.Contains("replay observation enqueue failed", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -616,6 +651,23 @@ public sealed class AwsSigV4RequestVerifierTests
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => utcNow;
+    }
+
+    private sealed class RecordingReplayPublisher : IAwsSigV4ReplayObservationPublisher
+    {
+        public List<string> Operations { get; } = [];
+
+        public bool TryPublish(AwsSigV4VerifiedProof proof, string operation)
+        {
+            Operations.Add(operation);
+            return true;
+        }
+    }
+
+    private sealed class ThrowingReplayPublisher : IAwsSigV4ReplayObservationPublisher
+    {
+        public bool TryPublish(AwsSigV4VerifiedProof proof, string operation) =>
+            throw new InvalidOperationException("simulated publisher failure");
     }
 
     private sealed class ListLogger<T> : ILogger<T>

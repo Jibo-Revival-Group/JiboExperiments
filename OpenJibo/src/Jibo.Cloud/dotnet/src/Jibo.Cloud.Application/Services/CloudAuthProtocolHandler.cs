@@ -11,7 +11,8 @@ public sealed class CloudAuthProtocolHandler(
     ILogger<CloudAuthProtocolHandler>? logger = null,
     RobotIdentitySuggestionStore? identitySuggestionStore = null,
     ReleaseSmokeAuthorizationOptions? releaseSmokeAuthorization = null,
-    AwsSigV4RequestVerifier? awsSigV4Verifier = null) : ICloudAuthProtocolHandler
+    AwsSigV4RequestVerifier? awsSigV4Verifier = null,
+    IAwsSigV4ReplayObservationPublisher? awsSigV4ReplayObservationPublisher = null) : ICloudAuthProtocolHandler
 {
     private static readonly AwsSigV4OperationPolicy CreateHubTokenPolicy = new(
         "Account.CreateHubToken",
@@ -30,6 +31,8 @@ public sealed class CloudAuthProtocolHandler(
         releaseSmokeAuthorization ?? new ReleaseSmokeAuthorizationOptions();
     private readonly AwsSigV4RequestVerifier _awsSigV4Verifier =
         awsSigV4Verifier ?? new AwsSigV4RequestVerifier(stateStore);
+    private readonly IAwsSigV4ReplayObservationPublisher _awsSigV4ReplayObservationPublisher =
+        awsSigV4ReplayObservationPublisher ?? NullAwsSigV4ReplayObservationPublisher.Instance;
     public ProtocolDispatchResult HandleAccount(string operation, ProtocolEnvelope envelope)
     {
         var account = stateStore.GetAccount();
@@ -305,6 +308,20 @@ public sealed class CloudAuthProtocolHandler(
 
         if (verification.CredentialAuthenticated)
         {
+            if (verification.VerifiedProof is not null)
+            {
+                try
+                {
+                    _awsSigV4ReplayObservationPublisher.TryPublish(verification.VerifiedProof, policy.Operation);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogWarning(exception,
+                        "Legacy SigV4 replay observation enqueue failed operation={Operation} shadow=true",
+                        policy.Operation);
+                }
+            }
+
             _logger.LogInformation(
                 "Legacy credential signature valid operation={Operation} outcome={Outcome} credentialFingerprint={CredentialFingerprint} scope={ScopeClassification} target={TargetClassification} payload={PayloadClassification} host={HostClassification} operationAuthenticated={OperationAuthenticated} robotIdentityProof=false shadow=true",
                 policy.Operation,

@@ -56,6 +56,49 @@ public sealed record AwsSigV4OperationPolicy(
     IReadOnlyList<string> Targets,
     IReadOnlyList<string> Hosts);
 
+/// <summary>
+/// Ephemeral proof material emitted only after a legacy SigV4 signature verifies.
+/// Raw fields remain private; callers can derive only the environment-keyed replay digest.
+/// </summary>
+public sealed class AwsSigV4VerifiedProof
+{
+    private readonly string _accessKeyId;
+    private readonly string _credentialDate;
+    private readonly string _region;
+    private readonly string _service;
+    private readonly string _signedTimestamp;
+    private readonly byte[] _signature;
+
+    internal AwsSigV4VerifiedProof(
+        string accessKeyId,
+        string credentialDate,
+        string region,
+        string service,
+        DateTimeOffset signedAt,
+        ReadOnlySpan<byte> signature)
+    {
+        _accessKeyId = accessKeyId;
+        _credentialDate = credentialDate;
+        _region = region;
+        _service = service;
+        _signedTimestamp = signedAt.UtcDateTime.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture);
+        _signature = signature.ToArray();
+    }
+
+    public byte[] CreateReplayDigest(AwsSigV4ReplayDigestKey key, string operation) =>
+        AwsSigV4ReplayDigestFactory.Create(
+            key,
+            operation,
+            _accessKeyId,
+            _credentialDate,
+            _region,
+            _service,
+            _signedTimestamp,
+            _signature);
+
+    public override string ToString() => nameof(AwsSigV4VerifiedProof);
+}
+
 public sealed record AwsSigV4Verification(
     AwsSigV4VerificationOutcome Outcome,
     string? AccessKeyFingerprint = null,
@@ -65,7 +108,8 @@ public sealed record AwsSigV4Verification(
     AwsSigV4ScopeClassification ScopeClassification = AwsSigV4ScopeClassification.NotEvaluated,
     AwsSigV4TargetClassification TargetClassification = AwsSigV4TargetClassification.NotEvaluated,
     AwsSigV4PayloadClassification PayloadClassification = AwsSigV4PayloadClassification.NotEvaluated,
-    AwsSigV4HostClassification HostClassification = AwsSigV4HostClassification.NotEvaluated)
+    AwsSigV4HostClassification HostClassification = AwsSigV4HostClassification.NotEvaluated,
+    AwsSigV4VerifiedProof? VerifiedProof = null)
 {
     public bool CredentialAuthenticated => Outcome is AwsSigV4VerificationOutcome.VerifiedCredentialOnly or
         AwsSigV4VerificationOutcome.VerifiedPayloadAndTarget;
@@ -203,7 +247,14 @@ public sealed partial class AwsSigV4RequestVerifier(
             scopeClassification,
             targetClassification,
             payloadClassification,
-            hostClassification);
+            hostClassification,
+            new AwsSigV4VerifiedProof(
+                accessKeyId,
+                credentialDate,
+                region,
+                service,
+                signedAt,
+                presentedSignatureBytes));
     }
 
     private static AwsSigV4TargetClassification ClassifyTarget(

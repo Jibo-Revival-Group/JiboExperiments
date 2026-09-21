@@ -108,12 +108,16 @@ public sealed class AwsSigV4ReplayObservationPublisher : BackgroundService,
                     {
                         try
                         {
-                            await _store.ObserveAsync(
+                            var observationResult = await _store.ObserveAsync(
                                 observation.Digest,
                                 observation.KeyVersion,
                                 item.Operation,
                                 stoppingToken);
                             Record(item.Operation, observation.KeySlot, "persisted");
+                            Record(item.Operation, observation.KeySlot,
+                                observationResult.Status == AwsSigV4ReplayObservationStatus.FirstSeen
+                                    ? "first_seen"
+                                    : "repeat");
                         }
                         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                         {

@@ -28,7 +28,9 @@ dormant source-local design is documented in [runtime-usage-outbox.md](runtime-u
 | `openjibo.persistence.cache.accesses` | counter | accesses | `store`, `result` |
 | `openjibo.persistence.postgresql.configured_max_connections` | observable gauge | connections | `store` |
 
-The transport HTTP, WebSocket, connection, and active-session instruments remain in the same meter. Turn phases
+The replay-observation `outcome` attribute is limited to `enqueued`, `dropped`, `persisted`, `failed`, `first_seen`,
+and `repeat`; `first_seen` and `repeat` are emitted only after the dedicated observer store returns its atomic
+classification. The transport HTTP, WebSocket, connection, and active-session instruments remain in the same meter. Turn phases
 are limited to `stt`, `plan`, `finalize`, and `other`. Outcomes are limited to `success`, `bypassed`,
 `unavailable`, `failure`, `canceled`, and `other`. Persistence store, cache result, suppression reason, socket,
 payload, message, endpoint, method, and status attributes have fixed allowlists in `TransportMetrics`; unknown

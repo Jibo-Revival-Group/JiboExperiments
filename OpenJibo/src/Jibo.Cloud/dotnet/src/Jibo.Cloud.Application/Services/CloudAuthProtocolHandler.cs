@@ -40,8 +40,6 @@ public sealed class CloudAuthProtocolHandler(
 
         if (operation.Equals("CreateHubToken", StringComparison.OrdinalIgnoreCase))
         {
-            var credentialVerification = ObserveLegacyCredential(envelope, CreateHubTokenPolicy);
-            var credentialBinding = HubTokenCredentialBinding.FromVerification(credentialVerification);
             var deviceId = !string.IsNullOrWhiteSpace(envelope.DeviceId)
                 ? envelope.DeviceId!
                 : ReadString(body, "deviceId")
@@ -50,6 +48,12 @@ public sealed class CloudAuthProtocolHandler(
                   ?? ReadString(body, "cpuid")
                   ?? ReadString(body, "cpuId")
                   ?? ReadString(body, "robotId");
+            var registrationSource = ReadRegistrationSource(envelope);
+            var credentialVerification = ObserveLegacyCredential(
+                envelope,
+                CreateHubTokenPolicy,
+                TryGetReplayProbeCredential(deviceId, registrationSource, envelope));
+            var credentialBinding = HubTokenCredentialBinding.FromVerification(credentialVerification);
 
             var defaultRobotIsSynthetic = RobotRegistrationSources.IsSynthetic(
                 RobotRegistrationSources.Normalize(stateStore.GetRobot().RegistrationSource,
@@ -62,10 +66,6 @@ public sealed class CloudAuthProtocolHandler(
             // new hardware remains an unlinked observed session until it is explicitly registered.
             if (!string.IsNullOrWhiteSpace(deviceId))
             {
-                var registrationSource = envelope.Headers.TryGetValue("X-OpenJibo-Registration-Source",
-                    out var sourceHeader)
-                    ? sourceHeader
-                    : null;
                 var smokeHubToken = TryIssueDeploymentSmokeHubToken(deviceId, registrationSource, envelope);
                 if (smokeHubToken is not null) return smokeHubToken;
             }
@@ -226,8 +226,6 @@ public sealed class CloudAuthProtocolHandler(
         if (!operation.Equals("NewRobotToken", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(new { ok = true, operation });
 
-        ObserveLegacyCredential(envelope, NewRobotTokenPolicy);
-
         var body = envelope.TryParseBody();
         var presentedDeviceId = ReadString(body, "deviceId")
                                 ?? ReadString(body, "serial_number")
@@ -243,9 +241,11 @@ public sealed class CloudAuthProtocolHandler(
                 ? presentedRobotId!
                 : "unknown-device";
 
-        var registrationSource = envelope.Headers.TryGetValue("X-OpenJibo-Registration-Source", out var sourceHeader)
-            ? sourceHeader
-            : null;
+        var registrationSource = ReadRegistrationSource(envelope);
+        ObserveLegacyCredential(
+            envelope,
+            NewRobotTokenPolicy,
+            TryGetReplayProbeCredential(deviceId, registrationSource, envelope));
         var isDeploymentSmoke = string.Equals(registrationSource, RobotRegistrationSources.DeploymentSmoke,
             StringComparison.OrdinalIgnoreCase);
         DeploymentSmokeRegistrationAuthorization? smokeAuthorization = null;
@@ -303,9 +303,10 @@ public sealed class CloudAuthProtocolHandler(
 
     private AwsSigV4Verification ObserveLegacyCredential(
         ProtocolEnvelope envelope,
-        AwsSigV4OperationPolicy policy)
+        AwsSigV4OperationPolicy policy,
+        AwsSigV4Credential? additionalCredential = null)
     {
-        var verification = _awsSigV4Verifier.Verify(envelope, policy);
+        var verification = _awsSigV4Verifier.Verify(envelope, policy, additionalCredential);
         if (verification.Outcome == AwsSigV4VerificationOutcome.NotPresented)
         {
             _logger.LogDebug("Legacy SigV4 was not presented operation={Operation}", policy.Operation);
@@ -350,6 +351,31 @@ public sealed class CloudAuthProtocolHandler(
             verification.AccessKeyFingerprint);
         return verification;
     }
+
+    private AwsSigV4Credential? TryGetReplayProbeCredential(
+        string? deviceId,
+        string? registrationSource,
+        ProtocolEnvelope envelope)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId)) return null;
+        var presentedSecret = envelope.Headers.TryGetValue(
+            ReleaseSmokeAuthorizationOptions.SecretHeaderName,
+            out var secretHeader)
+            ? secretHeader
+            : null;
+        return _releaseSmokeAuthorization.TryGetSigV4ReplayProbeCredential(
+            deviceId,
+            registrationSource,
+            presentedSecret,
+            out var credential)
+            ? credential
+            : null;
+    }
+
+    private static string? ReadRegistrationSource(ProtocolEnvelope envelope) =>
+        envelope.Headers.TryGetValue("X-OpenJibo-Registration-Source", out var sourceHeader)
+            ? sourceHeader
+            : null;
 
     private ProtocolDispatchResult? TryIssueDeploymentSmokeHubToken(string deviceId, string? registrationSource,
         ProtocolEnvelope envelope)

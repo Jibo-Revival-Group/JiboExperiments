@@ -56,6 +56,8 @@ public sealed record AwsSigV4OperationPolicy(
     IReadOnlyList<string> Targets,
     IReadOnlyList<string> Hosts);
 
+public sealed record AwsSigV4Credential(string AccessKeyId, string SecretAccessKey);
+
 /// <summary>
 /// Ephemeral proof material emitted only after a legacy SigV4 signature verifies.
 /// Raw fields remain private; callers can derive only the environment-keyed replay digest.
@@ -134,7 +136,10 @@ public sealed partial class AwsSigV4RequestVerifier(
     public static readonly TimeSpan MaximumClockSkew = TimeSpan.FromMinutes(5);
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
-    public AwsSigV4Verification Verify(ProtocolEnvelope envelope, AwsSigV4OperationPolicy? policy = null)
+    public AwsSigV4Verification Verify(
+        ProtocolEnvelope envelope,
+        AwsSigV4OperationPolicy? policy = null,
+        AwsSigV4Credential? additionalCredential = null)
     {
         if (!envelope.Headers.TryGetValue("Authorization", out var authorization) ||
             string.IsNullOrWhiteSpace(authorization))
@@ -163,11 +168,12 @@ public sealed partial class AwsSigV4RequestVerifier(
         var fingerprint = CreateAccessKeyFingerprint(accessKeyId);
 
         var account = stateStore.GetAccount();
-        if (string.IsNullOrWhiteSpace(account.AccessKeyId) ||
-            string.IsNullOrWhiteSpace(account.SecretAccessKey) ||
-            !CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(accessKeyId),
-                Encoding.UTF8.GetBytes(account.AccessKeyId)))
+        var secretAccessKey = MatchesCredential(accessKeyId, additionalCredential)
+            ? additionalCredential!.SecretAccessKey
+            : MatchesCredential(accessKeyId, new AwsSigV4Credential(account.AccessKeyId, account.SecretAccessKey))
+                ? account.SecretAccessKey
+                : null;
+        if (string.IsNullOrWhiteSpace(secretAccessKey))
             return new AwsSigV4Verification(AwsSigV4VerificationOutcome.UnknownCredential, fingerprint);
 
         if (!TryReadSignedAt(envelope, credentialDate, out var signedAt))
@@ -203,7 +209,7 @@ public sealed partial class AwsSigV4RequestVerifier(
             scope,
             HexSha256(Encoding.UTF8.GetBytes(canonicalRequest)));
 
-        var signingKey = DeriveSigningKey(account.SecretAccessKey, credentialDate, region, service);
+        var signingKey = DeriveSigningKey(secretAccessKey, credentialDate, region, service);
         var expectedSignature = HmacSha256(signingKey, Encoding.UTF8.GetBytes(stringToSign));
         byte[] presentedSignatureBytes;
         try
@@ -382,6 +388,13 @@ public sealed partial class AwsSigV4RequestVerifier(
     }
 
     private static byte[] HmacSha256(byte[] key, byte[] value) => HMACSHA256.HashData(key, value);
+    private static bool MatchesCredential(string accessKeyId, AwsSigV4Credential? credential) =>
+        credential is not null &&
+        !string.IsNullOrWhiteSpace(credential.AccessKeyId) &&
+        !string.IsNullOrWhiteSpace(credential.SecretAccessKey) &&
+        CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(accessKeyId),
+            Encoding.UTF8.GetBytes(credential.AccessKeyId));
     private static string HexSha256(byte[] value) => Convert.ToHexString(SHA256.HashData(value)).ToLowerInvariant();
     public static string CreateAccessKeyFingerprint(string accessKeyId)
     {

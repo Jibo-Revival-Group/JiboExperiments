@@ -21,7 +21,12 @@ if ! az containerapp update \
   --resource-group "$resource_group" \
   --name "$app_name" \
   --set-env-vars "OpenJibo__ReleaseSmoke__Enabled=false" \
-  --remove-env-vars OpenJibo__ReleaseSmoke__Secret OpenJibo__ReleaseSmoke__MaxConcurrentDevices \
+  --remove-env-vars \
+    OpenJibo__ReleaseSmoke__Secret \
+    OpenJibo__ReleaseSmoke__MaxConcurrentDevices \
+    OpenJibo__ReleaseSmoke__SigV4ReplayProbe__Enabled \
+    OpenJibo__ReleaseSmoke__SigV4ReplayProbe__AccessKeyId \
+    OpenJibo__ReleaseSmoke__SigV4ReplayProbe__SecretAccessKey \
   --output none; then
   echo "Failed to deploy the disabled release-smoke configuration." >&2
   failures=$((failures + 1))
@@ -50,7 +55,7 @@ fi
 secret_ref_count="$(az containerapp show \
   --resource-group "$resource_group" \
   --name "$app_name" \
-  --query "length(properties.template.containers[0].env[?name=='OpenJibo__ReleaseSmoke__Secret'])" \
+  --query "length(properties.template.containers[0].env[?name=='OpenJibo__ReleaseSmoke__Secret' || name=='OpenJibo__ReleaseSmoke__SigV4ReplayProbe__AccessKeyId' || name=='OpenJibo__ReleaseSmoke__SigV4ReplayProbe__SecretAccessKey'])" \
   --output tsv 2>/dev/null || echo 1)"
 if [[ "$secret_ref_count" != "0" ]]; then
   echo "Release-smoke secret reference is still present; stored secret will not be removed." >&2
@@ -58,23 +63,23 @@ if [[ "$secret_ref_count" != "0" ]]; then
 elif [[ "$healthy" != "true" ]]; then
   echo "Stored release-smoke secret will be retained until a disabled revision is healthy." >&2
 else
-  secret_count="$(az containerapp secret list \
-    --resource-group "$resource_group" \
-    --name "$app_name" \
-    --query "length([?name=='release-smoke-authorization'])" \
-    --output tsv 2>/dev/null || echo 1)"
-  if [[ "$secret_count" == "1" ]]; then
+  if ! existing_secret_names="$(az containerapp secret list \
+      --resource-group "$resource_group" \
+      --name "$app_name" \
+      --query "[?name=='release-smoke-authorization' || name=='sigv4-replay-probe-access-key' || name=='sigv4-replay-probe-secret-key'].name" \
+      --output tsv 2>/dev/null)"; then
+    echo "Could not safely enumerate stored release-smoke secrets." >&2
+    failures=$((failures + 1))
+  elif [[ -n "$existing_secret_names" ]]; then
+    mapfile -t secret_names < <(printf '%s\n' "$existing_secret_names" | tr '\t' '\n' | sed '/^$/d')
     if ! az containerapp secret remove \
       --resource-group "$resource_group" \
       --name "$app_name" \
-      --secret-names release-smoke-authorization \
+      --secret-names "${secret_names[@]}" \
       --output none; then
       echo "Failed to remove the stored release-smoke authorization secret." >&2
       failures=$((failures + 1))
     fi
-  elif [[ "$secret_count" != "0" ]]; then
-    echo "Could not safely determine whether the release-smoke secret exists." >&2
-    failures=$((failures + 1))
   fi
 fi
 

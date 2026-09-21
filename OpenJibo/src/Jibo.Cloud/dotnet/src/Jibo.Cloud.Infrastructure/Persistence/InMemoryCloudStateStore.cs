@@ -1092,6 +1092,15 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return token;
     }
 
+    public void RevokeDeploymentSmokeTokens(string deviceId)
+    {
+        ValidateDeploymentSmokeDeviceId(deviceId);
+        var normalizedDeviceId = deviceId.Trim();
+        _sessions.RemoveDurableForDevice(normalizedDeviceId, "robot");
+        _sessions.RemoveDurableForDevice(normalizedDeviceId, "hub");
+        TouchState();
+    }
+
     private static void ValidateDeploymentSmokeDeviceId(string deviceId)
     {
         if (string.IsNullOrWhiteSpace(deviceId) ||

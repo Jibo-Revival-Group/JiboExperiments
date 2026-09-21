@@ -274,7 +274,7 @@ if ($configureSmokeIndex -lt 0 -or $restartSmokeIndex -lt 0 -or $runSmokeIndex -
     throw "The configured release-smoke revision must be restarted and verified before deployed smoke runs."
 }
 
-foreach ($marker in @("OpenJibo__ReleaseSmoke__Enabled=false", "--remove-env-vars", "OpenJibo__ReleaseSmoke__Secret", "/health", "containerapp secret remove", "release-smoke-authorization", "failures=")) {
+foreach ($marker in @("OpenJibo__ReleaseSmoke__Enabled=false", "--remove-env-vars", "OpenJibo__ReleaseSmoke__Secret", "OpenJibo__ReleaseSmoke__SigV4ReplayProbe__SecretAccessKey", "/health", "containerapp secret remove", "release-smoke-authorization", "sigv4-replay-probe-secret-key", "failures=")) {
     Assert-ContainsMarker -Text $releaseSmokeCleanupText -Marker $marker -FailurePrefix "Release-smoke cleanup script is missing lifecycle safeguard"
 }
 $disabledConfigIndex = $releaseSmokeCleanupText.IndexOf("OpenJibo__ReleaseSmoke__Enabled=false", [StringComparison]::Ordinal)

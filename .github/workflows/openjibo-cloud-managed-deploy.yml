@@ -633,8 +633,14 @@ jobs:
         shell: bash
         run: |
           smoke_secret="$(openssl rand -hex 32)"
+          replay_probe_access_key="openjibo-probe-$(openssl rand -hex 12)"
+          replay_probe_secret_key="$(openssl rand -hex 32)"
           echo "::add-mask::$smoke_secret"
+          echo "::add-mask::$replay_probe_access_key"
+          echo "::add-mask::$replay_probe_secret_key"
           echo "OPENJIBO_RELEASE_SMOKE_SECRET=$smoke_secret" >> "$GITHUB_ENV"
+          echo "OPENJIBO_SIGV4_REPLAY_PROBE_ACCESS_KEY_ID=$replay_probe_access_key" >> "$GITHUB_ENV"
+          echo "OPENJIBO_SIGV4_REPLAY_PROBE_SECRET_ACCESS_KEY=$replay_probe_secret_key" >> "$GITHUB_ENV"
 
       - name: Deploy and smoke-test managed Container App
         id: deploy
@@ -778,20 +784,34 @@ jobs:
             exit 1
           fi
           if [[ "${{ inputs.deployment_target }}" == "staging" ]]; then
+            smoke_secrets=("release-smoke-authorization=$OPENJIBO_RELEASE_SMOKE_SECRET")
+            smoke_env=(
+              "OpenJibo__ReleaseSmoke__Enabled=true"
+              "OpenJibo__ReleaseSmoke__Secret=secretref:release-smoke-authorization"
+              "OpenJibo__ReleaseSmoke__MaxConcurrentDevices=${{ inputs.staging_smoke_robot_count }}"
+            )
+            if [[ "${{ inputs.enable_sigv4_replay_observation }}" == "true" ]]; then
+              smoke_secrets+=(
+                "sigv4-replay-probe-access-key=$OPENJIBO_SIGV4_REPLAY_PROBE_ACCESS_KEY_ID"
+                "sigv4-replay-probe-secret-key=$OPENJIBO_SIGV4_REPLAY_PROBE_SECRET_ACCESS_KEY"
+              )
+              smoke_env+=(
+                "OpenJibo__ReleaseSmoke__SigV4ReplayProbe__Enabled=true"
+                "OpenJibo__ReleaseSmoke__SigV4ReplayProbe__AccessKeyId=secretref:sigv4-replay-probe-access-key"
+                "OpenJibo__ReleaseSmoke__SigV4ReplayProbe__SecretAccessKey=secretref:sigv4-replay-probe-secret-key"
+              )
+            fi
             az containerapp secret set \
               --resource-group "$OPENJIBO_RESOURCE_GROUP" \
               --name "$app_name" \
-              --secrets "release-smoke-authorization=$OPENJIBO_RELEASE_SMOKE_SECRET" \
+              --secrets "${smoke_secrets[@]}" \
               --output none
             az containerapp update \
               --resource-group "$OPENJIBO_RESOURCE_GROUP" \
               --name "$app_name" \
               --min-replicas 2 \
               --max-replicas 2 \
-              --set-env-vars \
-                "OpenJibo__ReleaseSmoke__Enabled=true" \
-                "OpenJibo__ReleaseSmoke__Secret=secretref:release-smoke-authorization" \
-                "OpenJibo__ReleaseSmoke__MaxConcurrentDevices=${{ inputs.staging_smoke_robot_count }}" \
+              --set-env-vars "${smoke_env[@]}" \
               --output none
 
             configured_revision="$(az containerapp show \
@@ -880,6 +900,22 @@ jobs:
           OPENJIBO_RELEASE_SMOKE_ALLOWED_HOST="$app_fqdn" \
             BASE_URL="https://${app_fqdn}" \
             node ./scripts/cloud/invoke-release-smoke.mjs
+
+      - name: Prove staging SigV4 replay persistence
+        if: inputs.deployment_target == 'staging' && inputs.enable_sigv4_replay_observation
+        shell: bash
+        env:
+          RELEASE_SMOKE_EXPECTED_REVISION: ${{ steps.release_smoke_config.outputs.revision }}
+        run: |
+          app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
+          app_fqdn="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.configuration.ingress.fqdn --output tsv)"
+          if [[ -z "$app_fqdn" ]]; then
+            echo "The staging Container App did not report an ingress FQDN." >&2
+            exit 1
+          fi
+          OPENJIBO_RELEASE_SMOKE_ALLOWED_HOST="$app_fqdn" \
+            BASE_URL="https://${app_fqdn}" \
+            node ./scripts/cloud/invoke-sigv4-replay-probe.mjs
 
       - name: Disable staging release smoke authorization
         if: always() && inputs.deployment_target == 'staging' && steps.azure_login.outcome == 'success'

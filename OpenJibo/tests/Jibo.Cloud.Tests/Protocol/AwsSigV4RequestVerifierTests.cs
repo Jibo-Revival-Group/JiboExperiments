@@ -705,6 +705,71 @@ public sealed class AwsSigV4RequestVerifierTests
         Assert.Contains("shadow=true", messages, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task ReplayProbeProof_RequiresExactAuthorizedRequestAndProvesTwoPriorObservations()
+    {
+        var store = new InMemoryCloudStateStore();
+        var probeAccount = new AccountProfile
+        {
+            AccessKeyId = "staging-proof-access-key",
+            SecretAccessKey = "staging-proof-secret-key"
+        };
+        var signedAt = DateTimeOffset.UtcNow;
+        var envelope = Sign(
+            probeAccount,
+            "{\"deviceId\":\"open-jibo-smoke-staging-primary\"}",
+            signedAt,
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"],
+            target: "Notification_20160715.NewRobotToken",
+            host: "openjibo-managed-api.example.azurecontainerapps.io");
+        envelope.Headers["X-OpenJibo-Registration-Source"] = RobotRegistrationSources.DeploymentSmoke;
+        envelope.Headers[ReleaseSmokeAuthorizationOptions.SecretHeaderName] = "proof-smoke-secret";
+        var observationStore = new ProofObservationStore(observationCount: 3);
+        var service = new AwsSigV4ReplayProbeProofService(
+            store,
+            new ReleaseSmokeAuthorizationOptions
+            {
+                Enabled = true,
+                Secret = "proof-smoke-secret",
+                SigV4ReplayProbe = new SigV4ReplayProbeCredentialOptions
+                {
+                    Enabled = true,
+                    AccessKeyId = probeAccount.AccessKeyId,
+                    SecretAccessKey = probeAccount.SecretAccessKey
+                }
+            },
+            observationStore,
+            new AwsSigV4ReplayDigestKey(new byte[32]));
+
+        var result = await service.ProveAsync(envelope);
+
+        Assert.True(result.Verified);
+        Assert.Equal(2, result.PriorObservationCount);
+        Assert.Equal(1, observationStore.Calls);
+    }
+
+    [Fact]
+    public async Task ReplayProbeProof_DoesNotTouchStoreWithoutReleaseSmokeAuthorization()
+    {
+        var store = new InMemoryCloudStateStore();
+        var observationStore = new ProofObservationStore(observationCount: 3);
+        var service = new AwsSigV4ReplayProbeProofService(
+            store,
+            new ReleaseSmokeAuthorizationOptions(),
+            observationStore,
+            new AwsSigV4ReplayDigestKey(new byte[32]));
+        var envelope = Sign(
+            store.GetAccount(),
+            "{\"deviceId\":\"open-jibo-smoke-staging-primary\"}",
+            DateTimeOffset.UtcNow,
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"]);
+
+        var result = await service.ProveAsync(envelope);
+
+        Assert.False(result.Verified);
+        Assert.Equal(0, observationStore.Calls);
+    }
+
     private static ProtocolEnvelope Sign(
         AccountProfile account,
         string body,
@@ -792,6 +857,29 @@ public sealed class AwsSigV4RequestVerifierTests
     {
         public bool TryPublish(AwsSigV4VerifiedProof proof, string operation) =>
             throw new InvalidOperationException("simulated publisher failure");
+    }
+
+    private sealed class ProofObservationStore(long observationCount) : IAwsSigV4ReplayObservationStore
+    {
+        public int Calls { get; private set; }
+
+        public Task<AwsSigV4ReplayObservation> ObserveAsync(
+            ReadOnlyMemory<byte> replayDigest,
+            short keyVersion,
+            string operation,
+            CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            var now = DateTimeOffset.UtcNow;
+            return Task.FromResult(new AwsSigV4ReplayObservation(
+                observationCount > 1
+                    ? AwsSigV4ReplayObservationStatus.Repeat
+                    : AwsSigV4ReplayObservationStatus.FirstSeen,
+                observationCount,
+                now.AddSeconds(-1),
+                now,
+                now.AddMinutes(15)));
+        }
     }
 
     private sealed class ListLogger<T> : ILogger<T>

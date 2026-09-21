@@ -85,6 +85,22 @@ export async function collectDistinctReplicaReplayEvidence({
   throw new Error("Signed replay probe did not reach two distinct replicas.");
 }
 
+export async function provePersistedReplay({ baseUrl, request, fetchImpl = globalThis.fetch }) {
+  const response = await fetchImpl(`${baseUrl.replace(/\/$/, "")}/health/sigv4-replay-proof`, {
+    method: "POST",
+    headers: request.headers,
+    body: request.body,
+    cache: "no-store",
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`Replay persistence proof returned HTTP ${response.status}.`);
+  const result = text ? JSON.parse(text) : null;
+  if (result?.verified !== true || !Number.isInteger(result?.priorObservationCount) ||
+      result.priorObservationCount < 2)
+    throw new Error("Replay persistence proof did not confirm two prior observations.");
+  return { verified: true, priorObservationCount: result.priorObservationCount };
+}
+
 export function validateProbeTarget(baseUrl, allowedHost) {
   const host = new URL(baseUrl).hostname.toLowerCase().replace(/\.$/, "");
   const approved = String(allowedHost ?? "").trim().toLowerCase().replace(/\.$/, "");
@@ -109,7 +125,15 @@ async function main() {
     attempts: Number(process.env.RELEASE_SMOKE_REPLICA_ATTEMPTS || 40),
     intervalMs: Number(process.env.RELEASE_SMOKE_REPLICA_INTERVAL_MS || 250),
   });
-  console.log(JSON.stringify({ status: "passed", ...evidence }));
+  // The runtime publisher is deliberately asynchronous. Wait once, then perform a
+  // single mutating proof observation; retrying the proof endpoint could manufacture
+  // the count it is intended to verify.
+  const settleMs = Number(process.env.OPENJIBO_SIGV4_REPLAY_PROBE_SETTLE_MS || 2000);
+  if (!Number.isInteger(settleMs) || settleMs < 0 || settleMs > 10000)
+    throw new Error("OPENJIBO_SIGV4_REPLAY_PROBE_SETTLE_MS must be between 0 and 10000.");
+  if (settleMs > 0) await new Promise((resolve) => setTimeout(resolve, settleMs));
+  const persistence = await provePersistedReplay({ baseUrl, request });
+  console.log(JSON.stringify({ status: "passed", ...evidence, persistence }));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

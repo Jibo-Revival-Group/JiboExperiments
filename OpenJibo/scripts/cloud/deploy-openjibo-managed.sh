@@ -181,6 +181,27 @@ raise SystemExit("Could not determine the PostgreSQL database name from the conn
 PY
 }
 
+validate_base64url_secret() {
+  local value="$1"
+  OPENJIBO_SECRET_TO_VALIDATE="$value" python3 - <<'PY'
+import base64
+import os
+import re
+
+value = os.environ.get("OPENJIBO_SECRET_TO_VALIDATE", "")
+if not value or re.fullmatch(r"[A-Za-z0-9_-]+", value) is None:
+    raise SystemExit(1)
+
+padding = "=" * (-len(value) % 4)
+try:
+    decoded = base64.urlsafe_b64decode(value + padding)
+except Exception:
+    raise SystemExit(1)
+
+raise SystemExit(0 if len(decoded) >= 32 else 1)
+PY
+}
+
 ensure_postgres_firewall_rule() {
   local postgres_server_name="$1"
   local rule_name="$2"
@@ -300,11 +321,17 @@ search_backend="$(az keyvault secret show --vault-name "$key_vault_name" --name 
 search_fallback="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-search-fallback --query value -o tsv 2>/dev/null || true)"
 portal_status_password="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-portal-status-password --query value -o tsv)"
 peer_sync_shared_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-peer-sync-shared-key --query value -o tsv)"
+sigv4_replay_hmac_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-sigv4-replay-hmac --query value -o tsv)"
 user_encryption_passphrase="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-user-encrypt --query value -o tsv)"
 user_encryption_salt="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-user-salt --query value -o tsv)"
 
 if [[ -z "$user_encryption_passphrase" || -z "$user_encryption_salt" ]]; then
-  echo "Managed user encryption secrets are missing from Key Vault '$key_vault_name'." >&2
+  echo "Managed encryption or replay-observation secrets are missing from Key Vault '$key_vault_name'." >&2
+  exit 1
+fi
+
+if ! validate_base64url_secret "$sigv4_replay_hmac_key"; then
+  echo "Managed SigV4 replay HMAC secret is missing, malformed, or shorter than 32 decoded bytes in Key Vault '$key_vault_name'." >&2
   exit 1
 fi
 
@@ -338,6 +365,7 @@ deployment_args=(
   --parameters "newsApiKey=${news_api_key}"
   --parameters "portalStatusPassword=${portal_status_password}"
   --parameters "peerSyncSharedKey=${peer_sync_shared_key}"
+  --parameters "sigV4ReplayHmacKey=${sigv4_replay_hmac_key}"
   --parameters "peerSyncEnabled=${peer_sync_enabled}"
   --parameters "allowedPeerHosts=${allowed_peer_hosts}"
   --parameters "userEncryptionPassphrase=${user_encryption_passphrase}"
@@ -488,6 +516,7 @@ if [[ -n "${container_app_name:-}" ]]; then
     "personal-memory-connection-string=${personal_memory_connection_string}"
     "portal-status-password=${portal_status_password}"
     "peer-sync-shared-key=${peer_sync_shared_key}"
+    "sigv4-replay-hmac-key=${sigv4_replay_hmac_key}"
     "user-encryption-passphrase=${user_encryption_passphrase}"
     "user-encryption-salt=${user_encryption_salt}"
   )

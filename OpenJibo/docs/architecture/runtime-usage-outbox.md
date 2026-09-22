@@ -113,3 +113,29 @@ capability role, wrapper `EXECUTE`, and schema `USAGE`; it receives no table/vie
 
 Attempt-cap recovery is intentionally absent from this artifact. That operation remains an operator-only,
 unwired function until a separately reviewed recovery boundary is approved.
+
+## Dormant shadow-source reader
+
+`infra/postgresql/runtime-usage-shadow-source-role.sql` is a separate,
+read-only deployment artifact for later Cloud shadow reconciliation. It does
+not widen the delivery identity and is not applied by normal migration or
+runtime startup. Its pre-created physical login is exactly
+`openjibo_runtime_usage_shadow_source` with `LOGIN INHERIT`, no elevated
+attributes, and connection limit `1`.
+
+The artifact creates independent `NOLOGIN` owner and capability roles and the
+`runtime_usage_shadow_source` wrapper schema. The physical login can execute
+only two `STABLE SECURITY DEFINER` functions: `describe_runtime_usage_stream`
+captures an immutable stream high watermark and `read_runtime_usage_stream_page`
+returns a strictly sequence-keyset page through that caller-supplied fixed
+watermark. The page limit is `1..250`, returns the full immutable runtime
+snapshot needed to reproduce canonical evidence, and exposes only the minimal
+delivery state, delivery observation timestamp, acknowledgement receipt hash,
+and quarantine category.
+
+The reader has no direct raw table or function access, no claim/defer/acknowledge/
+quarantine/recovery operation, and no access to bindings, events, accumulators,
+or credentials. `PUBLIC TEMP`, unexpected memberships, raw ACL contamination,
+schema creation, unsafe role attributes, and source-wrapper privilege leakage
+fail closed. A later private adapter must hash the returned opaque idempotency
+key immediately and must never log or persist it.

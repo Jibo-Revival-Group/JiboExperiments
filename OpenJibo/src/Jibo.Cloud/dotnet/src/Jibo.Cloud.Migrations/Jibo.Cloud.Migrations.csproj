@@ -23,6 +23,9 @@
     <Content Include="..\..\..\..\..\infra\postgresql\runtime-usage-delivery-role.sql"
              Link="Deployment\runtime-usage-delivery-role.sql"
              CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\..\..\..\infra\postgresql\runtime-usage-shadow-source-role.sql"
+             Link="Deployment\runtime-usage-shadow-source-role.sql"
+             CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Migrations\PostgreSql\**\*.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

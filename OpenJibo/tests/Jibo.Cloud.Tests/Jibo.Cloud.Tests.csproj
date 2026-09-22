@@ -27,6 +27,10 @@
 			<Link>Deployment\runtime-usage-delivery-role.sql</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+		<None Include="..\..\infra\postgresql\runtime-usage-shadow-source-role.sql">
+			<Link>Deployment\runtime-usage-shadow-source-role.sql</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Include="..\..\src\Jibo.Cloud\dotnet\src\Jibo.Cloud.Migrations\Migrations\PostgreSql\*.sql">
 			<Link>Migrations\PostgreSql\%(Filename)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

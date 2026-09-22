@@ -129,6 +129,14 @@ robot. The current slice provides the persistence and enforcement seam. Secret-o
 access-key identifier must explicitly revoke existing Hub tokens until a future transactionally authoritative
 credential-generation workflow exists.
 
+The neutral runtime also contains a default-disabled ES256/P-256 attestation issuer foundation. It emits the
+exact managed-service claim contract only from explicit trusted pairing, device-key, credential-version,
+challenge, and live-session inputs. The session binding is
+`SHA-256("openjibo-runtime-pairing-session-binding-v1\\0" || UTF8(trimmed opaque hub token))`; it is never derived
+from the process-local session ID or robot-provided `CONTEXT`. No caller, managed-API transport, private signing
+key configuration, pairing command, co-presence ceremony, or deployment enablement exists yet, so this
+foundation cannot change ownership or live robot behavior.
+
 Research targets:
 
 - capture and compare `Notification.NewRobotToken` requests across known-good and suspicious devices

@@ -608,11 +608,15 @@ These are the carryover items that need a clean proof pass first:
     the hashed durable Hub-token row; every PostgreSQL-backed handshake rechecks token revocation and the current
     account epoch across replicas, while unsigned compatibility tokens remain unchanged and unbound
   - credential claims, swaps, backfill, offline merge, verified serial evidence, and explicit session links are persisted
+  - a default-disabled ES256 runtime-attestation issuer now implements the exact managed-service claim contract
+    and a domain-separated opaque-Hub-token session binding, but has no caller, configured signing key, transport,
+    pairing command, or ownership side effect
   - raw binary WebSocket audio is normalized into a single browser-playable Ogg/Opus stream
   - the status page distinguishes observed runtime IDs from explicit links and reports artifact coverage
 - Remaining proof:
   - keep this observation out of robot identity and ownership decisions; add synchronous replay consumption,
-    live-socket fencing, and physical co-presence before it contributes to a managed pairing attestation
+    durable live-socket fencing, managed pairing descriptor acquisition, and physical co-presence before the
+    disabled issuer can be called or enabled
   - deploy and verify attribution survives restart/reconnect on the Azure state backend
   - perform a real capture audit covering events, logs, media, and ASR, including an unassigned-credential claim
   - confirm archived records remain historical after a fresh deployment

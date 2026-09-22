@@ -34,6 +34,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Content Include="..\..\..\..\..\infra\postgresql\runtime-usage-delivery-role.sql"
+		         Link="Deployment\runtime-usage-delivery-role.sql"
+		         CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <PackageReference Include="Azure.Storage.Blobs" Version="12.28.0" />
 	  <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
 	  <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />

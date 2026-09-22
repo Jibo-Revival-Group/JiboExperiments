@@ -10,6 +10,9 @@ media_connection_string=""
 media_container="openjibo-media"
 replay_observer_connection_string=""
 provision_sigv4_replay_observer=false
+runtime_usage_state_schema=""
+runtime_usage_source_login_role=""
+provision_runtime_usage_delivery=false
 import_legacy_cloud_state=false
 import_legacy_personal_memory=false
 verify=false
@@ -52,6 +55,18 @@ while [[ $# -gt 0 ]]; do
       ;;
     --provision-sigv4-replay-observer)
       provision_sigv4_replay_observer=true
+      shift
+      ;;
+    --runtime-usage-state-schema)
+      runtime_usage_state_schema="${2:-}"
+      shift 2
+      ;;
+    --runtime-usage-source-login)
+      runtime_usage_source_login_role="${2:-}"
+      shift 2
+      ;;
+    --provision-runtime-usage-delivery)
+      provision_runtime_usage_delivery=true
       shift
       ;;
     --import-legacy-cloud-state)
@@ -132,6 +147,18 @@ fi
 
 if [[ "$provision_sigv4_replay_observer" == true ]]; then
   arguments+=(--provision-sigv4-replay-observer)
+fi
+
+if [[ "$provision_runtime_usage_delivery" == true ]]; then
+  if [[ -z "$runtime_usage_state_schema" || -z "$runtime_usage_source_login_role" ]]; then
+    echo "Runtime usage delivery provisioning requires --runtime-usage-state-schema and --runtime-usage-source-login." >&2
+    exit 2
+  fi
+  arguments+=(
+    --provision-runtime-usage-delivery
+    --runtime-usage-state-schema "$runtime_usage_state_schema"
+    --runtime-usage-source-login "$runtime_usage_source_login_role"
+  )
 fi
 
 if [[ "$import_legacy_cloud_state" == true ]]; then

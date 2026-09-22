@@ -96,3 +96,20 @@ with invoker rights and are currently usable only by the database owner. Before 
 
 Application Insights and diagnostic capture remain operational/debugging systems. They are aggregate or
 best-effort and must not be parsed into this ledger.
+
+## Source delivery deployment artifact
+
+`infra/postgresql/runtime-usage-delivery-role.sql` is a separately reviewed deployment artifact, not a
+migration. The administrative provisioner accepts the configured state schema and the exact name of an already
+created physical login principal. It fails closed if that principal is missing, privileged, has an unexpected
+membership, or crosses the dedicated delivery boundary; it never creates a login, changes a password, or attaches
+a secret.
+
+The artifact creates the `runtime_usage_delivery` wrapper schema and two `NOLOGIN` roles: a narrow, non-inheriting
+owner and an inheriting capability role. Four pinned `SECURITY DEFINER` wrappers are exposed—claim, defer,
+acknowledge, and quarantine. Each wrapper uses `pg_catalog`, the explicitly configured state schema, and `pg_temp`
+as its complete search path and calls a schema-qualified state function. The source login receives only the
+capability role, wrapper `EXECUTE`, and schema `USAGE`; it receives no table/view/raw-function/owner access.
+
+Attempt-cap recovery is intentionally absent from this artifact. That operation remains an operator-only,
+unwired function until a separately reviewed recovery boundary is approved.

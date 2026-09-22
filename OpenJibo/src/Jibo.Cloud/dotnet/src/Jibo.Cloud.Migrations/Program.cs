@@ -204,6 +204,24 @@ try
         Log.Information("Provisioned the least-privilege SigV4 replay observer database role.");
     }
 
+    if (options.ProvisionRuntimeUsageDelivery && !options.PreviewOnly)
+    {
+        var stateConnectionString = options.ResolveConnectionString(MigrationTarget.State);
+        if (string.IsNullOrWhiteSpace(stateConnectionString) ||
+            string.IsNullOrWhiteSpace(options.RuntimeUsageStateSchema) ||
+            string.IsNullOrWhiteSpace(options.RuntimeUsageSourceLoginRole))
+        {
+            Log.Error("State connection, runtime-usage state schema, and pre-created source login role are required for runtime-usage delivery provisioning.");
+            return 1;
+        }
+
+        await PostgreSqlRuntimeUsageDeliveryRoleProvisioner.ProvisionAsync(
+            stateConnectionString,
+            options.RuntimeUsageStateSchema,
+            options.RuntimeUsageSourceLoginRole);
+        Log.Information("Provisioned the least-privilege runtime-usage source delivery boundary.");
+    }
+
     return 0;
 }
 finally
@@ -683,6 +701,9 @@ internal sealed record MigrationOptions(
     string? TargetStateConnectionString,
     bool ProvisionSigV4ReplayObserver,
     string? ReplayObserverConnectionString,
+    bool ProvisionRuntimeUsageDelivery,
+    string? RuntimeUsageStateSchema,
+    string? RuntimeUsageSourceLoginRole,
     bool ShowHelp)
 {
     public static string HelpText =>
@@ -722,6 +743,12 @@ internal sealed record MigrationOptions(
                                   Provision the fixed least-privilege replay database roles
           --replay-observer-connection
                                   Dedicated replay observer login connection string
+          --provision-runtime-usage-delivery
+                                  Apply the separate runtime-usage delivery role artifact
+          --runtime-usage-state-schema
+                                  Explicit configured state schema for delivery wrappers
+          --runtime-usage-source-login
+                                  Exact pre-created physical source login role name
           --verbose               Print already-applied scripts too
           --help                  Show this help
         """;
@@ -758,6 +785,9 @@ internal sealed record MigrationOptions(
         var provisionSigV4ReplayObserver = false;
         string? replayObserverConnectionString = Environment.GetEnvironmentVariable(
             "OpenJibo__Security__SigV4ReplayObservation__ConnectionString");
+        var provisionRuntimeUsageDelivery = false;
+        var runtimeUsageStateSchema = Environment.GetEnvironmentVariable("OPENJIBO_RUNTIME_USAGE_STATE_SCHEMA");
+        var runtimeUsageSourceLoginRole = Environment.GetEnvironmentVariable("OPENJIBO_RUNTIME_USAGE_SOURCE_LOGIN");
 
         for (var index = 0; index < args.Length; index += 1)
         {
@@ -803,6 +833,15 @@ internal sealed record MigrationOptions(
                     break;
                 case "--replay-observer-connection":
                     replayObserverConnectionString = GetValue(args, ref index, "--replay-observer-connection");
+                    break;
+                case "--provision-runtime-usage-delivery":
+                    provisionRuntimeUsageDelivery = true;
+                    break;
+                case "--runtime-usage-state-schema":
+                    runtimeUsageStateSchema = GetValue(args, ref index, "--runtime-usage-state-schema");
+                    break;
+                case "--runtime-usage-source-login":
+                    runtimeUsageSourceLoginRole = GetValue(args, ref index, "--runtime-usage-source-login");
                     break;
                 case "--source-state-connection":
                     sourceStateConnectionString = GetValue(args, ref index, "--source-state-connection");
@@ -851,6 +890,9 @@ internal sealed record MigrationOptions(
             targetStateConnectionString,
             provisionSigV4ReplayObserver,
             replayObserverConnectionString,
+            provisionRuntimeUsageDelivery,
+            runtimeUsageStateSchema,
+            runtimeUsageSourceLoginRole,
             showHelp);
     }
 

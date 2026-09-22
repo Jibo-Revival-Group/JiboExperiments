@@ -222,6 +222,20 @@ try
         Log.Information("Provisioned the least-privilege runtime-usage source delivery boundary.");
     }
 
+    if (options.ProvisionRuntimeUsageShadowSource && !options.PreviewOnly)
+    {
+        var stateConnectionString = options.ResolveConnectionString(MigrationTarget.State);
+        if (string.IsNullOrWhiteSpace(stateConnectionString) || string.IsNullOrWhiteSpace(options.RuntimeUsageStateSchema))
+        {
+            Log.Error("State connection and runtime-usage state schema are required for shadow-source role provisioning.");
+            return 1;
+        }
+
+        await PostgreSqlRuntimeUsageShadowSourceRoleProvisioner.ProvisionAsync(
+            stateConnectionString, options.RuntimeUsageStateSchema);
+        Log.Information("Provisioned the dormant least-privilege runtime-usage shadow-source reader boundary.");
+    }
+
     return 0;
 }
 finally
@@ -702,6 +716,7 @@ internal sealed record MigrationOptions(
     bool ProvisionSigV4ReplayObserver,
     string? ReplayObserverConnectionString,
     bool ProvisionRuntimeUsageDelivery,
+    bool ProvisionRuntimeUsageShadowSource,
     string? RuntimeUsageStateSchema,
     string? RuntimeUsageSourceLoginRole,
     bool ShowHelp)
@@ -745,6 +760,8 @@ internal sealed record MigrationOptions(
                                   Dedicated replay observer login connection string
           --provision-runtime-usage-delivery
                                   Apply the separate runtime-usage delivery role artifact
+          --provision-runtime-usage-shadow-source
+                                  Apply the separate dormant runtime-usage shadow-source reader artifact
           --runtime-usage-state-schema
                                   Explicit configured state schema for delivery wrappers
           --runtime-usage-source-login
@@ -786,6 +803,7 @@ internal sealed record MigrationOptions(
         string? replayObserverConnectionString = Environment.GetEnvironmentVariable(
             "OpenJibo__Security__SigV4ReplayObservation__ConnectionString");
         var provisionRuntimeUsageDelivery = false;
+        var provisionRuntimeUsageShadowSource = false;
         var runtimeUsageStateSchema = Environment.GetEnvironmentVariable("OPENJIBO_RUNTIME_USAGE_STATE_SCHEMA");
         var runtimeUsageSourceLoginRole = Environment.GetEnvironmentVariable("OPENJIBO_RUNTIME_USAGE_SOURCE_LOGIN");
 
@@ -836,6 +854,9 @@ internal sealed record MigrationOptions(
                     break;
                 case "--provision-runtime-usage-delivery":
                     provisionRuntimeUsageDelivery = true;
+                    break;
+                case "--provision-runtime-usage-shadow-source":
+                    provisionRuntimeUsageShadowSource = true;
                     break;
                 case "--runtime-usage-state-schema":
                     runtimeUsageStateSchema = GetValue(args, ref index, "--runtime-usage-state-schema");
@@ -891,6 +912,7 @@ internal sealed record MigrationOptions(
             provisionSigV4ReplayObserver,
             replayObserverConnectionString,
             provisionRuntimeUsageDelivery,
+            provisionRuntimeUsageShadowSource,
             runtimeUsageStateSchema,
             runtimeUsageSourceLoginRole,
             showHelp);

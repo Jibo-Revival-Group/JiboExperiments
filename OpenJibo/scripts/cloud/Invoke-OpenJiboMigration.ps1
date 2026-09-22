@@ -12,6 +12,7 @@ param(
     [string]$RuntimeUsageStateSchema,
     [string]$RuntimeUsageSourceLoginRole,
     [switch]$ProvisionRuntimeUsageDelivery,
+    [switch]$ProvisionRuntimeUsageShadowSource,
     [switch]$ImportLegacyCloudState,
     [switch]$ImportLegacyPersonalMemory,
     [switch]$Verify,
@@ -71,6 +72,16 @@ if ($ProvisionRuntimeUsageDelivery) {
     $arguments += @(
         "--runtime-usage-state-schema", $RuntimeUsageStateSchema,
         "--runtime-usage-source-login", $RuntimeUsageSourceLoginRole
+    )
+}
+
+if ($ProvisionRuntimeUsageShadowSource) {
+    if ([string]::IsNullOrWhiteSpace($RuntimeUsageStateSchema)) {
+        throw "Runtime usage shadow-source provisioning requires RuntimeUsageStateSchema."
+    }
+    $arguments += @(
+        "--provision-runtime-usage-shadow-source",
+        "--runtime-usage-state-schema", $RuntimeUsageStateSchema
     )
 }
 

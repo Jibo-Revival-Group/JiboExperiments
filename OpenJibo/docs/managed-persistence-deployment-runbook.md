@@ -275,6 +275,29 @@ password, attaches a secret, or grants the attempt-cap recovery function. The so
 the four wrappers (claim, defer, acknowledge, quarantine) through its sole capability-role membership. Isolated
 tests must pass their own state schema explicitly; do not rely on `search_path` defaults.
 
+### Runtime usage shadow-source reader provisioning
+
+Shadow reconciliation is still dormant. The independently reviewed
+`infra/postgresql/runtime-usage-shadow-source-role.sql` artifact can be
+provisioned only by an administrator through the migration launcher. It never
+starts a reader, adds a runtime credential, changes delivery roles, or enables
+Cloud collection. Before the command, create exactly
+`openjibo_runtime_usage_shadow_source` with `LOGIN INHERIT`, no elevated role
+attributes, and connection limit `1` using the protected secret workflow.
+
+```powershell
+.\OpenJibo\scripts\cloud\Invoke-OpenJiboMigration.ps1 `
+  -Target state `
+  -ProvisionRuntimeUsageShadowSource `
+  -RuntimeUsageStateSchema public
+```
+
+The identity receives only the two read-only stream wrapper functions. The
+artifact rejects `PUBLIC TEMP`, direct raw-table grants, schema creation,
+unexpected memberships, unsafe role attributes, and any role crossover. Do
+not pass the opaque source idempotency key outside the private reader path or
+write it to logs.
+
 ## Inventory Audit and Device Recovery
 
 Run the aggregate audit before recovery:

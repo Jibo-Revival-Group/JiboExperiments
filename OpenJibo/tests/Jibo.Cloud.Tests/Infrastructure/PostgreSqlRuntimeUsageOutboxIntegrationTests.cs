@@ -12,7 +12,7 @@ public sealed class PostgreSqlRuntimeUsageOutboxIntegrationTests
         await using var database = await RuntimeUsageTestDatabase.CreateAsync();
         await database.ApplyMigrationAsync();
 
-        Assert.Equal(6, await database.ExecuteScalarAsync<long>("""
+        Assert.Equal(7, await database.ExecuteScalarAsync<long>("""
             SELECT COUNT(*)
             FROM information_schema.tables
             WHERE table_schema = current_schema()
@@ -583,6 +583,163 @@ public sealed class PostgreSqlRuntimeUsageOutboxIntegrationTests
             """));
     }
 
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
+    public async Task AttemptCapRecovery_QuarantinesOnlyEligibleMessagesAndReplaysExactly()
+    {
+        await using var database = await RuntimeUsageTestDatabase.CreateAsync();
+        await database.ExecuteAsync("""
+            INSERT INTO RuntimeUsageDailyAccumulators
+                (ManagedRobotId, UsageDate, ServiceEnvironment, SuccessfulTurns,
+                 FirstEventUtc, LastEventUtc, Revision)
+            VALUES
+                ('16161616-1616-1616-1616-161616161616', '2026-09-13', 'staging', 1,
+                 '2026-09-13T01:00:00Z', '2026-09-13T01:00:00Z', 1);
+
+            INSERT INTO RuntimeUsageOutboxMessages
+                (MessageId, ManagedRobotId, UsageDate, ServiceEnvironment, SourceSequence,
+                 AccumulatorRevision, FormatVersion, SourceSchemaVersion, SourceRevision,
+                 SuccessfulTurns, FailedTurns, HttpRequests, HttpRequestBytes,
+                 HttpResponseBytes, WebSocketInboundMessages, WebSocketOutboundMessages,
+                 WebSocketInboundBytes, WebSocketOutboundBytes, AudioInputBytes,
+                 FirstEventUtc, LastEventUtc, IsIncomplete, IdempotencyKey)
+            VALUES
+                ('16161616-0000-0000-0000-000000000001', '16161616-1616-1616-1616-161616161616', '2026-09-13', 'staging', 1,
+                 1, 1, 'openjibo-runtime-usage.v1', '1', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 '2026-09-13T01:00:00Z', '2026-09-13T01:00:00Z', FALSE, repeat('A', 43)),
+                ('16161616-0000-0000-0000-000000000002', '16161616-1616-1616-1616-161616161616', '2026-09-13', 'staging', 2,
+                 1, 1, 'openjibo-runtime-usage.v1', '1', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 '2026-09-13T01:00:00Z', '2026-09-13T01:00:00Z', FALSE, repeat('B', 43)),
+                ('16161616-0000-0000-0000-000000000003', '16161616-1616-1616-1616-161616161616', '2026-09-13', 'staging', 3,
+                 1, 1, 'openjibo-runtime-usage.v1', '1', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 '2026-09-13T01:00:00Z', '2026-09-13T01:00:00Z', FALSE, repeat('C', 43)),
+                ('16161616-0000-0000-0000-000000000004', '16161616-1616-1616-1616-161616161616', '2026-09-13', 'staging', 4,
+                 1, 1, 'openjibo-runtime-usage.v1', '1', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 '2026-09-13T01:00:00Z', '2026-09-13T01:00:00Z', FALSE, repeat('D', 43)),
+                ('16161616-0000-0000-0000-000000000005', '16161616-1616-1616-1616-161616161616', '2026-09-13', 'staging', 5,
+                 1, 1, 'openjibo-runtime-usage.v1', '1', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 '2026-09-13T01:00:00Z', '2026-09-13T01:00:00Z', FALSE, repeat('E', 43)),
+                ('16161616-0000-0000-0000-000000000006', '16161616-1616-1616-1616-161616161616', '2026-09-13', 'staging', 6,
+                 1, 1, 'openjibo-runtime-usage.v1', '1', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 '2026-09-13T01:00:00Z', '2026-09-13T01:00:00Z', FALSE, repeat('F', 43)),
+                ('16161616-0000-0000-0000-000000000007', '16161616-1616-1616-1616-161616161616', '2026-09-13', 'staging', 7,
+                 1, 1, 'openjibo-runtime-usage.v1', '1', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 '2026-09-13T01:00:00Z', '2026-09-13T01:00:00Z', FALSE, repeat('G', 43));
+
+            INSERT INTO RuntimeUsageOutboxDelivery
+                (MessageId, DeliveryState, AttemptCount, NotBeforeUtc, LeaseOwner,
+                 LeaseExpiresUtc, AcknowledgedUtc, ReceiptHash, QuarantinedUtc,
+                 QuarantineCategory)
+            VALUES
+                ('16161616-0000-0000-0000-000000000001', 'pending', 100000,
+                 NOW() - INTERVAL '1 minute', NULL, NULL, NULL, NULL, NULL, NULL),
+                ('16161616-0000-0000-0000-000000000002', 'leased', 100000,
+                 NOW() - INTERVAL '2 minutes', 'expired-owner', NOW() - INTERVAL '1 minute', NULL, NULL, NULL, NULL),
+                ('16161616-0000-0000-0000-000000000003', 'pending', 99999,
+                 NOW() - INTERVAL '1 minute', NULL, NULL, NULL, NULL, NULL, NULL),
+                ('16161616-0000-0000-0000-000000000004', 'pending', 100000,
+                 NOW() + INTERVAL '1 hour', NULL, NULL, NULL, NULL, NULL, NULL),
+                ('16161616-0000-0000-0000-000000000005', 'leased', 100000,
+                 NOW() - INTERVAL '1 minute', 'live-owner', NOW() + INTERVAL '1 hour', NULL, NULL, NULL, NULL),
+                ('16161616-0000-0000-0000-000000000006', 'acknowledged', 100000,
+                 NOW() - INTERVAL '1 minute', NULL, NULL, NOW(), decode(repeat('11', 32), 'hex'), NULL, NULL),
+                ('16161616-0000-0000-0000-000000000007', 'quarantined', 100000,
+                 NOW() - INTERVAL '1 minute', NULL, NULL, NULL, NULL, NOW(), 'operator-review');
+            """);
+
+        var concurrentRecovery = await Task.WhenAll(
+            database.ExecuteScalarAsync<bool>("""
+                SELECT WasReplay FROM RecoverRuntimeUsageOutboxAtAttemptCap(
+                    '16161616-0000-0000-0000-000000000001',
+                    '26262626-2626-2626-2626-262626262601', decode(repeat('aa', 32), 'hex'))
+                """),
+            database.ExecuteScalarAsync<bool>("""
+                SELECT WasReplay FROM RecoverRuntimeUsageOutboxAtAttemptCap(
+                    '16161616-0000-0000-0000-000000000001',
+                    '26262626-2626-2626-2626-262626262601', decode(repeat('aa', 32), 'hex'))
+                """));
+        Assert.Single(concurrentRecovery, wasReplay => !wasReplay);
+        Assert.Single(concurrentRecovery, wasReplay => wasReplay);
+        Assert.Equal("quarantined,100000,attempt-cap-exhausted", await database.ExecuteScalarAsync<string>("""
+            SELECT DeliveryState || ',' || AttemptCount::text || ',' || QuarantineCategory
+            FROM RuntimeUsageOutboxDelivery
+            WHERE MessageId='16161616-0000-0000-0000-000000000001'
+            """));
+        Assert.Equal("pending,100000", await database.ExecuteScalarAsync<string>("""
+            SELECT PriorDeliveryState || ',' || PriorAttemptCount::text
+            FROM RuntimeUsageOutboxAttemptCapRecoveryReceipts
+            WHERE RecoveryOperationId='26262626-2626-2626-2626-262626262601'
+            """));
+        Assert.Equal("quarantine,attempt-cap-exhausted,32", await database.ExecuteScalarAsync<string>("""
+            SELECT ActionCode || ',' || QuarantineCategory || ',' || octet_length(EvidenceDigest)::text
+            FROM RuntimeUsageOutboxAttemptCapRecoveryReceipts
+            WHERE RecoveryOperationId='26262626-2626-2626-2626-262626262601'
+            """));
+        var mutateReceipt = await Assert.ThrowsAsync<PostgresException>(() => database.ExecuteAsync("""
+            UPDATE RuntimeUsageOutboxAttemptCapRecoveryReceipts
+            SET EvidenceDigest=decode(repeat('ff', 32), 'hex')
+            WHERE RecoveryOperationId='26262626-2626-2626-2626-262626262601'
+            """));
+        Assert.Equal("55000", mutateReceipt.SqlState);
+
+        Assert.False(await database.ExecuteScalarAsync<bool>("""
+            SELECT WasReplay FROM RecoverRuntimeUsageOutboxAtAttemptCap(
+                '16161616-0000-0000-0000-000000000002',
+                '26262626-2626-2626-2626-262626262602', decode(repeat('bb', 32), 'hex'))
+            """));
+        Assert.Equal("quarantined,100000", await database.ExecuteScalarAsync<string>("""
+            SELECT DeliveryState || ',' || AttemptCount::text
+            FROM RuntimeUsageOutboxDelivery
+            WHERE MessageId='16161616-0000-0000-0000-000000000002'
+            """));
+        Assert.Null(await database.ExecuteScalarOrNullAsync("""
+            SELECT MessageId::text
+            FROM ClaimRuntimeUsageOutbox('attempt-cap-test-collector', 300, 1)
+            """));
+        Assert.Equal(2, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM RuntimeUsageOutboxAttemptCapRecoveryReceipts"));
+
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM RecoverRuntimeUsageOutboxAtAttemptCap(
+                '16161616-0000-0000-0000-000000000001',
+                '26262626-2626-2626-2626-262626262601', decode(repeat('cc', 32), 'hex'))
+            """));
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM RecoverRuntimeUsageOutboxAtAttemptCap(
+                '16161616-0000-0000-0000-000000000002',
+                '26262626-2626-2626-2626-262626262601', decode(repeat('aa', 32), 'hex'))
+            """));
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM RecoverRuntimeUsageOutboxAtAttemptCap(
+                '16161616-0000-0000-0000-000000000003',
+                '00000000-0000-0000-0000-000000000000', decode(repeat('aa', 32), 'hex'))
+            """));
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM RecoverRuntimeUsageOutboxAtAttemptCap(
+                '16161616-0000-0000-0000-000000000003',
+                '26262626-2626-2626-2626-262626262603', decode(repeat('aa', 31), 'hex'))
+            """));
+
+        foreach (var messageId in new[]
+                 {
+                     "16161616-0000-0000-0000-000000000003",
+                     "16161616-0000-0000-0000-000000000004",
+                     "16161616-0000-0000-0000-000000000005",
+                     "16161616-0000-0000-0000-000000000006",
+                     "16161616-0000-0000-0000-000000000007"
+                 })
+        {
+            Assert.Equal("22023", await database.TryExecuteAsync($"""
+                SELECT * FROM RecoverRuntimeUsageOutboxAtAttemptCap(
+                    '{messageId}',
+                    '26262626-2626-2626-2626-26262626260{messageId[^1]}', decode(repeat('dd', 32), 'hex'))
+                """));
+        }
+
+        Assert.Equal(2, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM RuntimeUsageOutboxAttemptCapRecoveryReceipts"));
+    }
+
     private sealed class RuntimeUsageTestDatabase : IAsyncDisposable
     {
         private const string ConnectionVariable = "OPENJIBO_TEST_POSTGRES_CONNECTION_STRING";
@@ -635,7 +792,8 @@ public sealed class PostgreSqlRuntimeUsageOutboxIntegrationTests
                      {
                          "011_create_runtime_usage_outbox.state.sql",
                          "012_runtime_usage_delivery_boundary.state.sql",
-                         "015_runtime_usage_defer_boundary.state.sql"
+                         "015_runtime_usage_defer_boundary.state.sql",
+                         "016_runtime_usage_attempt_cap_recovery.state.sql"
                      })
             {
                 var path = Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql", fileName);

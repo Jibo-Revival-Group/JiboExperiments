@@ -67,9 +67,19 @@ later snapshots in the same robot/day/environment stream. The migration also clo
 window in acknowledgement and quarantine by rechecking the lease in their final update predicates. It creates
 no roles or grants and remains unwired.
 
-The delivery attempt ceiling is a deliberate fail-closed boundary. A lease crash at the ceiling can block its
-stream permanently. Before activation, add an explicit owner-only, audited attempt-cap recovery operation and
-alerts before the ceiling; do not silently skip, acknowledge, or automatically quarantine capped messages.
+Migration `016_runtime_usage_attempt_cap_recovery.state.sql` adds the dormant, owner-only
+`RecoverRuntimeUsageOutboxAtAttemptCap` terminal audited classification operation. Despite its historical
+function name, this is not a stream-recovery or unblock operation. It accepts a message ID, a nonzero recovery
+operation UUID, and a 32-byte opaque evidence digest. Classification is eligible only at exactly 100,000
+attempts and only for a ready pending message or a lease whose expiry has passed. The operation writes an
+immutable receipt capturing the operation, evidence, prior delivery state/count/not-before/lease expiry,
+database session/current users, recovery timestamp, and fixed `quarantine` / `attempt-cap-exhausted` action
+values before atomically quarantining the delivery and clearing its lease. The attempt count is preserved. Exact
+retries are successful replays; changed arguments or reuse of an operation UUID for another message fail with
+`22023`. Live leases, lower attempt counts, future pending messages, acknowledged messages, and already
+quarantined messages are rejected. The receipt and function receive no grants, the function is not `SECURITY
+DEFINER`, and the operation remains unwired. A quarantined message intentionally retains its head-of-line
+blocking behavior, so later snapshots remain blocked until separately handled.
 
 ## Activation Boundary
 

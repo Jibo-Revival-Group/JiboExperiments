@@ -191,4 +191,54 @@ public sealed class CloudStateMigrationSchemaTests
         Assert.DoesNotContain("RecordRuntimeUsageEvent", migration, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void RuntimeUsageAttemptCapRecovery_IsImmutableOwnerOnlyFixedAndUnwired()
+    {
+        var migration = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
+            "016_runtime_usage_attempt_cap_recovery.state.sql"));
+
+        Assert.Contains("RuntimeUsageOutboxAttemptCapRecoveryReceipts", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RecoveryOperationId UUID", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RecoveryOperationId <> '00000000-0000-0000-0000-000000000000'", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("EvidenceDigest BYTEA", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OCTET_LENGTH(EvidenceDigest) = 32", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("PriorAttemptCount INTEGER NOT NULL CHECK (PriorAttemptCount = 100000)", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("PriorNotBeforeUtc", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("PriorLeaseExpiresUtc", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("SessionUser", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("CurrentUser", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RecoveredUtc", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ActionCode TEXT NOT NULL CHECK (ActionCode = 'quarantine')", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("QuarantineCategory TEXT NOT NULL CHECK (QuarantineCategory = 'attempt-cap-exhausted')",
+            migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("CREATE OR REPLACE FUNCTION RecoverRuntimeUsageOutboxAtAttemptCap", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("p_message_id UUID", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("p_recovery_operation_id UUID", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("p_evidence_digest BYTEA", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("BEFORE UPDATE OR DELETE", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("pg_advisory_xact_lock", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("DeliveryState = 'quarantined'", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("AttemptCount <> 100000", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("LeaseExpiresUtc > v_now", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("NotBeforeUtc > v_now", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("REVOKE ALL ON FUNCTION RecoverRuntimeUsageOutboxAtAttemptCap(UUID, UUID, BYTEA)",
+            migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("REVOKE ALL ON RuntimeUsageOutboxAttemptCapRecoveryReceipts FROM PUBLIC", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("GET DIAGNOSTICS v_updated_count = ROW_COUNT", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("GRANT EXECUTE", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("SECURITY DEFINER", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("RecordRuntimeUsageEvent", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ClaimRuntimeUsageOutbox", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("CustomerId", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("SerialNumber", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Transcript", migration, StringComparison.OrdinalIgnoreCase);
+    }
+
 }

@@ -195,6 +195,23 @@ Before production, confirm:
 
 Record the successful staging workflow run ID.
 
+For a bounded post-deployment soak, run the read-only staging checker every two hours. It verifies the exact
+immutable image, ready revision, replay-observation setting, public health, aggregate failure signals, and
+revision-scoped Container App restarts without enabling release-smoke credentials or creating robot records:
+
+```powershell
+node scripts/cloud/openjibo-staging-soak-check.mjs `
+  --expected-commit 7a39fc97d39929f950a0a5d78ce47fa7bc2fcaf2 `
+  --lookback-hours 3 `
+  --output artifact-output/staging-soak/check.json
+```
+
+Use a three-hour lookback for a two-hour schedule so delayed telemetry and scheduler jitter do not create gaps.
+Any failed public health check, unexpected image, disabled replay observation, restart, request/exception failure,
+database command failure or pending request, or audio-limit rejection blocks promotion. Waiting without traffic
+does not prove capacity; this 24-hour soak is a regression guard around the already completed active release smoke
+and cross-replica replay proof.
+
 ## Production Promotion
 
 Schedule a short maintenance window. The old revision is quiesced so it cannot update the legacy snapshot during final import.

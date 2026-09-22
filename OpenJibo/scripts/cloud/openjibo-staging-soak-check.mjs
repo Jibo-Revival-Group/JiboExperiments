@@ -44,8 +44,8 @@ export function parseArgs(argv) {
   if (!values.help) {
     if (values.resourceGroup !== "rg-openjibo-staging")
       throw new Error("The soak checker is restricted to rg-openjibo-staging.");
-    if (!/^[0-9a-f]{7,40}$/i.test(values.expectedCommit ?? ""))
-      throw new Error("--expected-commit must be a 7-40 character Git commit.");
+    if (!/^[0-9a-f]{40}$/i.test(values.expectedCommit ?? ""))
+      throw new Error("--expected-commit must be the full 40-character Git commit.");
     if (!Number.isFinite(values.lookbackHours) || values.lookbackHours < 1 || values.lookbackHours > 24)
       throw new Error("--lookback-hours must be between 1 and 24.");
   }
@@ -108,8 +108,9 @@ function runAz(args) {
     executableArgs = ["-IBm", "azure.cli", ...args];
   }
   const result = spawnSync(executable, executableArgs,
-    { encoding: "utf8", windowsHide: true, maxBuffer: 16 * 1024 * 1024 });
+    { encoding: "utf8", windowsHide: true, maxBuffer: 16 * 1024 * 1024, timeout: 60_000 });
   if (result.error) throw result.error;
+  if (result.signal) throw new Error(`Azure CLI '${args.slice(0, 3).join(" ")}' timed out.`);
   if (result.status !== 0) {
     const operation = args.slice(0, 3).join(" ");
     throw new Error(`Azure CLI '${operation}' failed: ${(result.stderr || `exit ${result.status}`).trim()}`);
@@ -131,7 +132,20 @@ function envValue(container, name) {
 
 function expectedImageTag(commit) { return `sha-${commit.toLowerCase().slice(0, 12)}`; }
 
-export function assessSoakEvidence({ options, container, health, reliabilityRows, restartMetric }) {
+function imageTag(image) {
+  const lastSlash = String(image ?? "").lastIndexOf("/");
+  const lastColon = String(image ?? "").lastIndexOf(":");
+  return lastColon > lastSlash ? String(image).slice(lastColon + 1) : null;
+}
+
+function ownsAllTraffic(container, revision) {
+  const traffic = container?.properties?.configuration?.ingress?.traffic;
+  return Array.isArray(traffic) && traffic.length === 1 && Number(traffic[0].weight) === 100 &&
+    (traffic[0].revisionName === revision || traffic[0].latestRevision === true);
+}
+
+export function assessSoakEvidence({ options, container, revisionState, health, reliabilityRows,
+  restartMetric, platformWorkingSet, platformReplicas }) {
   const problems = [];
   const appName = container?.name ?? null;
   const revision = container?.properties?.latestReadyRevisionName ?? null;
@@ -148,10 +162,17 @@ export function assessSoakEvidence({ options, container, health, reliabilityRows
   };
 
   if (!appName || !revision || !fqdn) problems.push("staging-container-app-incomplete");
-  if (!image?.includes(`:${expectedTag}`)) problems.push("unexpected-image");
+  if (imageTag(image) !== expectedTag) problems.push("unexpected-image");
   if (String(replayObservation).toLowerCase() !== "true") problems.push("replay-observation-disabled");
-  if (runningState && runningState !== "Running") problems.push("container-app-not-running");
+  if (runningState !== "Running") problems.push("container-app-not-running");
+  if (revisionState?.properties?.active !== true || revisionState?.properties?.healthState !== "Healthy" ||
+      revisionState?.properties?.runningState !== "Running") problems.push("ready-revision-not-healthy");
+  if (!ownsAllTraffic(container, revision)) problems.push("ready-revision-does-not-own-traffic");
   if (!health?.ok) problems.push("public-health-failed");
+  if (!Number.isFinite(signals.workingSetBytes?.value) || signals.workingSetBytes.samples < 1)
+    problems.push("application-telemetry-unavailable");
+  if ((platformWorkingSet?.samples ?? 0) < 1 || (platformReplicas?.samples ?? 0) < 1)
+    problems.push("platform-telemetry-unavailable");
   for (const [name, signal] of Object.entries(signals)) {
     if (RELIABILITY_SIGNALS.has(name) && Number.isFinite(signal.value) && signal.value > 0)
       problems.push(`reliability-signal:${name}`);
@@ -168,8 +189,13 @@ export function assessSoakEvidence({ options, container, health, reliabilityRows
       expectedImageTag: expectedTag,
       lookbackHours: options.lookbackHours,
     },
-    deployment: { appName, revision, image, fqdn, runningState, replayObservation },
+    deployment: { appName, revision, image, fqdn, runningState, replayObservation,
+      revisionActive: revisionState?.properties?.active ?? null,
+      revisionHealthState: revisionState?.properties?.healthState ?? null,
+      revisionRunningState: revisionState?.properties?.runningState ?? null,
+      ownsAllTraffic: ownsAllTraffic(container, revision) },
     health,
+    platformCoverage: { workingSet: platformWorkingSet, replicas: platformReplicas },
     signals,
     problems,
   };
@@ -185,6 +211,8 @@ export async function collectSoakEvidence(options, azure = runAz, request = fetc
   const revision = container?.properties?.latestReadyRevisionName;
   const fqdn = container?.properties?.configuration?.ingress?.fqdn;
   if (!revision || !fqdn) throw new Error("The staging Container App did not expose a ready revision and FQDN.");
+  const revisionState = azure(["containerapp", "revision", "show", "--resource-group", options.resourceGroup,
+    "--name", matchingApps[0].name, "--revision", revision, "--output", "json"]);
 
   let health;
   try {
@@ -200,14 +228,23 @@ export async function collectSoakEvidence(options, azure = runAz, request = fetc
     buildReliabilityQuery(revision, options.lookbackHours), "--offset", `${options.lookbackHours}h`,
     "--output", "json"]);
   const resourceId = container.id;
-  const restartPayload = azure(["monitor", "metrics", "list", "--resource", resourceId,
-    "--metric", "RestartCount", "--aggregation", "Maximum", "--interval", "PT1H",
-    "--filter", `RevisionName eq '${revision}'`, "--offset", `${options.lookbackHours}h`, "--output", "json"]);
-  const restartPoints = (restartPayload?.value?.[0]?.timeseries ?? []).flatMap((series) => series.data ?? [])
-    .map((point) => Number(point.maximum)).filter(Number.isFinite);
-  const restartMetric = { samples: restartPoints.length,
-    max: restartPoints.length ? Math.max(...restartPoints) : 0 };
-  return assessSoakEvidence({ options, container, health, reliabilityRows: tableRows(reliabilityPayload), restartMetric });
+  const platformMetric = (metric, aggregation) => {
+    const payload = azure(["monitor", "metrics", "list", "--resource", resourceId,
+      "--metric", metric, "--aggregation", aggregation, "--interval", "PT1H",
+      "--filter", `RevisionName eq '${revision}'`, "--offset", `${options.lookbackHours}h`, "--output", "json"]);
+    const property = aggregation.toLowerCase();
+    const points = (payload?.value?.[0]?.timeseries ?? []).flatMap((series) => series.data ?? [])
+      .map((point) => Number(point[property])).filter(Number.isFinite);
+    return { samples: points.length, max: points.length ? Math.max(...points) : null };
+  };
+  const platformWorkingSet = platformMetric("WorkingSetBytes", "Maximum");
+  const platformReplicas = platformMetric("Replicas", "Maximum");
+  const restartSamples = platformMetric("RestartCount", "Maximum");
+  const restartMetric = { samples: restartSamples.samples,
+    max: restartSamples.samples ? restartSamples.max : 0,
+    inferredZero: restartSamples.samples === 0 && platformWorkingSet.samples > 0 && platformReplicas.samples > 0 };
+  return assessSoakEvidence({ options, container, revisionState, health,
+    reliabilityRows: tableRows(reliabilityPayload), restartMetric, platformWorkingSet, platformReplicas });
 }
 
 function usage() {

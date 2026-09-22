@@ -5,6 +5,7 @@ using Npgsql;
 
 namespace Jibo.Cloud.Tests.Infrastructure;
 
+[Collection(PostgreSqlPrivilegedIntegrationCollection.Name)]
 public sealed class PostgreSqlAwsSigV4ReplayObservationStoreTests
 {
     [PostgreSqlIntegrationFact]

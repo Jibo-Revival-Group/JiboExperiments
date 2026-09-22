@@ -250,6 +250,31 @@ Do not delete legacy snapshots or imported backup payloads during the verificati
 
 Monitor Container App restarts and memory, PostgreSQL connections and latency, WebSocket connections and bytes, and robot reconnect behavior. Remove legacy recovery artifacts only in a later, separately reviewed release.
 
+### Runtime usage source delivery activation
+
+Runtime usage delivery remains dormant until the separately reviewed
+`infra/postgresql/runtime-usage-delivery-role.sql` artifact is applied by an administrator. Use the migration
+launcher only with an explicit state schema and an exact, already-created physical source login role:
+
+The principal must be the pre-created `openjibo_runtime_usage` role with `LOGIN`, `INHERIT`, no elevated
+attributes, and connection limit `3`; provision it and its secret through the platform's existing secret workflow
+before running this command.
+
+```powershell
+.\OpenJibo\scripts\cloud\Invoke-OpenJiboMigration.ps1 `
+  -Target state `
+  -ProvisionRuntimeUsageDelivery `
+  -RuntimeUsageStateSchema public `
+  -RuntimeUsageSourceLoginRole openjibo_runtime_usage
+```
+
+The provisioning step creates only the dedicated non-login owner/capability roles and the
+`runtime_usage_delivery` wrapper schema. It fails closed on missing or unsafe source principals, unexpected role
+memberships, unsafe schema ownership/ACLs, or principal crossover. It never creates a source login, changes a
+password, attaches a secret, or grants the attempt-cap recovery function. The source principal can execute only
+the four wrappers (claim, defer, acknowledge, quarantine) through its sole capability-role membership. Isolated
+tests must pass their own state schema explicitly; do not rely on `search_path` defaults.
+
 ## Inventory Audit and Device Recovery
 
 Run the aggregate audit before recovery:

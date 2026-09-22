@@ -20,6 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="..\..\..\..\..\infra\postgresql\runtime-usage-delivery-role.sql"
+             Link="Deployment\runtime-usage-delivery-role.sql"
+             CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Migrations\PostgreSql\**\*.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

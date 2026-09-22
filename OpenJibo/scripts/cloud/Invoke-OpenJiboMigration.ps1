@@ -9,6 +9,9 @@ param(
     [string]$MediaContainer = "openjibo-media",
     [string]$ReplayObserverConnectionString,
     [switch]$ProvisionSigV4ReplayObserver,
+    [string]$RuntimeUsageStateSchema,
+    [string]$RuntimeUsageSourceLoginRole,
+    [switch]$ProvisionRuntimeUsageDelivery,
     [switch]$ImportLegacyCloudState,
     [switch]$ImportLegacyPersonalMemory,
     [switch]$Verify,
@@ -57,6 +60,18 @@ if (-not [string]::IsNullOrWhiteSpace($ReplayObserverConnectionString)) {
 
 if ($ProvisionSigV4ReplayObserver) {
     $arguments += "--provision-sigv4-replay-observer"
+}
+
+if ($ProvisionRuntimeUsageDelivery) {
+    $arguments += "--provision-runtime-usage-delivery"
+    if ([string]::IsNullOrWhiteSpace($RuntimeUsageStateSchema) -or
+        [string]::IsNullOrWhiteSpace($RuntimeUsageSourceLoginRole)) {
+        throw "Runtime usage delivery provisioning requires RuntimeUsageStateSchema and RuntimeUsageSourceLoginRole."
+    }
+    $arguments += @(
+        "--runtime-usage-state-schema", $RuntimeUsageStateSchema,
+        "--runtime-usage-source-login", $RuntimeUsageSourceLoginRole
+    )
 }
 
 if ($ImportLegacyCloudState) {

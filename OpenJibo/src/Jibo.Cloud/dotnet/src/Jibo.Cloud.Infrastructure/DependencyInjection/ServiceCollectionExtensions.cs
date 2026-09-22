@@ -344,6 +344,18 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(releaseSmokeAuthorization);
         if (replayDigestKey is not null)
             services.AddSingleton<AwsSigV4ReplayProbeProofService>();
+        var runtimePairingAttestationOptions = new RuntimePairingAttestationIssuerOptions();
+        configuration?.GetSection(RuntimePairingAttestationIssuerOptions.SectionName)
+            .Bind(runtimePairingAttestationOptions);
+        Es256RuntimePairingAttestationIssuer.TryCreate(
+            runtimePairingAttestationOptions,
+            TimeProvider.System,
+            out var runtimePairingAttestationIssuer);
+        // Do not make the raw private-key option object injectable or retain it in
+        // the registration closure after the signer has imported the key.
+        runtimePairingAttestationOptions.PrivateKeyPem = string.Empty;
+        services.AddSingleton<IRuntimePairingAttestationIssuer>(
+            _ => runtimePairingAttestationIssuer);
         services.AddSingleton<ICloudAuthProtocolHandler, CloudAuthProtocolHandler>();
         services.AddSingleton<IPersonalMemoryStore>(provider =>
         {

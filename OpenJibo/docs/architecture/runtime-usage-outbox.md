@@ -16,7 +16,7 @@ flowchart LR
     Schedule["ScheduleRuntimeUsageSnapshot<br/>locked revision + sequence"]
     Message["Immutable typed outbox snapshot"]
     Delivery["Separate delivery state"]
-    DeliveryApi["Owner-only claim / acknowledge / quarantine<br/><b>DORMANT</b>"]
+    DeliveryApi["Owner-only claim / defer / acknowledge / quarantine<br/><b>DORMANT</b>"]
     Collector["Private pull collector<br/><b>REMAINING</b>"]
     Assembly["Multi-source Cloud assembly<br/><b>REMAINING</b>"]
 
@@ -56,6 +56,20 @@ hash; quarantine requires the current live lease and a bounded category. Termina
 when their receipt or category agrees. A quarantined message deliberately blocks later messages in the same
 stream so an operator cannot silently skip a source sequence. The migration grants no collector capability and
 explicitly revokes `PUBLIC` execution.
+
+Migration `015_runtime_usage_defer_boundary.state.sql` adds bounded source-side backoff without treating a
+temporarily incomplete Cloud assembly as success or data loss. Only the current live lease owner can defer a
+message, the new not-before time must be strictly future and no more than 24 hours away, and the attempt count
+does not change. Each request carries an operation UUID and writes an immutable receipt before the atomic
+`leased`-to-`pending` transition. An exact retry remains replayable even if the message later becomes terminal;
+reuse of the operation UUID with different inputs is rejected. Deferred head-of-line messages continue to block
+later snapshots in the same robot/day/environment stream. The migration also closes the lease-expiry mutation
+window in acknowledgement and quarantine by rechecking the lease in their final update predicates. It creates
+no roles or grants and remains unwired.
+
+The delivery attempt ceiling is a deliberate fail-closed boundary. A lease crash at the ceiling can block its
+stream permanently. Before activation, add an explicit owner-only, audited attempt-cap recovery operation and
+alerts before the ceiling; do not silently skip, acknowledge, or automatically quarantine capped messages.
 
 ## Activation Boundary
 

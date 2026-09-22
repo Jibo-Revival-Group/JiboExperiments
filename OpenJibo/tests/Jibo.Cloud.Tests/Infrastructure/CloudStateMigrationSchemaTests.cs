@@ -163,4 +163,32 @@ public sealed class CloudStateMigrationSchemaTests
         Assert.DoesNotContain("GRANT EXECUTE", migration, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void RuntimeUsageDeliveryDefer_IsOwnerOnlyBoundedAndUnwired()
+    {
+        var migration = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql",
+            "015_runtime_usage_defer_boundary.state.sql"));
+
+        Assert.Contains("CREATE OR REPLACE FUNCTION DeferRuntimeUsageOutbox", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("CREATE TABLE IF NOT EXISTS RuntimeUsageOutboxDeferrals", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("p_operation_id UUID", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("p_not_before_utc > v_now + INTERVAL '24 hours'", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("LeaseExpiresUtc > clock_timestamp()", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RejectRuntimeUsageOutboxDeferralMutation", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("pg_advisory_xact_lock", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("WasReplay", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("REVOKE ALL ON FUNCTION DeferRuntimeUsageOutbox", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("REVOKE ALL ON RuntimeUsageOutboxDeferrals FROM PUBLIC", migration,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("GRANT EXECUTE", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("SECURITY DEFINER", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("RecordRuntimeUsageEvent", migration, StringComparison.OrdinalIgnoreCase);
+    }
+
 }

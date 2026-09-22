@@ -12,7 +12,7 @@ public sealed class PostgreSqlRuntimeUsageOutboxIntegrationTests
         await using var database = await RuntimeUsageTestDatabase.CreateAsync();
         await database.ApplyMigrationAsync();
 
-        Assert.Equal(5, await database.ExecuteScalarAsync<long>("""
+        Assert.Equal(6, await database.ExecuteScalarAsync<long>("""
             SELECT COUNT(*)
             FROM information_schema.tables
             WHERE table_schema = current_schema()
@@ -461,6 +461,94 @@ public sealed class PostgreSqlRuntimeUsageOutboxIntegrationTests
 
     [PostgreSqlIntegrationFact]
     [Trait("Category", "PostgreSqlIntegration")]
+    public async Task DeliveryBoundary_DefersWithDurableExactReplayAndPreservesOrdering()
+    {
+        await using var database = await RuntimeUsageTestDatabase.CreateAsync();
+        await database.ExecuteAsync("""
+            INSERT INTO RuntimeUsageRobotBindings
+                (SourceSubjectHmac, BindingVersion, ManagedRobotId, ActiveFromUtc, ActorCode, ReasonCode)
+            VALUES
+                (decode(repeat('bc', 32), 'hex'), 1, 'bcbcbcbc-bcbc-bcbc-bcbc-bcbcbcbcbcbc',
+                 '2026-09-13T00:00:00Z', 'binding-admin', 'defer-test');
+            SELECT * FROM RecordRuntimeUsageEvent(
+                decode(repeat('bc', 32), 'hex'),
+                'bdbdbdbd-bdbd-bdbd-bdbd-bdbdbdbdbdbd', '2026-09-13T01:00:00Z', 'staging',
+                1, 0, 0, 0, 0, 1, 0, 10, 0, 20, NULL);
+            SELECT * FROM ScheduleRuntimeUsageSnapshot(
+                decode(repeat('bc', 32), 'hex'), '2026-09-13', 'staging',
+                'bebebebe-bebe-bebe-bebe-bebebebebebe',
+                'BEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEBEB');
+            SELECT * FROM RecordRuntimeUsageEvent(
+                decode(repeat('bc', 32), 'hex'),
+                'bfbfbfbf-bfbf-bfbf-bfbf-bfbfbfbfbfbf', '2026-09-13T02:00:00Z', 'staging',
+                1, 0, 0, 0, 0, 1, 0, 10, 0, 20, NULL);
+            SELECT * FROM ScheduleRuntimeUsageSnapshot(
+                decode(repeat('bc', 32), 'hex'), '2026-09-13', 'staging',
+                'cacacaca-caca-caca-caca-cacacacacaca',
+                'CACACACACACACACACACACACACACACACACACACACACAC');
+            SELECT * FROM ClaimRuntimeUsageOutbox('defer-collector', 300, 1);
+            """);
+
+        Assert.False(await database.ExecuteScalarAsync<bool>("""
+            SELECT WasReplay FROM DeferRuntimeUsageOutbox(
+                'bebebebe-bebe-bebe-bebe-bebebebebebe', 'defer-collector',
+                'cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd',
+                date_trunc('second', clock_timestamp()) + INTERVAL '1 hour', 'assembly-waiting')
+            """));
+        Assert.Equal("pending,1,assembly-waiting", await database.ExecuteScalarAsync<string>("""
+            SELECT DeliveryState || ',' || AttemptCount::text || ',' || LastFailureCategory
+            FROM RuntimeUsageOutboxDelivery
+            WHERE MessageId='bebebebe-bebe-bebe-bebe-bebebebebebe'
+            """));
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>("""
+            SELECT COUNT(*) FROM RuntimeUsageOutboxDeferrals
+            WHERE OperationId='cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd'
+            """));
+        Assert.Null(await database.ExecuteScalarOrNullAsync("""
+            SELECT MessageId::text FROM ClaimRuntimeUsageOutbox('other-collector', 300, 1)
+            """));
+
+        Assert.True(await database.ExecuteScalarAsync<bool>("""
+            SELECT WasReplay FROM DeferRuntimeUsageOutbox(
+                'bebebebe-bebe-bebe-bebe-bebebebebebe', 'defer-collector',
+                'cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd',
+                (SELECT NotBeforeUtc FROM RuntimeUsageOutboxDeferrals
+                 WHERE OperationId='cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd'),
+                'assembly-waiting')
+            """));
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM DeferRuntimeUsageOutbox(
+                'bebebebe-bebe-bebe-bebe-bebebebebebe', 'defer-collector',
+                'cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd',
+                (SELECT NotBeforeUtc FROM RuntimeUsageOutboxDeferrals
+                 WHERE OperationId='cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd'),
+                'different-reason')
+            """));
+
+        await database.ExecuteAsync("""
+            UPDATE RuntimeUsageOutboxDelivery
+            SET DeliveryState='quarantined', NotBeforeUtc=NOW(), QuarantinedUtc=NOW(),
+                QuarantineCategory='operator-review', UpdatedUtc=NOW()
+            WHERE MessageId='bebebebe-bebe-bebe-bebe-bebebebebebe';
+            """);
+        Assert.True(await database.ExecuteScalarAsync<bool>("""
+            SELECT WasReplay FROM DeferRuntimeUsageOutbox(
+                'bebebebe-bebe-bebe-bebe-bebebebebebe', 'defer-collector',
+                'cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd',
+                (SELECT NotBeforeUtc FROM RuntimeUsageOutboxDeferrals
+                 WHERE OperationId='cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd'),
+                'assembly-waiting')
+            """));
+
+        var mutateReceipt = await Assert.ThrowsAsync<PostgresException>(() => database.ExecuteAsync("""
+            UPDATE RuntimeUsageOutboxDeferrals SET FailureCategory='rewritten'
+            WHERE OperationId='cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd'
+            """));
+        Assert.Equal("55000", mutateReceipt.SqlState);
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
     public async Task DeliveryBoundary_RejectsNullAndInvalidRequestsWithoutMutation()
     {
         await using var database = await RuntimeUsageTestDatabase.CreateAsync();
@@ -482,6 +570,16 @@ public sealed class PostgreSqlRuntimeUsageOutboxIntegrationTests
         Assert.Equal("22023", await database.TryExecuteAsync("""
             SELECT * FROM QuarantineRuntimeUsageOutbox(
                 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'collector', NULL)
+            """));
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM DeferRuntimeUsageOutbox(
+                'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'collector',
+                'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', clock_timestamp() - INTERVAL '1 minute', 'retry')
+            """));
+        Assert.Equal("22023", await database.TryExecuteAsync("""
+            SELECT * FROM DeferRuntimeUsageOutbox(
+                'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'collector',
+                'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', clock_timestamp() + INTERVAL '25 hours', 'retry')
             """));
     }
 
@@ -536,7 +634,8 @@ public sealed class PostgreSqlRuntimeUsageOutboxIntegrationTests
             foreach (var fileName in new[]
                      {
                          "011_create_runtime_usage_outbox.state.sql",
-                         "012_runtime_usage_delivery_boundary.state.sql"
+                         "012_runtime_usage_delivery_boundary.state.sql",
+                         "015_runtime_usage_defer_boundary.state.sql"
                      })
             {
                 var path = Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql", fileName);

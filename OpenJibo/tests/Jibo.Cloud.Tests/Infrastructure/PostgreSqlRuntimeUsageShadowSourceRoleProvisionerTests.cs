@@ -22,7 +22,11 @@ public sealed class PostgreSqlRuntimeUsageShadowSourceRoleProvisionerTests
         Assert.Contains("p_page_size NOT BETWEEN 1 AND 250", artifact, StringComparison.Ordinal);
         Assert.Contains("STABLE SECURITY DEFINER", artifact, StringComparison.Ordinal);
         Assert.Contains("PUBLIC temporary privilege", artifact, StringComparison.Ordinal);
-        Assert.Contains("m.roleid=owner_oid AND m.member<>admin_oid", artifact, StringComparison.Ordinal);
+        Assert.Contains("m.member=admin_oid AND m.roleid=owner_oid AND m.grantor=admin_oid", artifact, StringComparison.Ordinal);
+        Assert.Contains("m.grantor=10::oid", artifact, StringComparison.Ordinal);
+        Assert.Contains("b.oid=10 AND b.rolsuper", artifact, StringComparison.Ordinal);
+        Assert.Contains("m.admin_option AND NOT m.inherit_option AND NOT m.set_option", artifact, StringComparison.Ordinal);
+        Assert.Contains("shadow-source supporting roles have unsafe membership", artifact, StringComparison.Ordinal);
         Assert.Contains("shadow-source raw relation ACL is contaminated", artifact, StringComparison.Ordinal);
         Assert.Contains("shadow-source raw function ACL is contaminated", artifact, StringComparison.Ordinal);
         Assert.Contains("shadow-source wrapper schema contains an unexpected function", artifact, StringComparison.Ordinal);

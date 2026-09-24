@@ -69,6 +69,14 @@ public sealed class PostgreSqlRuntimeUsageShadowSourceRolePrivilegedIntegrationT
             Assert.Contains("wrapper schema contains an unexpected function", wrapper.MessageText, StringComparison.Ordinal);
             await ExecuteAsync(administrator, "DROP FUNCTION runtime_usage_shadow_source.extra_shadow_wrapper()");
             await PostgreSqlRuntimeUsageShadowSourceRoleProvisioner.ProvisionAsync(administrator, schema);
+            await ExecuteAsync(administrator,
+                $"GRANT {Quote(PostgreSqlRuntimeUsageShadowSourceRoleProvisioner.CapabilityRole)} TO CURRENT_USER WITH INHERIT FALSE, SET TRUE, ADMIN FALSE");
+            var creatorAccess = await Assert.ThrowsAsync<PostgresException>(() =>
+                PostgreSqlRuntimeUsageShadowSourceRoleProvisioner.ProvisionAsync(administrator, schema));
+            Assert.Contains("supporting roles have unsafe membership", creatorAccess.MessageText, StringComparison.Ordinal);
+            await ExecuteAsync(administrator,
+                $"REVOKE {Quote(PostgreSqlRuntimeUsageShadowSourceRoleProvisioner.CapabilityRole)} FROM CURRENT_USER");
+            await PostgreSqlRuntimeUsageShadowSourceRoleProvisioner.ProvisionAsync(administrator, schema);
         }
         finally
         {

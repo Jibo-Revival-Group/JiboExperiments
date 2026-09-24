@@ -18,7 +18,21 @@ BEGIN
   SELECT oid INTO capability_oid FROM pg_catalog.pg_roles WHERE rolname='openjibo_runtime_usage_shadow_source_reader';
   IF owner_oid IS NOT NULL AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE oid=owner_oid AND (rolcanlogin OR rolinherit OR rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls)) THEN RAISE EXCEPTION 'shadow-source owner attributes are unsafe'; END IF;
   IF capability_oid IS NOT NULL AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE oid=capability_oid AND (rolcanlogin OR NOT rolinherit OR rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls)) THEN RAISE EXCEPTION 'shadow-source capability attributes are unsafe'; END IF;
-  IF EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members m WHERE m.member IN (owner_oid,capability_oid)) OR EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members m WHERE m.roleid=owner_oid AND m.member<>admin_oid) OR EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members m WHERE m.roleid=capability_oid AND m.member<>login_oid) THEN RAISE EXCEPTION 'shadow-source supporting roles have unsafe membership'; END IF;
+  -- PostgreSQL grants a non-superuser role creator a bootstrap-owned ADMIN edge
+  -- with neither INHERIT nor SET. It cannot be revoked by that creator.
+  IF EXISTS (
+    SELECT 1 FROM pg_catalog.pg_auth_members m
+    WHERE (m.member IN (login_oid,owner_oid,capability_oid) OR m.roleid IN (login_oid,owner_oid,capability_oid))
+      AND NOT (
+        (m.member=admin_oid AND m.roleid IN (login_oid,owner_oid,capability_oid)
+          AND m.grantor=10::oid AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles b WHERE b.oid=10 AND b.rolsuper)
+          AND m.admin_option AND NOT m.inherit_option AND NOT m.set_option)
+        OR (m.member=admin_oid AND m.roleid=owner_oid AND m.grantor=admin_oid
+          AND NOT m.admin_option AND NOT m.inherit_option AND m.set_option)
+        OR (m.member=login_oid AND m.roleid=capability_oid AND m.grantor=admin_oid
+          AND NOT m.admin_option AND m.inherit_option AND NOT m.set_option)
+      )
+  ) THEN RAISE EXCEPTION 'shadow-source supporting roles have unsafe membership'; END IF;
   SELECT nspowner INTO schema_owner FROM pg_catalog.pg_namespace WHERE nspname='runtime_usage_shadow_source';
   IF schema_owner IS NOT NULL AND schema_owner<>admin_oid THEN RAISE EXCEPTION 'shadow-source wrapper schema must remain deployment-administrator owned'; END IF;
   IF EXISTS (SELECT 1 FROM pg_catalog.pg_namespace n CROSS JOIN LATERAL pg_catalog.aclexplode(COALESCE(n.nspacl,pg_catalog.acldefault('n',n.nspowner))) a WHERE n.nspname='runtime_usage_shadow_source' AND a.grantee=0) THEN RAISE EXCEPTION 'shadow-source wrapper schema has unsafe PUBLIC privileges'; END IF;

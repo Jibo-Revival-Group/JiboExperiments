@@ -2042,6 +2042,36 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task UpdateOperations_PreserveOpaqueDependencies()
+    {
+        const string dependencies = """{"@be/be":{"minimum":"10.0.18","options":["a",{"enabled":true}]}}""";
+        var created = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com", Method = "POST", ServicePrefix = "Update_20160715",
+            Operation = "CreateUpdate",
+            BodyText = """{"fromVersion":"1.0.0","toVersion":"1.0.1","subsystem":"robot","dependencies":{"@be/be":{"minimum":"10.0.18","options":["a",{"enabled":true}]}}}"""
+        });
+        using var createdJson = JsonDocument.Parse(created.BodyText);
+        var id = createdJson.RootElement.GetProperty("_id").GetString();
+        Assert.Equal(dependencies, createdJson.RootElement.GetProperty("dependencies").GetRawText());
+
+        foreach (var operation in new[] { "ListUpdates", "GetUpdateFrom", "RemoveUpdate" })
+        {
+            var result = await _service.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com", Method = "POST", ServicePrefix = "Update_20160715",
+                Operation = operation,
+                BodyText = operation == "RemoveUpdate"
+                    ? JsonSerializer.Serialize(new { id })
+                    : """{"subsystem":"robot","fromVersion":"1.0.0"}"""
+            });
+            using var payload = JsonDocument.Parse(result.BodyText);
+            var update = operation == "ListUpdates" ? payload.RootElement[0] : payload.RootElement;
+            Assert.Equal(dependencies, update.GetProperty("dependencies").GetRawText());
+        }
+    }
+
+    [Fact]
     public async Task ListUpdatesFrom_IgnoresSameVersionUpdates()
     {
         await _service.DispatchAsync(new ProtocolEnvelope

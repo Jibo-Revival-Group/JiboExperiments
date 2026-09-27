@@ -128,6 +128,100 @@ public sealed class JiboCloudApiIntegrationTests
         Assert.False(string.IsNullOrWhiteSpace(payload.Token));
     }
 
+    [Theory]
+    [InlineData("Update_20160301", "CreateUpdate")]
+    [InlineData("update_20160715", "CreateUpdate")]
+    [InlineData("Update_20160301", "cReAtEuPdAtE")]
+    [InlineData("Update_20160301", "RemoveUpdate")]
+    [InlineData("update_20160715", "RemoveUpdate")]
+    [InlineData("Update_20160715", "rEmOvEuPdAtE")]
+    public async Task PublicUpdateMutations_AreForbiddenWithoutChangingManifestCatalog(
+        string servicePrefix, string operation)
+    {
+        await using var factory = CreateFactory(enableReleaseSmoke: true);
+        var client = factory.CreateClient();
+        var stateStore = factory.Services.GetRequiredService<ICloudStateStore>();
+        var existing = stateStore.CreateUpdate("1.0.0", "1.0.1", "Seeded fixture", "digest", 12,
+            "robot", null, null);
+
+        using var mutationRequest = new HttpRequestMessage(HttpMethod.Post, "/")
+        {
+            Content = operation.Equals("RemoveUpdate", StringComparison.OrdinalIgnoreCase)
+                ? JsonContent.Create(new { id = existing.UpdateId })
+                : JsonContent.Create(new
+                {
+                    fromVersion = "1.0.1",
+                    toVersion = "1.0.2",
+                    changes = "Must not be created",
+                    subsystem = "robot"
+                })
+        };
+        mutationRequest.Headers.TryAddWithoutValidation("X-Amz-Target", $"{servicePrefix}.{operation}");
+        mutationRequest.Headers.TryAddWithoutValidation(ReleaseSmokeAuthorizationOptions.SecretHeaderName,
+            "integration-test-secret");
+        mutationRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "admin");
+        mutationRequest.Headers.TryAddWithoutValidation("Cookie", "admin=true");
+        mutationRequest.Headers.Host = "api.jibo.com";
+
+        using var mutationResponse = await client.SendAsync(mutationRequest);
+        Assert.Equal(HttpStatusCode.Forbidden, mutationResponse.StatusCode);
+        Assert.Equal("no-store", mutationResponse.Headers.CacheControl?.ToString());
+        Assert.Equal("application/json", mutationResponse.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("{\"error\":\"forbidden\"}", await mutationResponse.Content.ReadAsStringAsync());
+        Assert.Equal(new[] { existing.UpdateId }, stateStore.ListUpdates("robot").Select(update => update.UpdateId));
+    }
+
+    [Fact]
+    public async Task UpdatePolling_RemainsAvailableAndEmptyWhenNoManifestMatches()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var stateStore = factory.Services.GetRequiredService<ICloudStateStore>();
+        var stagedUpdate = stateStore.CreateUpdate("1.0.0", "1.0.1", "Pollable fixture", "digest", 12,
+            "robot", null, null);
+
+        using var emptyListRequest = new HttpRequestMessage(HttpMethod.Post, "/")
+        {
+            Content = JsonContent.Create(new { subsystem = "empty-robot" })
+        };
+        emptyListRequest.Headers.TryAddWithoutValidation("X-Amz-Target", "Update_20160301.ListUpdates");
+        emptyListRequest.Headers.Host = "api.jibo.com";
+        using var emptyListResponse = await client.SendAsync(emptyListRequest);
+        Assert.Equal(HttpStatusCode.OK, emptyListResponse.StatusCode);
+        Assert.Equal("[]", await emptyListResponse.Content.ReadAsStringAsync());
+
+        using var noUpdateRequest = new HttpRequestMessage(HttpMethod.Post, "/")
+        {
+            Content = JsonContent.Create(new { subsystem = "empty-robot", fromVersion = "1.0.0" })
+        };
+        noUpdateRequest.Headers.TryAddWithoutValidation("X-Amz-Target", "Update_20160715.GetUpdateFrom");
+        noUpdateRequest.Headers.Host = "api.jibo.com";
+        using var noUpdateResponse = await client.SendAsync(noUpdateRequest);
+        Assert.Equal(HttpStatusCode.NoContent, noUpdateResponse.StatusCode);
+
+        using var matchingListRequest = new HttpRequestMessage(HttpMethod.Post, "/")
+        {
+            Content = JsonContent.Create(new { subsystem = "robot" })
+        };
+        matchingListRequest.Headers.TryAddWithoutValidation("X-Amz-Target", "Update_20160301.ListUpdates");
+        matchingListRequest.Headers.Host = "api.jibo.com";
+        using var matchingListResponse = await client.SendAsync(matchingListRequest);
+        Assert.Equal(HttpStatusCode.OK, matchingListResponse.StatusCode);
+        Assert.Contains(stagedUpdate.UpdateId, await matchingListResponse.Content.ReadAsStringAsync(),
+            StringComparison.Ordinal);
+
+        using var matchingGetRequest = new HttpRequestMessage(HttpMethod.Post, "/")
+        {
+            Content = JsonContent.Create(new { subsystem = "robot", fromVersion = "1.0.0" })
+        };
+        matchingGetRequest.Headers.TryAddWithoutValidation("X-Amz-Target", "Update_20160715.GetUpdateFrom");
+        matchingGetRequest.Headers.Host = "api.jibo.com";
+        using var matchingGetResponse = await client.SendAsync(matchingGetRequest);
+        Assert.Equal(HttpStatusCode.OK, matchingGetResponse.StatusCode);
+        Assert.Contains(stagedUpdate.UpdateId, await matchingGetResponse.Content.ReadAsStringAsync(),
+            StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task HttpProtocolDispatch_RecordsExactAggregateApplicationBytes()
     {

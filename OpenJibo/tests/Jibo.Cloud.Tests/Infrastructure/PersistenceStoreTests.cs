@@ -127,6 +127,39 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void CloudStateStore_UpdateDependenciesSurviveSnapshotAndLegacyMissingField()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"openjibo-update-deps-{Guid.NewGuid():N}.json");
+        try
+        {
+            var store = new InMemoryCloudStateStore(path);
+            var nested = new Dictionary<string, object?> { ["minimum"] = "10.0.18" };
+            var supplied = new Dictionary<string, object?> { ["@be/be"] = nested };
+            var created = store.CreateUpdate("1.0.0", "1.0.1", null, null, null, "robot", null, supplied);
+            nested["minimum"] = "changed";
+            supplied.Clear();
+            store.SavePersistedState();
+
+            var reloaded = new InMemoryCloudStateStore(path);
+            using var dependencies = JsonDocument.Parse(JsonSerializer.Serialize(
+                reloaded.GetUpdateFrom("robot", "1.0.0", null)!.Dependencies));
+            Assert.Equal("10.0.18", dependencies.RootElement.GetProperty("@be/be")
+                .GetProperty("minimum").GetString());
+
+            var legacy = JsonNode.Parse(File.ReadAllText(path))!;
+            legacy["Updates"]![0]!.AsObject().Remove("Dependencies");
+            File.WriteAllText(path, legacy.ToJsonString());
+            var legacyReloaded = new InMemoryCloudStateStore(path);
+            Assert.Empty(legacyReloaded.GetUpdateFrom("robot", "1.0.0", null)!.Dependencies);
+            Assert.Equal(created.UpdateId, legacyReloaded.ListUpdates("robot").Single().UpdateId);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void CloudStateStore_PersistsExplicitRobotLinkOutsideEphemeralSession()
     {
         var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-identity-link-{Guid.NewGuid():N}.json");

@@ -2192,7 +2192,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             ShaHash = shaHash ?? "fake-sha-hash",
             Length = length ?? 0,
             Subsystem = subsystem ?? "unknown",
-            Filter = filter
+            Filter = filter,
+            Dependencies = dependencies is null
+                ? new Dictionary<string, object?>()
+                : JsonSerializer.Deserialize<Dictionary<string, object?>>(JsonSerializer.Serialize(dependencies))!
         };
 
         _updates.Add(update);

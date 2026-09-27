@@ -17,6 +17,10 @@ distinguishes hosted metadata from robot-local scheduler/update-menu state.
 Existing handlers and proof endpoints do not prove signed, bootable updates or
 working recovery. Confirm these findings for each supported OOBE, v1 and v2 build.
 
+The [initial contract checkpoint](robot-ota-contract-checkpoint.md) records the
+current metadata scaffolding and its dependency-preservation/public-write
+boundary repairs. It is not a working OTA deployment or a release offer.
+
 ## Architecture and ownership
 
 The neutral runtime exposes the compatible robot-facing update API, backed by

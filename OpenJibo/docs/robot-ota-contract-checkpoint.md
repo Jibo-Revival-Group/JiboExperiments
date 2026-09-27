@@ -42,9 +42,15 @@ claim that an already-running server has been patched.
 
 ## Evidence still needed
 
-Research in [robot internals](jibo-internals.md) names stock metadata operations,
+Follow-up: the owner subsequently supplied an extracted eMMC tree containing
+updater 1.3.10. The [stock source evidence](robot-ota-stock-1.3.10-evidence.md)
+now confirms its envelope, SHA-1 download check and subsystem apply behavior.
+The repository-only search below is historical; it is not a statement that the
+newly supplied image lacks those sources. Hardware/trust/release gates remain open.
+
+At the initial checkpoint, research in [robot internals](jibo-internals.md) named stock metadata operations,
 A/B partitions and `S72jibo-apply-update`. It does not establish a full build or
-signing chain. We still need version-specific source or redacted lab traces for
+signing chain. The initial evidence request covered version-specific source or redacted lab traces for
 package layout, actual hash/signature algorithms, trust anchors, download/resume,
 dependency meaning, partition writes, boot selection and recovery/commit logic.
 Preserving a dependencies object is not validating its contents or compatibility.

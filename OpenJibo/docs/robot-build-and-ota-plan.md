@@ -21,6 +21,11 @@ The [initial contract checkpoint](robot-ota-contract-checkpoint.md) records the
 current metadata scaffolding and its dependency-preservation/public-write
 boundary repairs. It is not a working OTA deployment or a release offer.
 
+The subsequent [updater 1.3.10 source inspection](robot-ota-stock-1.3.10-evidence.md)
+provides version-scoped package/download/apply evidence from an owner-supplied
+image. In particular, its A/B implementation does not retain the previous root
+through final service verification. Installation/recovery remains unproven.
+
 ## Architecture and ownership
 
 The neutral runtime exposes the compatible robot-facing update API, backed by

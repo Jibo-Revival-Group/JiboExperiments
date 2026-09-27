@@ -1,7 +1,7 @@
 import hashlib
 import importlib.util
 import io
-import os
+import bz2
 import sys
 import tarfile
 import tempfile
@@ -27,6 +27,18 @@ def make_tar(path: Path, members: list[tuple[tarfile.TarInfo, bytes]]) -> None:
             for info, content in members:
                 info.size = len(content)
                 archive.addfile(info, io.BytesIO(content))
+
+
+def make_nested_tar(members: list[tuple[tarfile.TarInfo, bytes]]) -> bytes:
+    output = io.BytesIO()
+    with tarfile.open(fileobj=output, mode="w:") as archive:
+        root = tarfile.TarInfo("./")
+        root.type = tarfile.DIRTYPE
+        archive.addfile(root)
+        for info, content in members:
+            info.size = len(content)
+            archive.addfile(info, io.BytesIO(content))
+    return output.getvalue()
 
 
 class OuterOtaPackageInspectorTests(unittest.TestCase):
@@ -74,6 +86,81 @@ class OuterOtaPackageInspectorTests(unittest.TestCase):
                          hashlib.sha1(content).hexdigest())
         self.assertIn("sha1CompatibilityOnly", result["ArchiveDigests"])
         self.assertIn("not publisher identity", result["Sha1Purpose"])
+
+    def test_optional_nested_scan_reports_bounded_structural_inventory_only(self) -> None:
+        directory = tarfile.TarInfo("etc/")
+        directory.type = tarfile.DIRTYPE
+        nested = make_nested_tar([
+            (directory, b""),
+            (tarfile.TarInfo("etc/config"), b"synthetic config"),
+            (tarfile.TarInfo("usr/bin/tool"), b"synthetic executable"),
+        ])
+        result = self.inspect_members(
+            [(tarfile.TarInfo("filesystem.tar.bz2"), bz2.compress(nested))],
+            inspect_filesystem=True)
+
+        inspection = result["NestedFilesystemInspection"]
+        self.assertTrue(inspection["Performed"])
+        self.assertFalse(inspection["CompatibilityCertification"])
+        self.assertFalse(result["CanOfferUpdates"])
+        self.assertIn("filesystem-content-abi-ownership-hardware-not-validated", result["Blockers"])
+        self.assertIn("publisher-trust-and-signature-not-verified", result["Blockers"])
+        self.assertEqual(inspection["RegularFileCount"], 2)
+        self.assertEqual(inspection["DirectoryCount"], 2)
+
+    def test_nested_scan_rejects_traversal_links_modes_and_path_collisions(self) -> None:
+        escape = tarfile.TarInfo("../escape")
+        link = tarfile.TarInfo("etc/link")
+        link.type = tarfile.SYMTYPE
+        link.linkname = "../../escape"
+        setid = tarfile.TarInfo("usr/bin/setid")
+        setid.mode = 0o4755
+        collisions = [
+            [(tarfile.TarInfo("a"), b"file"), (tarfile.TarInfo("a/b"), b"child")],
+            [(tarfile.TarInfo("a/b"), b"child"), (tarfile.TarInfo("a"), b"file")],
+        ]
+        cases = [
+            [(escape, b"bad")],
+            [(link, b"")],
+            [(setid, b"bad")],
+            *collisions,
+        ]
+        for members in cases:
+            with self.subTest(names=[info.name for info, _ in members]):
+                with self.assertRaises(inspector.InspectionError):
+                    self.inspect_members(
+                        [(tarfile.TarInfo("filesystem.tar.bz2"),
+                          bz2.compress(make_nested_tar(members)))],
+                        inspect_filesystem=True)
+
+    def test_nested_scan_bounds_bzip2_expansion_and_rejects_bad_streams(self) -> None:
+        plain_tar = make_nested_tar([(tarfile.TarInfo("large"), b"x" * 8192)])
+        compressed = bz2.compress(plain_tar)
+        path = self.root / "nested-limits.tar"
+
+        make_tar(path, [(tarfile.TarInfo("filesystem.tar.bz2"), compressed)])
+        with patch.object(inspector, "MAX_NESTED_ENTRIES", 1):
+            with self.assertRaisesRegex(inspector.InspectionError, "entry-count-limit"):
+                inspector.inspect_package(str(path), inspect_filesystem=True)
+        with patch.object(inspector, "MAX_NESTED_DECOMPRESSED_BYTES", 1024):
+            with self.assertRaisesRegex(inspector.InspectionError, "decompressed-byte-limit"):
+                inspector.inspect_package(str(path), inspect_filesystem=True)
+        with patch.object(inspector, "MAX_NESTED_COMPRESSED_BYTES", 1):
+            with self.assertRaisesRegex(inspector.InspectionError, "compressed-byte-limit"):
+                inspector.inspect_package(str(path), inspect_filesystem=True)
+
+        bad_streams = [
+            compressed[:-5],
+            compressed[:-1] + bytes([compressed[-1] ^ 0xFF]),
+            compressed + bz2.compress(b"extra stream"),
+            bz2.compress(plain_tar[:-10240]),
+            bz2.compress(plain_tar[:-512] + b"x" + b"\0" * 511),
+        ]
+        for bad in bad_streams:
+            with self.subTest(compressedLength=len(bad)):
+                make_tar(path, [(tarfile.TarInfo("filesystem.tar.bz2"), bad)])
+                with self.assertRaises(inspector.InspectionError):
+                    inspector.inspect_package(str(path), inspect_filesystem=True)
 
     def test_rejects_absolute_traversal_backslash_and_unsupported_names(self) -> None:
         for name in ("/filesystem.tar.bz2", "../filesystem.tar.bz2", "dir/../filesystem.tar.bz2",

@@ -78,4 +78,24 @@ SHA-256 proves publisher identity. Exit 0 means only that the outer envelope
 passed this inspector's structural subset; `CanOfferUpdates` remains false.
 Exit 2 rejects the input. No extraction directory is created. Use a stable local
 copy of an untrusted package in an isolated analysis environment; this tool is
-not a sandbox or a substitute for inner-filesystem inspection.
+not a sandbox or a substitute for full filesystem/content validation.
+
+### Optional nested structural inspection
+
+`--inspect-filesystem` additionally streams the `filesystem.tar.bz2` member
+through bounded decompression and checks its tar headers without extracting it.
+The initial policy admits only regular files and directories: links, special
+files, extended headers, unsafe paths and setuid/setgid modes are rejected.
+This will reject some legitimate stock Linux filesystem packages. It is a
+conservative analysis subset, not a promise of stock compatibility.
+
+```text
+python3 scripts/bootstrap/inspect-robot-ota-package.py /path/to/package.tar --inspect-filesystem
+```
+
+Even when this option passes, file contents, executable behavior, ownership,
+architecture/ABI, partition fit, trust, dependency ordering and recovery are not
+certified. `CanOfferUpdates` stays false. The limits are deliberately bounded;
+exceeding them means unsupported analysis input, not permission to bypass them.
+Use [scheduler and trust evidence](robot-ota-scheduler-and-trust-evidence.md)
+to track the independent release gates.

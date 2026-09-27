@@ -26,6 +26,10 @@ provides version-scoped package/download/apply evidence from an owner-supplied
 image. In particular, its A/B implementation does not retain the previous root
 through final service verification. Installation/recovery remains unproven.
 
+The [scheduler and trust follow-up](robot-ota-scheduler-and-trust-evidence.md)
+traces signed metadata requests and the handoff to native system manager;
+native dependency ordering and effective runtime TLS configuration remain open.
+
 ## Architecture and ownership
 
 The neutral runtime exposes the compatible robot-facing update API, backed by

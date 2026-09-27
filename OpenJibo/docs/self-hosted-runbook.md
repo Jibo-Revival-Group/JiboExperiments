@@ -59,6 +59,44 @@ This builds the `api`/`migrate` image (installing whisper.cpp and its model as p
 
 Rebuild is required any time you change `OPENJIBO_ENABLE_LOCAL_WHISPER` or `OPENJIBO_WHISPER_MODEL`, since those are Docker build arguments, not just runtime environment variables.
 
+### Prebuilt-image starter foundation
+
+The launchers also accept an explicitly selected image digest. This is an
+expert/operator path, **not a published official download or automatic updater**.
+It still uses this checkout's Compose and initialization files. Match the
+checkout/configuration to the image's documented release and verify its source,
+signature, architecture and speech/model variant through a trusted release
+channel before running it. A digest pins bytes; it does not prove who built them.
+Official release signing, bundles and mirrors are tracked in the
+[distribution plan](official-distribution-plan.md).
+
+After completing the backup/configuration checks below, replace the placeholder
+with a verified `registry/repository@sha256:<64 lowercase hex>` reference:
+
+```powershell
+.\scripts\cloud\Invoke-OpenJiboSelfHostedStack.ps1 -RunMigration -Image '<verified image digest reference>'
+```
+
+```bash
+./scripts/cloud/invoke-openjibo-self-hosted-stack.sh --run-migration --image '<verified image digest reference>'
+```
+
+Both API and migration services use the same image. This path disables builds
+and pulls missing images; it does not build a missing image from your checkout.
+Mutable tags, malformed references and combining the image option with
+`-SkipBuild`/`--skip-build` are rejected before environment initialization.
+Source-build mode remains the default and selects the local
+`openjibo-cloud:self-hosted` image even if an image override was inherited.
+PowerShell restores the caller's image environment setting afterward.
+
+Build-time Whisper options do not change a prebuilt image's contents. Select a
+matching model/configuration rather than assuming a runtime environment setting
+will install it. Running a different image can apply migrations: retain both
+database backups and encryption keys, review schema compatibility and the
+release's restore plan first. Merely choosing the old image is not a guaranteed
+database rollback. These launchers do not perform signature verification,
+trusted-network enrollment, mirror selection or unattended updates.
+
 ## 4. Database backups and migrations
 
 The PostgreSQL volume is persistent. Before applying a schema migration or restoring data, make a plain-SQL backup of both databases and keep the files outside Docker's managed volumes:

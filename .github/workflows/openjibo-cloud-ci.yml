@@ -42,6 +42,14 @@ jobs:
         shell: bash
         run: bash ./scripts/cloud/test-openjibo-self-hosted-deployment-contract.sh
 
+      - name: Validate Bash image launcher
+        shell: bash
+        run: bash ./scripts/cloud/test-openjibo-self-hosted-image-launcher.sh
+
+      - name: Validate PowerShell image launcher
+        shell: pwsh
+        run: ./scripts/cloud/Test-OpenJiboSelfHostedImageLauncher.ps1
+
       - name: Validate OpenJiboCloud staging PostgreSQL bootstrap contract
         shell: bash
         run: bash ./scripts/cloud/test-openjibo-cloud-staging-bootstrap-contract.sh

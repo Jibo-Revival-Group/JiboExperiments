@@ -6,11 +6,18 @@ Stand up a small public site and web app on `openjibo.com` that makes the projec
 
 `jiborevived.com` remains the community-maintained Jibo Revival Group hub and status space. `openjibo.com` is the Open Jibo showcase, account entry surface, and hosted-cloud entry point.
 
-## Current Status (`2026-08-18`)
+## Current Status (`2026-09-26`)
 
 Status: `ready` for neutral site implementation.
 
 The repository contains a static placeholder only. The first implementation should explain the platform, link the Jibo Revival Group and source repositories, show device/conversion information, compare hosting choices consistently, and provide clean contact routing. Commercial membership belongs on each provider's own clearly labeled surface.
+
+The [official distribution plan](official-distribution-plan.md) adds versioned
+downloads, isolated/hybrid/managed starter packages, host adapters and verified
+updates/mirrors to this site work. Promote the revival group and its existing
+community hub; do not replace or conflate that hub with a commercial provider.
+Publish a downloads catalog only for releases that passed the package and
+platform acceptance matrix. The placeholder is not a deployed finished site.
 
 ## First Version Content
 
@@ -27,6 +34,11 @@ The repository contains a static placeholder only. The first implementation shou
 ## Hosting Choice And Onboarding Split
 
 The public site should make the hosted-cloud path explicit instead of hiding it inside one general account page.
+
+Account/onboarding entry here means a clearly labeled handoff to the selected
+provider or local setup, not an already-existing neutral identity service.
+Reading the site, comparing options and accessing self-hosted documentation or
+downloads must not require a managed-service login.
 
 Recommended host split:
 

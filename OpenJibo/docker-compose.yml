@@ -6,7 +6,7 @@ services:
       args:
         ENABLE_LOCAL_WHISPER: ${OPENJIBO_ENABLE_LOCAL_WHISPER:-true}
         WHISPER_MODEL: ${OPENJIBO_WHISPER_MODEL:-base.en}
-    image: openjibo-cloud:self-hosted
+    image: ${OPENJIBO_RUNTIME_IMAGE:-openjibo-cloud:self-hosted}
     env_file:
       - .env
     command:
@@ -35,7 +35,7 @@ services:
       args:
         ENABLE_LOCAL_WHISPER: ${OPENJIBO_ENABLE_LOCAL_WHISPER:-true}
         WHISPER_MODEL: ${OPENJIBO_WHISPER_MODEL:-base.en}
-    image: openjibo-cloud:self-hosted
+    image: ${OPENJIBO_RUNTIME_IMAGE:-openjibo-cloud:self-hosted}
     env_file:
       - .env
     environment:

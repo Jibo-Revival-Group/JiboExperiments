@@ -11,6 +11,10 @@ the API and migrations without rebuilding. Fake-Docker tests cover both shell
 launchers; real container install/upgrade verification and official release
 publication remain pending. This is not yet a standalone download bundle.
 
+Robot OS and on-device software have a separate
+[build and OTA delivery lane](robot-build-and-ota-plan.md), integrating with
+the stock update process. Server container updates do not replace this work.
+
 ## Product and ownership boundaries
 
 `openjibo.com` is the neutral revival-group entry point. It should promote the

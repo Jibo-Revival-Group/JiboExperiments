@@ -53,6 +53,25 @@ Speech-to-text options (see [section 4](#4-speech-to-text-local-whisper-vs-azure
 
 This builds the `api`/`migrate` image (installing whisper.cpp and its model as part of the build, unless disabled), starts PostgreSQL, applies migrations, and starts the API on port `8080`.
 
+Before startup, both launchers initialize the local `.env` and run
+`docker compose config --quiet` from the checkout root. A configuration failure
+stops the launcher before its `compose up` call, so that invocation does not
+build/pull images, start containers or run migrations. Initialization may already
+have created or updated `.env`; this is not a side-effect-free dry run. The quiet
+check avoids printing the resolved configuration and its secrets. Do not paste
+an unredacted `docker compose config` output into support reports.
+
+This checks Compose configuration, not image provenance/availability, Docker
+daemon health, database passwords, schema compatibility or safe upgrade/restore.
+Existing containers are not stopped by a failed check. Keep the backup and
+release-verification steps below even when preflight succeeds.
+
+The launcher suppresses Compose diagnostics during this check as well as its
+resolved output. For local troubleshooting, run `docker compose config --quiet`
+from the same checkout with the same environment, and review errors privately.
+Check Docker/Compose availability, YAML syntax, referenced files and required
+variables first. Redact credentials before sharing any diagnostics.
+
 - Use `-SkipBuild` / `--skip-build` on later runs if you have not changed the Dockerfile, `.env` whisper settings, or source.
 - Migrations are a required, idempotent startup dependency: Compose runs `migrate` before `api` on every stack startup, and already-applied migration scripts are skipped by the migration ledger.
 - `-RunMigration` / `--run-migration` explicitly targets the migration service for visibility and compatibility with the initial bring-up/retry procedure; it is not a switch that disables migrations. Use `-SkipBuild` / `--skip-build` for repeat starts when the image does not need rebuilding.

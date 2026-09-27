@@ -70,4 +70,8 @@ fi
 compose_args+=(api)
 
 cd "$repo_root"
+if ! docker compose config --quiet >/dev/null 2>&1; then
+  echo "Docker Compose configuration check failed; no services were started." >&2
+  exit 1
+fi
 exec docker "${compose_args[@]}"

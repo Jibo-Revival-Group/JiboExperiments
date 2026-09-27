@@ -45,6 +45,10 @@ try {
 
     Push-Location $repoRoot
     try {
+        & docker compose config --quiet *> $null
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Docker Compose configuration check failed; no services were started.'
+        }
         & docker @composeArgs
         if ($LASTEXITCODE -ne 0) {
             throw "Docker Compose failed with exit code $LASTEXITCODE."

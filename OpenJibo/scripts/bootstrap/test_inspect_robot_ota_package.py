@@ -133,6 +133,44 @@ class OuterOtaPackageInspectorTests(unittest.TestCase):
                           bz2.compress(make_nested_tar(members)))],
                         inspect_filesystem=True)
 
+    def test_nested_elf_headers_are_inventory_not_compatibility(self) -> None:
+        def elf(bits, order, machine):
+            data = bytearray(52 if bits == 32 else 64)
+            data[:7] = b"\x7fELF" + bytes([1 if bits == 32 else 2, 1 if order == "little" else 2, 1])
+            data[18:20] = machine.to_bytes(2, order)
+            data[20:24] = (1).to_bytes(4, order)
+            offset = 40 if bits == 32 else 52
+            data[offset:offset + 2] = len(data).to_bytes(2, order)
+            return bytes(data)
+
+        arm = elf(32, "little", 40)
+        other = elf(64, "big", 183)
+        nested = make_nested_tar([
+            (tarfile.TarInfo("lib/one.so"), arm),
+            (tarfile.TarInfo("lib/two.so"), arm),
+            (tarfile.TarInfo("lib/other.so"), other),
+            (tarfile.TarInfo("etc/plain"), b"ordinary data"),
+        ])
+        members = [(tarfile.TarInfo("filesystem.tar.bz2"), bz2.compress(nested))]
+        result = self.inspect_members(members, inspect_filesystem=True)
+        inventory = result["NestedFilesystemInspection"]["ElfHeaderInventory"]
+        self.assertEqual([entry["Machine"] for entry in inventory], [40, 183])
+        self.assertEqual([entry["FileCount"] for entry in inventory], [2, 1])
+        self.assertEqual(inventory[1]["ByteOrder"], "big")
+        self.assertFalse(result["CanOfferUpdates"])
+        self.assertFalse(result["NestedFilesystemInspection"]["CompatibilityCertification"])
+        with patch.object(inspector, "MAX_ELF_HEADER_VARIANTS", 1):
+            with self.assertRaisesRegex(inspector.InspectionError, "variant-limit"):
+                self.inspect_members(members, inspect_filesystem=True)
+
+        for invalid in (b"\x7fELF", arm[:30], arm[:6] + b"\x02" + arm[7:],
+                        arm[:40] + b"\0\0" + arm[42:]):
+            with self.subTest(length=len(invalid)):
+                with self.assertRaises(inspector.InspectionError):
+                    self.inspect_members([(tarfile.TarInfo("filesystem.tar.bz2"),
+                        bz2.compress(make_nested_tar([(tarfile.TarInfo("bin/bad"), invalid)])))],
+                        inspect_filesystem=True)
+
     def test_nested_scan_bounds_bzip2_expansion_and_rejects_bad_streams(self) -> None:
         plain_tar = make_nested_tar([(tarfile.TarInfo("large"), b"x" * 8192)])
         compressed = bz2.compress(plain_tar)

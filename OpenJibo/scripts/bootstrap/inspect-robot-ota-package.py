@@ -25,6 +25,7 @@ MAX_NESTED_DECOMPRESSED_BYTES = 4 * 1024 * 1024 * 1024
 MAX_NESTED_MEMBER_BYTES = 4 * 1024 * 1024 * 1024
 MAX_NESTED_TOTAL_DECLARED_BYTES = 4 * 1024 * 1024 * 1024
 MAX_NESTED_ENTRIES = 250_000
+MAX_ELF_HEADER_VARIANTS = 32
 ALLOWED_FILES = {"filesystem.tar.bz2", "preinstall", "postinstall"}
 REGULAR_TYPES = {tarfile.REGTYPE, tarfile.AREGTYPE}
 
@@ -120,6 +121,27 @@ def _skip_exact(stream: _BoundedBz2Reader, size: int) -> None:
         remaining -= len(chunk)
 
 
+def _elf_header_identity(prefix: bytes) -> tuple[int, str, int, int, int] | None:
+    """Inventory at most 64 bytes; this does not validate an ELF program or ABI.
+
+    Layout: https://gabi.xinuos.com/elf/02-eheader.html
+    """
+    if not prefix.startswith(b"\x7fELF"):
+        return None
+    if len(prefix) < 16 or prefix[4] not in (1, 2) or prefix[5] not in (1, 2):
+        raise InspectionError("unsupported-or-truncated-elf-identification")
+    header_size = 52 if prefix[4] == 1 else 64
+    if len(prefix) < header_size:
+        raise InspectionError("truncated-elf-header")
+    order = "little" if prefix[5] == 1 else "big"
+    size_offset = 40 if prefix[4] == 1 else 52
+    if (prefix[6] != 1 or int.from_bytes(prefix[20:24], order) != 1
+            or int.from_bytes(prefix[size_offset:size_offset + 2], order) != header_size):
+        raise InspectionError("unsupported-elf-header-version-or-size")
+    return (32 if prefix[4] == 1 else 64, order,
+            int.from_bytes(prefix[18:20], order), prefix[7], prefix[8])
+
+
 def _inspect_nested_filesystem(archive: tarfile.TarFile,
                                filesystem_member: tarfile.TarInfo) -> dict[str, Any]:
     if filesystem_member.size > MAX_NESTED_COMPRESSED_BYTES:
@@ -134,6 +156,7 @@ def _inspect_nested_filesystem(archive: tarfile.TarFile,
     nested_directories: set[str] = set()
     files = directories = executable_files = 0
     total_declared = 0
+    elf_headers: dict[tuple[int, str, int, int, int], int] = {}
     try:
         while True:
             header = _read_exact(reader, 512)
@@ -184,7 +207,15 @@ def _inspect_nested_filesystem(archive: tarfile.TarFile,
             files += 1
             if member.mode & 0o111:
                 executable_files += 1
-            _skip_exact(reader, member.size)
+            prefix = _read_exact(reader, min(64, member.size))
+            if len(prefix) != min(64, member.size):
+                raise InspectionError("truncated-nested-member-content")
+            identity = _elf_header_identity(prefix)
+            if identity is not None:
+                if identity not in elf_headers and len(elf_headers) >= MAX_ELF_HEADER_VARIANTS:
+                    raise InspectionError("elf-header-variant-limit-exceeded")
+                elf_headers[identity] = elf_headers.get(identity, 0) + 1
+            _skip_exact(reader, member.size - len(prefix))
             padding = (-member.size) % 512
             if padding and _read_exact(reader, padding) != b"\0" * padding:
                 raise InspectionError("nonzero-nested-member-padding")
@@ -202,6 +233,12 @@ def _inspect_nested_filesystem(archive: tarfile.TarFile,
         "DirectoryCount": directories,
         "DeclaredRegularFileBytes": total_declared,
         "ExecutableFileCount": executable_files,
+        "ElfHeaderInventory": [
+            {"ClassBits": key[0], "ByteOrder": key[1], "Machine": key[2],
+             "OsAbi": key[3], "AbiVersion": key[4], "FileCount": count}
+            for key, count in sorted(elf_headers.items())
+        ],
+        "ElfHeaderScope": "first 64 bytes only; no loader, code, dependency or ABI validation",
         "CompatibilityCertification": False,
         "LimitPolicy": "conservative; filesystem links and special entries are rejected",
     }

@@ -99,3 +99,20 @@ certified. `CanOfferUpdates` stays false. The limits are deliberately bounded;
 exceeding them means unsupported analysis input, not permission to bypass them.
 Use [scheduler and trust evidence](robot-ota-scheduler-and-trust-evidence.md)
 to track the independent release gates.
+
+### Header-only executable inventory
+
+Nested inspection also reads at most the first 64 bytes of each ordinary file.
+Files beginning with ELF magic receive a bounded aggregate inventory of class,
+byte order, numeric machine, OS ABI and ABI version. Layout follows the
+[ELF header specification](https://gabi.xinuos.com/elf/02-eheader.html).
+Truncated/unsupported identification, version or fixed header sizes are
+rejected; at most 32 distinct header identities are retained. No names or file
+contents are emitted by this inventory. Non-ELF files are not classified.
+
+This does not inspect program/section tables, dynamic libraries, ARM attributes,
+interpreter requirements, code behavior, firmware compatibility or installation
+safety. A matching machine number is not ABI validation. The inspected stock
+system-manager files provide one ELF32/little-endian/ARM sample, not an approved
+architecture allowlist for all robot software. Mixed identities remain visible
+without being declared compatible; update offers remain disabled.

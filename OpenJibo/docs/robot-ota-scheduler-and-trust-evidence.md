@@ -29,6 +29,22 @@ or install ordering. No such rules should be invented from the array order.
 Source-map text also needs correlation with the deployed firmware before
 claiming behavior for other robot releases.
 
+### Bounded native inventory
+
+First-header inspection of both native files above identifies ELF32,
+little-endian, machine number 40 (ARM). A bounded ASCII identifier search in
+the library finds `src/UpdateManager.cpp`, `UpdateManager.h`, and symbols for
+`getUpdates`, `downloadUpdates`, `applyUpdates`, `getVersion` and
+`applySystemUpdates`, along with dependency-related strings. These are source
+leads, not reconstructed control flow. Neither topological ordering nor version
+comparison behavior can be concluded from those symbols. No native code was
+executed, and no binary was copied into the repository.
+
+The next useful dependency evidence is the corresponding `UpdateManager`
+source or controlled query-only observations on lab hardware; installation
+and destructive fault testing remain separately gated. Do not infer a default
+ordering or advertise cycle handling from these identifiers.
+
 ## Metadata authentication boundary
 
 The updater-bundled SDK is at

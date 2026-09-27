@@ -49,6 +49,30 @@ package layout, actual hash/signature algorithms, trust anchors, download/resume
 dependency meaning, partition writes, boot selection and recovery/commit logic.
 Preserving a dependencies object is not validating its contents or compatibility.
 
+### Local source inventory follow-up
+
+A bounded source/file inventory of `C:/Projects/jibo/pegasus` and the runtime
+checkout (excluding generated `artifact-output`) did not locate the stock
+apply/download/updater implementation or an installable firmware package.
+Conversion scripts reference updater SDK paths but do not implement their
+verification logic. The Pegasus `surprises_ota_manifest.json` describes skill
+intents, not an OS/package installation manifest. This search does not establish
+that no other owner-held image contains the needed files.
+
+The OOBE conversion plan also records community-reported tarball/SHA-1 behavior.
+Keep those reports distinct from verified, version-specific package fixtures.
+The older planning helper previously treated the existence of a trace path as
+sufficient to clear its blockers. Its readiness signal now stays blocked
+regardless of that path until a reviewed evidence-validation mechanism exists.
+
+The next input needed is a legally available, owner-supplied stock updater source
+or mounted image with its firmware version and provenance. Inspect only updater
+code and public trust material first; do not copy credentials, private keys,
+personal data or whole image contents into the repository. A representative
+redistributable package and redacted positive/negative traces can then support
+format-specific offline tests. Until then, do not invent archive/signature rules
+or treat a generic hash check as an OTA validator.
+
 Next: collect those fixtures without changing a robot, define a separate
 fail-closed release-administration/promotion design, and add offline package
 validation before any update can be offered. Follow the

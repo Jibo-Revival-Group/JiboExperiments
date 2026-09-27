@@ -8,6 +8,7 @@ This is the single starting point for self-hosting the OpenJibo cloud with Docke
 - [docs/single-robot-http-self-hosting.md](single-robot-http-self-hosting.md) — deep dive on robot token/network overrides and the tokenless single-robot compatibility mode.
 - [docs/local-cloud-quickstart.md](local-cloud-quickstart.md) — running the `.NET` cloud directly with `dotnet run` instead of Docker, useful for development.
 - [docs/device-bootstrap.md](device-bootstrap.md) — pointing a physical Jibo at your self-hosted server.
+- [Standalone starter packaging preview](standalone-starter-packaging.md) — offline preparation for a fresh digest-pinned installation; not yet an official download or verified upgrade path.
 
 ## 1. Prerequisites
 

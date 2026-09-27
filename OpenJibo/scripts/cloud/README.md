@@ -2,6 +2,12 @@
 
 These scripts help exercise the new .NET hosted cloud locally.
 
+- `prepare-openjibo-starter-bundle.py`
+  Prepares an offline, allowlisted standalone isolated starter ZIP for a supplied
+  digest-pinned runtime image. Does not publish, pull or deploy. See the
+  [packaging preview guide](../../docs/standalone-starter-packaging.md) for limits
+  and remaining install/recovery verification.
+
 - `Start-OpenJiboDotNet.ps1`
   Starts the current `.NET` cloud with local capture directories configured.
 - `Start-OpenJiboNode.ps1`

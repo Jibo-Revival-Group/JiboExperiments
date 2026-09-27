@@ -9,7 +9,9 @@ new hosts, enrolling servers or modifying robots.
 The opt-in `-Image` / `--image` starter mode now uses one digest-pinned image for
 the API and migrations without rebuilding. Fake-Docker tests cover both shell
 launchers; real container install/upgrade verification and official release
-publication remain pending. This is not yet a standalone download bundle.
+publication remain pending. An offline, allowlisted standalone ZIP builder is
+available as a [local packaging preview](standalone-starter-packaging.md), not a
+published or install-certified official download.
 
 The launcher foundation also validates resolved Compose configuration quietly
 after `.env` initialization and before startup. Configuration failure blocks
@@ -17,8 +19,9 @@ that startup attempt; it does not certify an image, database or upgrade.
 
 Fresh-environment initialization generates per-install encryption values instead
 of copying shared sample values. Existing keys are preserved, not rotated. This
-is a packaging prerequisite; standalone bundles and real install/restore proof
-remain pending.
+is a packaging prerequisite. The local bundle builder removes source-build
+dependencies and host PostgreSQL exposure from its generated Compose file;
+real install/restore proof and release publication remain pending.
 
 Robot OS and on-device software have a separate
 [build and OTA delivery lane](robot-build-and-ota-plan.md), integrating with

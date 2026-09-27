@@ -15,6 +15,8 @@ Install:
 
 - Docker and Docker Compose (`docker compose` v2 CLI)
 - PowerShell, if you prefer the `.ps1` scripts over the `.sh` equivalents
+- OpenSSL for the Bash initializer's cryptographic random generation (the
+  PowerShell initializer uses .NET's cryptographic random generator)
 
 Everything else — .NET, ffmpeg, whisper.cpp — is built into the container image. You do not need to install any of those on the host.
 
@@ -30,11 +32,25 @@ From the `OpenJibo` repo root:
 ./scripts/cloud/initialize-openjibo-compose-env.sh
 ```
 
-This copies `.env.example` to `.env` if it does not already exist. Then edit `.env` and set at minimum:
+For a new installation, this prepares `.env` from the example and replaces its
+sample encryption passphrase and salt with independently generated random
+values. Generation/template failure must leave no final `.env`. Values are not
+printed. Existing `.env` encryption values are never automatically rotated.
+Then edit `.env` and set at minimum:
 
 - `OPENJIBO_POSTGRES_PASSWORD` — required; the stack will not start without it.
-- `OPENJIBO_USER_ENCRYPT` / `OPENJIBO_USER_SALT` — replace the sample values. Do not change these after your first run; they encrypt user data and changing them makes existing data unrecoverable.
+- `OPENJIBO_USER_ENCRYPT` / `OPENJIBO_USER_SALT` — generated for new installs;
+  retain and securely back up these values with your database recovery material.
+  Do not change them after your first run: existing data requires the original values.
 - `OPENJIBO_SEARCH_BACKEND` / `OPENJIBO_SEARCH_FALLBACK` — optional knowledge-search backend (Wolfram, ChatGPT, Ollama). Leave as `none` to disable.
+
+If you manually copy `.env.example`, replace its sample encryption values before
+the first run. If an existing installation already used those samples, do not
+delete `.env` or regenerate keys against that database. Rotation requires a
+separate, tested data migration/re-encryption procedure; it is not implemented
+by initialization. Restore the matching original keys when restoring a database.
+Inherited process environment can override Compose's `.env`; ensure it does not
+silently supply different encryption values.
 
 Speech-to-text options (see [section 4](#4-speech-to-text-local-whisper-vs-azure-speech) below):
 

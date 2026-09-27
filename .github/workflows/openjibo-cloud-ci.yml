@@ -42,6 +42,14 @@ jobs:
         shell: bash
         run: bash ./scripts/cloud/test-openjibo-self-hosted-deployment-contract.sh
 
+      - name: Validate Bash fresh environment initialization
+        shell: bash
+        run: bash ./scripts/cloud/test-openjibo-compose-env-init.sh
+
+      - name: Validate PowerShell fresh environment initialization
+        shell: pwsh
+        run: ./scripts/cloud/Test-OpenJiboComposeEnvInit.ps1
+
       - name: Validate Bash image launcher
         shell: bash
         run: bash ./scripts/cloud/test-openjibo-self-hosted-image-launcher.sh

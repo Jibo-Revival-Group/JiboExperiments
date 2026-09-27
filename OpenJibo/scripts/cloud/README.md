@@ -39,9 +39,9 @@ These scripts help exercise the new .NET hosted cloud locally.
   - `OPENJIBO_SEARCH_FALLBACK`
   Store the backend spec string in the `openjibo-managed` GitHub Actions environment. The deploy workflow seeds those values into Azure Key Vault and then copies them into the Container App as `OPENJIBO_SEARCH_BACKEND` and `OPENJIBO_SEARCH_FALLBACK`.
 - `initialize-openjibo-compose-env.sh`
-  Copies `.env.example` to `.env` when the compose env file is missing and keeps `OPENJIBO_POSTGRES_PASSWORD` in sync when the file already exists.
+  Initializes a missing `.env` from the example with cryptographically random per-install user encryption values (requires OpenSSL). Preserves existing encryption values and keeps `OPENJIBO_POSTGRES_PASSWORD` in sync when supplied. Back up `.env` with the database; never regenerate keys for existing encrypted data.
 - `Initialize-OpenJiboComposeEnv.ps1`
-  PowerShell equivalent of the compose env bootstrap helper, including password propagation into an existing `.env`.
+  PowerShell equivalent of the compose env bootstrap helper, using .NET cryptographic randomness for new environments and preserving existing encryption values, including password propagation into an existing `.env`.
 - `invoke-openjibo-self-hosted-stack.sh`
   Starts the local self-hosted stack, bootstraps `.env`, and can include the migration service when requested.
 - `Invoke-OpenJiboSelfHostedStack.ps1`

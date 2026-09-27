@@ -15,6 +15,11 @@ The launcher foundation also validates resolved Compose configuration quietly
 after `.env` initialization and before startup. Configuration failure blocks
 that startup attempt; it does not certify an image, database or upgrade.
 
+Fresh-environment initialization generates per-install encryption values instead
+of copying shared sample values. Existing keys are preserved, not rotated. This
+is a packaging prerequisite; standalone bundles and real install/restore proof
+remain pending.
+
 Robot OS and on-device software have a separate
 [build and OTA delivery lane](robot-build-and-ota-plan.md), integrating with
 the stock update process. Server container updates do not replace this work.

@@ -66,6 +66,9 @@ jobs:
         env:
           OPENJIBO_TEST_COMPOSE_CONFIG: "1"
 
+      - name: Validate offline standalone starter verification
+        run: python3 -B -m unittest discover -s tests -p test_verify_openjibo_starter_bundle.py
+
       - name: Validate OpenJiboCloud staging PostgreSQL bootstrap contract
         shell: bash
         run: bash ./scripts/cloud/test-openjibo-cloud-staging-bootstrap-contract.sh

@@ -23,6 +23,12 @@ is a packaging prerequisite. The local bundle builder removes source-build
 dependencies and host PostgreSQL exposure from its generated Compose file;
 real install/restore proof and release publication remain pending.
 
+An offline pre-extraction verifier checks the whole ZIP against an independently
+trusted SHA-256 and validates the bounded archive/manifest contract. It does not
+replace signed release metadata or establish trust in an arbitrary supplied
+checksum. The [candidate inspection](starter-image-candidate-20260927.md) records
+an existing private image and the remaining local install-test prerequisites.
+
 Robot OS and on-device software have a separate
 [build and OTA delivery lane](robot-build-and-ota-plan.md), integrating with
 the stock update process. Server container updates do not replace this work.

@@ -7,6 +7,10 @@ These scripts help exercise the new .NET hosted cloud locally.
   digest-pinned runtime image. Does not publish, pull or deploy. See the
   [packaging preview guide](../../docs/standalone-starter-packaging.md) for limits
   and remaining install/recovery verification.
+- `verify-openjibo-starter-bundle.py`
+  Checks an independently supplied whole-archive SHA-256 and the bounded starter
+  ZIP/manifest contract before extraction. Does not extract, run, or authenticate
+  a release on its own; the expected checksum must come from a trusted source.
 
 - `Start-OpenJiboDotNet.ps1`
   Starts the current `.NET` cloud with local capture directories configured.

@@ -36,13 +36,33 @@ The transformation is restricted to a reviewed Compose source contract. Source
 Compose changes require a packaging review and updated tests rather than silently
 adding new mounts or dependencies to the standalone package.
 
+## Verify before extraction
+
+Use the verifier from a trusted checkout before opening an acquired ZIP:
+
+```text
+python scripts/cloud/verify-openjibo-starter-bundle.py --bundle PATH/TO/starter-preview.zip --expected-sha256 TRUSTED_ARCHIVE_SHA256
+```
+
+The expected value is the **whole ZIP's** SHA-256, obtained independently from a
+trusted builder or release channel. Do not calculate a hash from an untrusted
+download and use that same value as evidence of authenticity. Signed release
+metadata and official downloads are still pending.
+
+The verifier checks the supplied archive hash before parsing ZIP contents, then
+checks bounded sizes, the exact file inventory, regular-file types, the manifest
+and each member hash. It neither extracts files nor executes their contents.
+A successful result means the bytes match the supplied checksum and package
+contract; it does not establish image provenance, safety of migrations, a
+supported CPU/model variant, or freshness of a release.
+
 ## Try a prepared bundle
 
 Extract into a new directory and follow its included README. Initialize `.env`
 using the supplied initializer, set a strong database password, retain the
 generated encryption keys, and then use the bundle's start entry point.
 Docker/Compose and the relevant shell are required; Bash initialization also
-requires OpenSSL. Python is needed to prepare the ZIP, not to run the starter.
+requires OpenSSL. Python is needed to prepare or verify the ZIP, not to run the starter.
 
 This configuration serves the API over HTTP on loopback. A physical robot cannot
 reach it until you deliberately change the binding and configure a trusted-LAN
@@ -58,6 +78,10 @@ backup restoration. Never delete an existing `.env` to obtain new keys for old
 encrypted data. Never use `docker compose down -v` as an upgrade shortcut.
 
 ## Remaining release gates
+
+The [September 27 candidate inspection](starter-image-candidate-20260927.md)
+records a historical deployed image, current local test prerequisites and the
+next acceptance sequence. It is not an official image recommendation.
 
 - Approve a registry, signing ownership and official image/build provenance.
 - Verify the exact image's CPU architecture and speech/model variant.

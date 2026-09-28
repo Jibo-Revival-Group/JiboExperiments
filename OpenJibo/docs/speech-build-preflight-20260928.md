@@ -131,6 +131,35 @@ turns returned the expected LISTEN/EOS/SKILL_ACTION and ESML in 7000, 5007 and
 container stopped its owned Whisper process and the API exited zero. This is
 a short post-fix smoke, not a long-duration load certification.
 
+## Two-client overlap smoke
+
+The repaired image was restarted with the same four-CPU/two-GiB limit. Two
+distinct synthetic robot identities each issued ten sequential cloud-version
+audio turns over their own authenticated socket. Client B started after client
+A had begun (approximately ten seconds later), so not every request overlapped.
+All 20 turns returned the expected transcript, EOS and cloud-version SKILL_ACTION
+speech instruction. Logs confirmed 20 warm-provider successes; CLI fallback and
+Azure remained disabled. No OOM kill or container restart occurred.
+
+Durations in milliseconds, in turn order:
+
+- A: 9621, 5210, 8238, 8256, 8459, 8292, 8215, 8141, 8249, 8115.
+- B: 5383, 8216, 8410, 8364, 8230, 8159, 8192, 8196, 7877, 4539.
+
+Across these 20 observations, median was 8215.5 ms, nearest-rank p95 was 8459 ms,
+and maximum was 9621 ms. Twenty Docker resource samples during the run showed
+372.6–400.5 MiB memory and CPU mostly near 400% (four logical cores); sampled CPU
+range was 276.70–406.23%. Sampling does not establish an absolute peak, and the
+small sample's p95 is descriptive only. The test container was stopped afterward.
+
+The roughly eight-second overlapping turns, compared with roughly five-second
+single-client turns, suggest CPU contention on this conservative, SIMD-disabled
+Whisper build. Memory was not near the configured limit in this test. These
+results do not extrapolate to managed Azure STT, representative robot usage,
+native Linux hardware, sustained production capacity or subscription pricing.
+This approximately 90-second overlapping batch is not a long-running soak.
+Admission/queue limits and overload behavior still need explicit acceptance.
+
 ## Remaining acceptance sequence
 
 1. Verify actual response playback with a physical-robot voice test.

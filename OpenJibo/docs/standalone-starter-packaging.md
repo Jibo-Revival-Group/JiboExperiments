@@ -77,6 +77,31 @@ milestone does not implement upgrade compatibility, migration rollback or
 backup restoration. Never delete an existing `.env` to obtain new keys for old
 encrypted data. Never use `docker compose down -v` as an upgrade shortcut.
 
+## Independent Linux host preflight
+
+Before installing a candidate on the separate Ubuntu machine, run this read-only
+check from the `OpenJibo` directory in a checkout (or copy the standalone Python
+script onto that machine and run it with Python 3):
+
+```bash
+python3 -B scripts/cloud/preflight-native-linux-starter.py
+```
+
+It reports JSON containing host OS/architecture, memory, free space on the
+working-directory filesystem, and selected Docker server/Compose facts. It
+does not install software, pull images, start containers, modify resources or
+print Docker endpoint/environment credentials. Docker inspection commands have
+bounded timeouts. Exit zero means the checked prerequisites passed, not that
+speech performance, installation or recovery has been certified. It does not
+impose an unmeasured memory or disk capacity threshold.
+
+WSL, container execution, Docker Desktop and nonlocal Docker endpoints do not
+qualify as independent native-host evidence. Local Unix socket classification
+is a best-effort prerequisite, not proof that a socket is not proxied. Run the
+script directly in the Ubuntu host shell against its local Docker Engine.
+Share the JSON before proceeding to an isolated fresh install. Do not run it
+with `sudo` merely to hide a permissions error; report that prerequisite first.
+
 ## Remaining release gates
 
 The [September 27 candidate inspection](starter-image-candidate-20260927.md)
@@ -85,8 +110,11 @@ next acceptance sequence. It is not an official image recommendation.
 
 The subsequent [Windows/Docker Desktop acceptance run](starter-acceptance-20260927.md)
 passed migrations, authenticated sockets and synthetic backup/restore. It also
-confirmed that the managed candidate lacks local Whisper; speech acceptance,
-native Linux-host coverage and official release gates remain open.
+confirmed that the managed candidate lacks local Whisper. A separate
+[local speech image acceptance run](speech-build-preflight-20260928.md) now
+covers acoustic input and cloud-response instructions, including a two-client
+overlap smoke. Physical-robot playback, native Linux-host coverage and official
+release gates remain open.
 
 - Approve a registry, signing ownership and official image/build provenance.
 - Verify the exact image's CPU architecture and speech/model variant.

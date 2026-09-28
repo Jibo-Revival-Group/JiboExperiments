@@ -42,6 +42,44 @@ jobs:
         shell: bash
         run: bash ./scripts/cloud/test-openjibo-self-hosted-deployment-contract.sh
 
+      - name: Validate Bash fresh environment initialization
+        shell: bash
+        run: bash ./scripts/cloud/test-openjibo-compose-env-init.sh
+
+      - name: Validate PowerShell fresh environment initialization
+        shell: pwsh
+        run: ./scripts/cloud/Test-OpenJiboComposeEnvInit.ps1
+
+      - name: Validate Bash image launcher
+        shell: bash
+        run: bash ./scripts/cloud/test-openjibo-self-hosted-image-launcher.sh
+
+      - name: Validate PowerShell image launcher
+        shell: pwsh
+        run: ./scripts/cloud/Test-OpenJiboSelfHostedImageLauncher.ps1
+
+      - name: Validate offline robot OTA envelope inspector
+        run: python3 -B -m unittest discover -s scripts/bootstrap -p test_inspect_robot_ota_package.py
+
+      - name: Validate offline standalone starter packaging
+        run: python3 -B -m unittest discover -s tests -p test_prepare_openjibo_starter_bundle.py
+        env:
+          OPENJIBO_TEST_COMPOSE_CONFIG: "1"
+
+      - name: Validate offline standalone starter verification
+        run: python3 -B -m unittest discover -s tests -p test_verify_openjibo_starter_bundle.py
+
+      - name: Validate Docker build context privacy
+        run: python3 -B -m unittest discover -s tests -p test_docker_build_context.py
+        env:
+          OPENJIBO_TEST_DOCKER_CONTEXT: "1"
+
+      - name: Validate local Whisper build contract
+        run: python3 -B -m unittest discover -s tests -p test_whisper_docker_build_contract.py
+
+      - name: Validate read-only native Linux preflight
+        run: python3 -B -m unittest discover -s tests -p test_preflight_native_linux_starter.py
+
       - name: Validate OpenJiboCloud staging PostgreSQL bootstrap contract
         shell: bash
         run: bash ./scripts/cloud/test-openjibo-cloud-staging-bootstrap-contract.sh

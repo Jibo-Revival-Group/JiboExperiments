@@ -14,3 +14,12 @@
 .codex/
 tmp/
 artifacts/
+
+# Local configuration, robot captures and recovery material are never image inputs.
+**/.env
+**/.env.*
+!**/.env.example
+**/captures/
+**/artifact-output/
+**/backups/
+**/node_modules/

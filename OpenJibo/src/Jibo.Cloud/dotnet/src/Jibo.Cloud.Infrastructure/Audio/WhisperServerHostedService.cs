@@ -19,6 +19,7 @@ public sealed class WhisperServerHostedService(
 
     private Process? _process;
     private bool _ownsProcess;
+    private Task? _outputDrainTask;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -109,6 +110,9 @@ public sealed class WhisperServerHostedService(
 
             _process = process;
             _ownsProcess = true;
+            // A long-running server can fill either redirected pipe and block unless both
+            // streams are consumed. Discard child output, which may contain transcript text.
+            _outputDrainTask = DrainOutputAsync(process);
             logger.LogInformation(
                 "Started whisper-server on {Host}:{Port} (pid={Pid}, bin={Bin})",
                 host,
@@ -142,6 +146,10 @@ public sealed class WhisperServerHostedService(
     }
 
     public void Dispose() => StopOwnedProcess();
+
+    internal static Task DrainOutputAsync(Process process) => Task.WhenAll(
+        process.StandardOutput.BaseStream.CopyToAsync(Stream.Null),
+        process.StandardError.BaseStream.CopyToAsync(Stream.Null));
 
     internal static bool TryParseLoopbackEndpoint(string? url, out string host, out int port)
     {
@@ -215,9 +223,20 @@ public sealed class WhisperServerHostedService(
         }
         finally
         {
+            try
+            {
+                if (_outputDrainTask is not null &&
+                    !_outputDrainTask.Wait(TimeSpan.FromSeconds(5)))
+                    logger.LogDebug("Timed out waiting for whisper-server output drains to finish");
+            }
+            catch (Exception exception)
+            {
+                logger.LogDebug(exception, "Failed to finish whisper-server output drains");
+            }
             _process.Dispose();
             _process = null;
             _ownsProcess = false;
+            _outputDrainTask = null;
         }
     }
 }

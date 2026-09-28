@@ -254,7 +254,16 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
         envelope.DeviceId,
         envelope.FirmwareVersion,
         envelope.ApplicationVersion);
-    var result = await service.DispatchAsync(envelope);
+    // The robot-facing OTA protocol is not an update-administration boundary.
+    // Keep mutation APIs available to internal fixtures while denying them over public HTTP.
+    var isPublicUpdateMutation =
+        (envelope.ServicePrefix ?? string.Empty).StartsWith("Update_", StringComparison.OrdinalIgnoreCase) &&
+        (string.Equals(envelope.Operation, "CreateUpdate", StringComparison.OrdinalIgnoreCase) ||
+         string.Equals(envelope.Operation, "RemoveUpdate", StringComparison.OrdinalIgnoreCase));
+    var result = isPublicUpdateMutation
+        ? ProtocolDispatchResult.Raw(StatusCodes.Status403Forbidden, """{"error":"forbidden"}""", "application/json")
+        : await service.DispatchAsync(envelope);
+    if (isPublicUpdateMutation) result.Headers["Cache-Control"] = "no-store";
     transportMetrics.HttpPayload("in", "protocol", envelope.Method, result.StatusCode, envelope.BodyBytes?.Length ?? 0);
     transportMetrics.HttpPayload("out", "protocol", envelope.Method, result.StatusCode,
         Encoding.UTF8.GetByteCount(result.BodyText ?? string.Empty));

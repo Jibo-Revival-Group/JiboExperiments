@@ -330,6 +330,13 @@ Decision: the helper should be a guided owner-facing recovery appliance. Interna
 
 Maaarcna reported a working prototype that can drive a wiped/OOBE Jibo into OTA without SSH by using the setup QR's static networking fields:
 
+Evidence qualification: the following describes a community-reported prototype,
+not a version-qualified, independently reproduced release contract. In particular,
+tarball layout, SHA-1 metadata and apply targets below are research leads, not
+permission to publish packages or bypass trust checks. See the
+[OTA contract checkpoint](robot-ota-contract-checkpoint.md). Historical clock and
+certificate behavior must not become the production trust design.
+
 - the OOBE QR payload is plaintext lines in this order: `ssid`, `password`, `staticIP`, `netmask`, `gateway`, `dns1`, `dns2`, and trailing access token
 - when static networking is present, `oobe-config` writes the supplied DNS values into the robot network configuration
 - a controlled DNS server can resolve `api.jibo.com`, NTP pool names, and related stock hosts to a LAN bootstrap server
@@ -349,7 +356,7 @@ Impact on the conversion plan:
 
 Immediate questions and blockers:
 
-Use `scripts/bootstrap/plan-oobe-ota-bootstrap.sh` to produce a machine-readable plan for this lane before touching a physical robot. The helper keeps the path planning-only, records DNS/NTP/HTTPS/OTA assumptions, and fails closed in strict mode while certificate provenance or trace evidence is missing.
+Use `scripts/bootstrap/plan-oobe-ota-bootstrap.sh` to produce a machine-readable research plan for this lane. An existing trace path is not validated evidence. The helper must remain blocked for execution until stock compatibility, package trust and hardware recovery have independently reviewed acceptance evidence; it does not authorize touching a physical robot.
 
 1. Confirm the provenance, redistribution rights, and security handling of the historical `*.jibo.com` certificate and key before placing any related material in this repository or in an owner-facing tool.
 2. Capture Maaarcna's prototype request/response traces for `PrepareRobot`, `SetupRobot`, `GetStatus`, `GetUpdateFrom`, asset downloads, NTP sync, and post-update verification.

@@ -29,6 +29,22 @@ public sealed partial class PostgreSqlCloudStateStoreTests
     }
 
     [Fact]
+    public void UpdateFacade_HydratesRepositoryDependenciesForListGetAndRemove()
+    {
+        var dependencies = new Dictionary<string, object?> { ["@be/be"] = new { minimum = "10.0.18" } };
+        var update = new StoredUpdateManifest(new UpdateManifest
+        {
+            UpdateId = "update-one", Subsystem = "robot", FromVersion = "1.0.0", ToVersion = "1.0.1"
+        }, dependencies);
+        var repository = new ArtifactUpdateRepository { Items = [update] };
+        var store = CreateStore(new FakeTokenRepository(), updates: repository);
+
+        Assert.Equal(dependencies, store.ListUpdates("robot").Single().Dependencies);
+        Assert.Equal(dependencies, store.GetUpdateFrom("robot", "1.0.0", null)!.Dependencies);
+        Assert.Equal(dependencies, store.RemoveUpdate("update-one").Dependencies);
+    }
+
+    [Fact]
     public void MediaMethodsAlwaysPassDefaultAccountScope()
     {
         var media = new ArtifactMediaRepository();

@@ -1738,7 +1738,7 @@ public sealed class JiboCloudProtocolService(
                 ReadLong(body, "length"),
                 subsystem,
                 filter,
-                ReadObject(body, "dependencies")))),
+                ReadOpaqueObject(body, "dependencies")))),
             "RemoveUpdate" => ProtocolDispatchResult.Ok(MapUpdate(stateStore.RemoveUpdate(ReadString(body, "id")))),
             _ => ProtocolDispatchResult.Ok(Array.Empty<object>())
         };
@@ -2161,7 +2161,7 @@ public sealed class JiboCloudProtocolService(
             length = update.Length,
             subsystem = update.Subsystem,
             filter = update.Filter,
-            dependencies = new Dictionary<string, object?>()
+            dependencies = update.Dependencies
         };
     }
 
@@ -2363,6 +2363,15 @@ public sealed class JiboCloudProtocolService(
             };
 
         return result;
+    }
+
+    private static IDictionary<string, object?>? ReadOpaqueObject(JsonElement? element, string propertyName)
+    {
+        if (element is null || !element.Value.TryGetProperty(propertyName, out var property) ||
+            property.ValueKind != JsonValueKind.Object)
+            return null;
+
+        return JsonSerializer.Deserialize<Dictionary<string, object?>>(property.GetRawText());
     }
 
     private static string? ReadHeader(ProtocolEnvelope envelope, string headerName)

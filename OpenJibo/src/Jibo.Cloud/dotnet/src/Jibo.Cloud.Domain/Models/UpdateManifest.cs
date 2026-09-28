@@ -12,4 +12,5 @@ public sealed class UpdateManifest
     public long Length { get; init; }
     public string Subsystem { get; init; } = "robot";
     public string? Filter { get; init; }
+    public IReadOnlyDictionary<string, object?> Dependencies { get; init; } = new Dictionary<string, object?>();
 }

@@ -38,6 +38,12 @@ postgres_init_text="$(get_repo_file_text "$postgres_init_script_path")"
 compose_env_bootstrap_text="$(get_repo_file_text "$compose_env_bootstrap_script_path")"
 runbook_text="$(get_repo_file_text "$runbook_path")"
 
+# The API and migrator must resolve the same opt-in prebuilt image reference.
+if [[ "$(grep -Fc 'image: ${OPENJIBO_RUNTIME_IMAGE:-openjibo-cloud:self-hosted}' <<< "$compose_text")" -ne 2 ]]; then
+  echo 'API and migration services must share the runtime image selector.' >&2
+  exit 1
+fi
+
 required_compose_markers=(
   "services:"
   "migrate:"

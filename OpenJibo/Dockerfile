@@ -35,12 +35,19 @@ RUN dotnet publish "src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Migrations/Jibo.Cloud.M
 FROM build AS whisper-true
 ARG WHISPER_CPP_REF
 ARG WHISPER_MODEL
-RUN apt-get update \
+# Keep the default safe for memory-limited builders; override only with sufficient RAM.
+ARG WHISPER_BUILD_JOBS=2
+# Conservative x86 baseline avoids AVX-era requirements on older CPUs, at a speed cost.
+RUN case "${WHISPER_BUILD_JOBS}" in ''|*[!0-9]*) echo 'WHISPER_BUILD_JOBS must be an integer from 1 to 32' >&2; exit 1;; esac \
+    && if ! [ "${WHISPER_BUILD_JOBS}" -ge 1 ] || ! [ "${WHISPER_BUILD_JOBS}" -le 32 ]; then echo 'WHISPER_BUILD_JOBS must be an integer from 1 to 32' >&2; exit 1; fi \
+    && apt-get update \
     && apt-get install -y --no-install-recommends build-essential cmake git curl \
     && rm -rf /var/lib/apt/lists/* \
     && git clone --branch "${WHISPER_CPP_REF}" --depth 1 https://github.com/ggml-org/whisper.cpp.git /usr/bin/whisper.cpp \
     && cmake -S /usr/bin/whisper.cpp -B /usr/bin/whisper.cpp/build -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build /usr/bin/whisper.cpp/build --config Release -j"$(nproc)" \
+        -DGGML_NATIVE=OFF -DGGML_SSE42=OFF -DGGML_AVX=OFF -DGGML_AVX2=OFF \
+        -DGGML_FMA=OFF -DGGML_F16C=OFF -DGGML_BMI2=OFF \
+    && cmake --build /usr/bin/whisper.cpp/build --config Release -j"${WHISPER_BUILD_JOBS}" \
     && bash /usr/bin/whisper.cpp/models/download-ggml-model.sh "${WHISPER_MODEL}" /usr/bin/whisper.cpp/models
 
 # Placeholder stage so COPY --from below always has a source, even when local Whisper is disabled.

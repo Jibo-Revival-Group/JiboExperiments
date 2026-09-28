@@ -78,7 +78,9 @@ Example:
 
 ## OOBE OTA bootstrap planning
 
-Use `plan-oobe-ota-bootstrap.sh` before attempting the static-DNS OOBE OTA path described in the release plan. The helper is intentionally planning-only: it records DNS/NTP/HTTPS/OTA metadata expectations, names the request traces that must be captured, and fails closed in `--strict` mode while certificate provenance or trace evidence is missing.
+Use `plan-oobe-ota-bootstrap.sh` to document the proposed static-DNS OOBE OTA path. It is planning-only: it performs no network or robot operations, never offers updates, and always reports `CanProceed: false` until the stock OTA contract, package format and provenance, publisher trust/digest policy, HTTPS robot trust, and lab installation/recovery are independently verified. Supplying an existing trace path only records that the path exists; it does not validate its contents. `--strict` therefore remains blocked even when a trace path exists.
+
+Package tarball format and SHA-1 metadata are unverified assumptions. The plan lists candidate metadata only; capture and validate the robot's actual request and package behavior before treating any field, digest algorithm, or archive format as part of the contract.
 
 Example:
 

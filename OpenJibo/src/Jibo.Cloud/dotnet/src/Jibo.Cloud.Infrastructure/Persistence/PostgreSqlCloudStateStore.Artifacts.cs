@@ -10,7 +10,7 @@ public sealed partial class PostgreSqlCloudStateStore
 
     public IReadOnlyList<UpdateManifest> ListUpdates(string? subsystem = null, string? filter = null) =>
         Sync(RequireUpdates().ListAsync(NormalizeUpdateSubsystem(subsystem), filter))
-            .Select(item => item.Manifest).ToArray();
+            .Select(HydrateUpdate).ToArray();
 
     public UpdateManifest? GetUpdateFrom(string? subsystem, string? fromVersion, string? filter) =>
         ListUpdates(subsystem, filter).FirstOrDefault(update => IsUpdateNewerThanRequest(update.ToVersion, fromVersion));
@@ -19,6 +19,9 @@ public sealed partial class PostgreSqlCloudStateStore
         long? length, string? subsystem, string? filter, IDictionary<string, object?>? dependencies)
     {
         var updateId = $"upd-{Guid.NewGuid():N}";
+        var storedDependencies = dependencies is null
+            ? new Dictionary<string, object?>()
+            : JsonSerializer.Deserialize<Dictionary<string, object?>>(JsonSerializer.Serialize(dependencies))!;
         var manifest = new UpdateManifest
         {
             UpdateId = updateId,
@@ -29,18 +32,38 @@ public sealed partial class PostgreSqlCloudStateStore
             ShaHash = shaHash ?? "fake-sha-hash",
             Length = Math.Max(0, length ?? 0),
             Subsystem = subsystem ?? "unknown",
-            Filter = filter
+            Filter = filter,
+            Dependencies = storedDependencies
         };
-        return Sync(RequireUpdates().UpsertAsync(new StoredUpdateManifest(manifest,
-            dependencies is null
-                ? new Dictionary<string, object?>()
-                : new Dictionary<string, object?>(dependencies)))).Manifest;
+        return HydrateUpdate(Sync(RequireUpdates().UpsertAsync(new StoredUpdateManifest(manifest,
+            storedDependencies))));
     }
 
     public UpdateManifest RemoveUpdate(string? updateId) =>
         string.IsNullOrWhiteSpace(updateId)
             ? MissingUpdate(updateId)
-            : Sync(RequireUpdates().DeleteAsync(updateId))?.Manifest ?? MissingUpdate(updateId);
+            : Sync(RequireUpdates().DeleteAsync(updateId)) is { } removed
+                ? HydrateUpdate(removed)
+                : MissingUpdate(updateId);
+
+    private static UpdateManifest HydrateUpdate(StoredUpdateManifest stored)
+    {
+        var manifest = stored.Manifest;
+        return new UpdateManifest
+        {
+            UpdateId = manifest.UpdateId,
+            CreatedUtc = manifest.CreatedUtc,
+            FromVersion = manifest.FromVersion,
+            ToVersion = manifest.ToVersion,
+            Changes = manifest.Changes,
+            Url = manifest.Url,
+            ShaHash = manifest.ShaHash,
+            Length = manifest.Length,
+            Subsystem = manifest.Subsystem,
+            Filter = manifest.Filter,
+            Dependencies = stored.Dependencies
+        };
+    }
 
     public IReadOnlyList<MediaRecord> ListMedia(IReadOnlyList<string>? loopIds = null, long? after = null,
         long? before = null) => Sync(RequireMedia().ListAsync(GetAccount().AccountId, loopIds,

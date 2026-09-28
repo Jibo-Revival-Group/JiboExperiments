@@ -52,7 +52,15 @@ const traceBundle = (process.argv[5] || "").trim();
 const outputPath = (process.argv[6] || "").trim();
 const strict = String(process.argv[7]).toLowerCase() === "true";
 
-const blockers = [];
+// These evidence gaps remain open until the stock contract, package trust, and
+// installation/recovery path are independently verified. A path check cannot close them.
+const blockers = [
+  "stock-ota-contract-unverified",
+  "package-format-and-provenance-unverified",
+  "publisher-trust-and-digest-policy-unverified",
+  "https-certificate-and-robot-trust-unverified",
+  "lab-install-and-recovery-unverified",
+];
 const warnings = [];
 
 if (!/^[a-z0-9.-]+$/i.test(apiHostname)) blockers.push("invalid-api-hostname");
@@ -66,6 +74,8 @@ if (!traceBundle) {
   blockers.push("missing-oobe-ota-trace-bundle");
 } else if (!fs.existsSync(path.resolve(traceBundle))) {
   blockers.push("trace-bundle-not-found");
+} else {
+  warnings.push("trace-bundle-path-exists-only; capture contents and protocol claims remain unverified");
 }
 
 const dnsRecords = [
@@ -85,25 +95,28 @@ const requiredCaptures = [
   "OOBE_20161026.GetStatus",
   "OOBE_20161026.SetupRobot",
   "Update_20160225.GetUpdateFrom",
-  "OTA asset HTTP GET with Content-Length and SHA-1 evidence",
+  "OTA asset HTTP GET with captured bytes, content-length behavior, and observed digest field/algorithm (unverified)",
   "post-update Robot.GetRobot or cloud-version proof",
 ];
 
 const packageRules = [
-  "build reproducible subsystem tarballs from legally sourced inputs",
+  "identify the actual subsystem package format from verified stock captures; tarball format is unverified",
   "exclude robot-unique identity, credential, certificate, and media files",
-  "emit manifest Content-Length and SHA-1 for each asset before serving OTA metadata",
+  "record asset size and digest only after field names and algorithm are captured; SHA-1 is unverified and digest alone is not publisher identity",
   "stage Open Jibo trust/host mapping so the robot can reach the selected cloud after reboot",
   "record rollback metadata before any package changes owner-visible state",
 ];
 
 const plan = {
   Purpose: "Plan the OOBE static-DNS OTA bootstrap lane without bundling sensitive certificate material.",
+  PlanningOnly: true,
+  ExecutionScope: "offline planning only; no network or robot operations performed",
+  CanOfferUpdates: false,
   ApiHostname: apiHostname,
   NtpEpoch: ntpEpoch,
   CertificateMode: certificateMode,
   TraceBundle: traceBundle ? path.resolve(traceBundle) : null,
-  CanProceed: blockers.length === 0,
+  CanProceed: false,
   Blockers: blockers,
   Warnings: warnings,
   BootstrapServices: {
@@ -117,9 +130,11 @@ const plan = {
         : "No repository-bundled certificate material is planned.",
     },
     OtaMetadata: {
-      endpoint: "Update_20160225.GetUpdateFrom",
+      endpointCandidate: "Update_20160225.GetUpdateFrom (requires stock trace verification)",
       targetHostAfterConversion: apiHostname,
-      requiredAssetMetadata: ["sha1", "contentLength", "subsystem", "fromVersion", "toVersion"],
+      contractStatus: "unverified",
+      candidateAssetMetadata: ["subsystem", "fromVersion", "toVersion", "contentLength", "digest field and algorithm (unverified)"],
+      packageFormat: "unverified",
     },
   },
   RequiredCaptures: requiredCaptures,

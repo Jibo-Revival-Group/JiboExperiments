@@ -8,6 +8,7 @@ This is the single starting point for self-hosting the OpenJibo cloud with Docke
 - [docs/single-robot-http-self-hosting.md](single-robot-http-self-hosting.md) — deep dive on robot token/network overrides and the tokenless single-robot compatibility mode.
 - [docs/local-cloud-quickstart.md](local-cloud-quickstart.md) — running the `.NET` cloud directly with `dotnet run` instead of Docker, useful for development.
 - [docs/device-bootstrap.md](device-bootstrap.md) — pointing a physical Jibo at your self-hosted server.
+- [Standalone starter packaging preview](standalone-starter-packaging.md) — offline preparation for a fresh digest-pinned installation; not yet an official download or verified upgrade path.
 
 ## 1. Prerequisites
 
@@ -15,6 +16,8 @@ Install:
 
 - Docker and Docker Compose (`docker compose` v2 CLI)
 - PowerShell, if you prefer the `.ps1` scripts over the `.sh` equivalents
+- OpenSSL for the Bash initializer's cryptographic random generation (the
+  PowerShell initializer uses .NET's cryptographic random generator)
 
 Everything else — .NET, ffmpeg, whisper.cpp — is built into the container image. You do not need to install any of those on the host.
 
@@ -30,11 +33,25 @@ From the `OpenJibo` repo root:
 ./scripts/cloud/initialize-openjibo-compose-env.sh
 ```
 
-This copies `.env.example` to `.env` if it does not already exist. Then edit `.env` and set at minimum:
+For a new installation, this prepares `.env` from the example and replaces its
+sample encryption passphrase and salt with independently generated random
+values. Generation/template failure must leave no final `.env`. Values are not
+printed. Existing `.env` encryption values are never automatically rotated.
+Then edit `.env` and set at minimum:
 
 - `OPENJIBO_POSTGRES_PASSWORD` — required; the stack will not start without it.
-- `OPENJIBO_USER_ENCRYPT` / `OPENJIBO_USER_SALT` — replace the sample values. Do not change these after your first run; they encrypt user data and changing them makes existing data unrecoverable.
+- `OPENJIBO_USER_ENCRYPT` / `OPENJIBO_USER_SALT` — generated for new installs;
+  retain and securely back up these values with your database recovery material.
+  Do not change them after your first run: existing data requires the original values.
 - `OPENJIBO_SEARCH_BACKEND` / `OPENJIBO_SEARCH_FALLBACK` — optional knowledge-search backend (Wolfram, ChatGPT, Ollama). Leave as `none` to disable.
+
+If you manually copy `.env.example`, replace its sample encryption values before
+the first run. If an existing installation already used those samples, do not
+delete `.env` or regenerate keys against that database. Rotation requires a
+separate, tested data migration/re-encryption procedure; it is not implemented
+by initialization. Restore the matching original keys when restoring a database.
+Inherited process environment can override Compose's `.env`; ensure it does not
+silently supply different encryption values.
 
 Speech-to-text options (see [section 4](#4-speech-to-text-local-whisper-vs-azure-speech) below):
 
@@ -53,11 +70,84 @@ Speech-to-text options (see [section 4](#4-speech-to-text-local-whisper-vs-azure
 
 This builds the `api`/`migrate` image (installing whisper.cpp and its model as part of the build, unless disabled), starts PostgreSQL, applies migrations, and starts the API on port `8080`.
 
+Before startup, both launchers initialize the local `.env` and run
+`docker compose config --quiet` from the checkout root. A configuration failure
+stops the launcher before its `compose up` call, so that invocation does not
+build/pull images, start containers or run migrations. Initialization may already
+have created or updated `.env`; this is not a side-effect-free dry run. The quiet
+check avoids printing the resolved configuration and its secrets. Do not paste
+an unredacted `docker compose config` output into support reports.
+
+This checks Compose configuration, not image provenance/availability, Docker
+daemon health, database passwords, schema compatibility or safe upgrade/restore.
+Existing containers are not stopped by a failed check. Keep the backup and
+release-verification steps below even when preflight succeeds.
+
+The launcher suppresses Compose diagnostics during this check as well as its
+resolved output. For local troubleshooting, run `docker compose config --quiet`
+from the same checkout with the same environment, and review errors privately.
+Check Docker/Compose availability, YAML syntax, referenced files and required
+variables first. Redact credentials before sharing any diagnostics.
+
 - Use `-SkipBuild` / `--skip-build` on later runs if you have not changed the Dockerfile, `.env` whisper settings, or source.
 - Migrations are a required, idempotent startup dependency: Compose runs `migrate` before `api` on every stack startup, and already-applied migration scripts are skipped by the migration ledger.
 - `-RunMigration` / `--run-migration` explicitly targets the migration service for visibility and compatibility with the initial bring-up/retry procedure; it is not a switch that disables migrations. Use `-SkipBuild` / `--skip-build` for repeat starts when the image does not need rebuilding.
 
 Rebuild is required any time you change `OPENJIBO_ENABLE_LOCAL_WHISPER` or `OPENJIBO_WHISPER_MODEL`, since those are Docker build arguments, not just runtime environment variables.
+
+Local Whisper compilation defaults to two concurrent jobs instead of the host's
+CPU count. `WHISPER_BUILD_JOBS` accepts 1–32; available RAM, not CPU count alone,
+should determine the value. This bounds the Whisper compile, not every .NET or
+Docker build process. For a manually prepared preview image, for example:
+
+```text
+docker build --build-arg ENABLE_LOCAL_WHISPER=true --build-arg WHISPER_MODEL=base.en --build-arg WHISPER_BUILD_JOBS=1 -t openjibo-cloud:speech-preview .
+```
+
+This builds locally and does not publish or start anything. The local tag is not
+a verified digest reference for distribution. The CPU build disables native-host
+tuning and newer x86 feature requirements conservatively; this may reduce speech
+performance and has not yet established a supported old-hardware matrix.
+Inspect the resulting executable/model and test real audio before promotion.
+See [speech build preflight](speech-build-preflight-20260928.md).
+
+### Prebuilt-image starter foundation
+
+The launchers also accept an explicitly selected image digest. This is an
+expert/operator path, **not a published official download or automatic updater**.
+It still uses this checkout's Compose and initialization files. Match the
+checkout/configuration to the image's documented release and verify its source,
+signature, architecture and speech/model variant through a trusted release
+channel before running it. A digest pins bytes; it does not prove who built them.
+Official release signing, bundles and mirrors are tracked in the
+[distribution plan](official-distribution-plan.md).
+
+After completing the backup/configuration checks below, replace the placeholder
+with a verified `registry/repository@sha256:<64 lowercase hex>` reference:
+
+```powershell
+.\scripts\cloud\Invoke-OpenJiboSelfHostedStack.ps1 -RunMigration -Image '<verified image digest reference>'
+```
+
+```bash
+./scripts/cloud/invoke-openjibo-self-hosted-stack.sh --run-migration --image '<verified image digest reference>'
+```
+
+Both API and migration services use the same image. This path disables builds
+and pulls missing images; it does not build a missing image from your checkout.
+Mutable tags, malformed references and combining the image option with
+`-SkipBuild`/`--skip-build` are rejected before environment initialization.
+Source-build mode remains the default and selects the local
+`openjibo-cloud:self-hosted` image even if an image override was inherited.
+PowerShell restores the caller's image environment setting afterward.
+
+Build-time Whisper options do not change a prebuilt image's contents. Select a
+matching model/configuration rather than assuming a runtime environment setting
+will install it. Running a different image can apply migrations: retain both
+database backups and encryption keys, review schema compatibility and the
+release's restore plan first. Merely choosing the old image is not a guaranteed
+database rollback. These launchers do not perform signature verification,
+trusted-network enrollment, mirror selection or unattended updates.
 
 ## 4. Database backups and migrations
 

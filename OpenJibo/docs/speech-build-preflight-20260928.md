@@ -80,10 +80,61 @@ release readiness. The CLI and API timings use different decoding settings and
 are not a controlled performance comparison. The test container is stopped after
 acceptance; existing starter/restore volumes are preserved.
 
+## Repeated-turn and response acceptance
+
+Additional local tests used the same image, four-CPU/two-GiB container limits,
+internal network and synthetic audio. Each batch reused one authenticated
+WebSocket with a fresh transaction ID per turn. The probe waited for final ASR
+and EOS before sending the next turn, with no transcript hints.
+
+| Provider | Consecutive turns | End-to-end turn durations (milliseconds) |
+| --- | --- | --- |
+| Per-turn local Whisper CLI | 5/5 correct transcripts and EOS | 9544, 5035, 4788, 4487, 4379 |
+| Local warm Whisper server, CLI fallback disabled | 5/5 correct transcripts and EOS | 6422, 4621, 4532, 4682, 4563 |
+
+Logs confirmed `whisper-server-buffered-audio` for the warm batch. These are
+small sequential correctness samples, not capacity measurements or evidence
+that warm mode is materially faster. They do not model microphone streaming,
+network delay or multi-robot concurrency.
+
+A second Microsoft David Desktop fixture said “Please tell me your cloud
+version.” Its WAV SHA-256 is
+`81f6d73bbbf6a7551b36392a241d7dc6307e54aad3f897905c0598750f552cf9`.
+After offline conversion to Ogg/Opus, three same-socket turns passed through the
+warm provider in 5132, 4613 and 4708 milliseconds. Each produced LISTEN, EOS and
+SKILL_ACTION with the expected Cloud version 1.0.20 ESML speech instruction.
+
+This verifies acoustic input through the cloud response contract. Jibo's own
+software performs speech playback; the cloud container does not synthesize this
+ESML into audible speech. No robot was contacted. Test containers were stopped
+afterward; synthetic fixtures and local probe remain excluded from Git.
+
+Review also identified an independent reliability defect: the long-running
+Whisper server redirected stdout and stderr without consuming them. Enough
+child output can fill a pipe and block the server. The short acoustic batches
+did not reproduce a stall; a targeted process-output regression test covers
+the fix. Child output is discarded rather than logged because it can contain
+transcripts. The measured batches above used the original pre-fix image.
+
+The pipe-drain regression writes 256 KiB to each redirected stream and requires
+the child process and both drains to finish within bounded timeouts. The related
+speech tests passed 32/32. The full local cloud suite passed 2,493 tests, with
+34 PostgreSQL-dependent integration tests skipped and zero failures. PostgreSQL
+integration verification was not performed in this run.
+
+Post-fix Linux container verification also passed. Rebuilt local image
+`openjibo-cloud:speech-drain-20260928` has identity
+`sha256:94f186029dacfc7f2f08c832124dd23d9634feed17d00e933e48ab60126df6d7`.
+With CLI fallback and Azure disabled, three consecutive acoustic cloud-version
+turns returned the expected LISTEN/EOS/SKILL_ACTION and ESML in 7000, 5007 and
+4783 milliseconds. Logs confirmed the warm provider for all three. Stopping the
+container stopped its owned Whisper process and the API exited zero. This is
+a short post-fix smoke, not a long-duration load certification.
+
 ## Remaining acceptance sequence
 
-1. Test response/TTS separately, then perform a physical-robot voice test.
-2. Measure repeated-turn speech latency and warm-server behavior separately.
+1. Verify actual response playback with a physical-robot voice test.
+2. Run longer speech-load tests, including concurrency and resource measurements.
 3. Use the Ubuntu laptop for independent native-Linux install, persistence and
    restore evidence if its resources are suitable. Windows Docker Desktop's
    Linux VM alone is not that independent host test.

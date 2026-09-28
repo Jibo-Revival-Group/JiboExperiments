@@ -166,3 +166,15 @@ because one image has been published.
 For D3, D5 and D6, record the exact starter version, image digest, supported
 host/platform and OOBE/v1/v2 device test matrix in each release's acceptance
 record; success for one profile/device does not certify the others.
+
+### Current local acceptance evidence
+
+The [starter acceptance record](starter-acceptance-20260927.md) covers the local
+Docker Desktop install, authenticated socket checks, persistence and separate
+backup/restore rehearsal. The [speech acceptance record](speech-build-preflight-20260928.md)
+adds an explicitly built local Whisper image, offline acoustic transcription,
+same-socket repeated turns and cloud-response speech instructions. Neither is
+an official published release. Independent native-Linux installation and actual
+robot speech playback remain D3 acceptance gaps; release trust/publication remains
+D2 work. Do not infer hybrid or managed-provider certification from these isolated
+tests.

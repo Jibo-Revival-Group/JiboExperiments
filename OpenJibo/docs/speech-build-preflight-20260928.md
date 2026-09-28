@@ -45,16 +45,46 @@ Offline `ffprobe` confirmed 16 kHz, 16-bit mono PCM. This fixture's creation is 
 evidence of Jibo TTS functionality, Whisper accuracy or natural-microphone quality.
 It is not included in a public release.
 
-## Next acceptance sequence
+## Local speech acceptance results — September 28
 
-1. Confirm a builder with adequate memory and record OS/CPU/Docker platform.
-2. Build an explicit local Whisper/model variant and record image identity.
-3. Inspect the executable and model, then transcribe the known WAV with
-   `whisper-cli` and compare normalized words with the expected phrase.
-4. Send real encoded audio through the API's buffered speech path with synthetic
-   hint/bypass routes disabled; verify the actual local provider and transcript.
-5. Test response/TTS separately, then perform a physical-robot voice test.
-6. Use the Ubuntu laptop for independent native-Linux install, persistence and
+After the Windows VM was increased to 12 GB, Docker reported 6,208,786,432
+bytes available. The speech image built successfully with two native compile
+jobs. No registry push or deployment was performed.
+
+- Local tag: `openjibo-cloud:speech-acceptance-20260928`.
+- Image identity: `sha256:9a6249b2c4d2c282c908edb3ec2e12c4a9e040eb6059e58d3db8c2c827ddcb0a`.
+- Whisper source release ref: `v1.9.3`; model: `base.en`.
+- Model SHA-256: `a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002`.
+- Offline CLI test: exact phrase recovered, 15.49 seconds reported total for
+  approximately six seconds of audio, four threads and default decoding settings.
+- API test: converted the same WAV to Ogg/Opus and sent LISTEN, binary Ogg pages,
+  then CLIENT_ASR over an authenticated loopback WebSocket. No transcript hints
+  were sent. The API received nine frames (seven audio pages, two metadata pages).
+- Final transcript: `the quick brown fox jumps over the lazy dog please tell me what time it is`.
+- Observed reply types: LISTEN and EOS. Logs confirmed provider
+  `local-whispercpp-buffered-audio`, successful ffmpeg conversion and Whisper exit
+  zero. The API used four threads, audio context 512 and beam size one; the
+  transcription span was approximately five seconds (log timestamps).
+
+The API used a fresh File-backed disposable container, not the PostgreSQL
+restore-test stack. An internal Docker network prevented external-provider
+access. Azure Speech and both Whisper-server configuration switches were off;
+warm-server autostart was also off. Docker Desktop did not expose this internal
+network's published port to Windows, so a Node 24 Alpine probe runner shared the
+API network namespace and used localhost there. Only the synthetic fixture,
+probe and WebSocket library were mounted read-only into the runner.
+
+This establishes local build and genuine acoustic API transcription, not TTS,
+physical-robot compatibility, sustained latency, native-Linux acceptance or
+release readiness. The CLI and API timings use different decoding settings and
+are not a controlled performance comparison. The test container is stopped after
+acceptance; existing starter/restore volumes are preserved.
+
+## Remaining acceptance sequence
+
+1. Test response/TTS separately, then perform a physical-robot voice test.
+2. Measure repeated-turn speech latency and warm-server behavior separately.
+3. Use the Ubuntu laptop for independent native-Linux install, persistence and
    restore evidence if its resources are suitable. Windows Docker Desktop's
    Linux VM alone is not that independent host test.
 

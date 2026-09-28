@@ -83,6 +83,11 @@ The [September 27 candidate inspection](starter-image-candidate-20260927.md)
 records a historical deployed image, current local test prerequisites and the
 next acceptance sequence. It is not an official image recommendation.
 
+The subsequent [Windows/Docker Desktop acceptance run](starter-acceptance-20260927.md)
+passed migrations, authenticated sockets and synthetic backup/restore. It also
+confirmed that the managed candidate lacks local Whisper; speech acceptance,
+native Linux-host coverage and official release gates remain open.
+
 - Approve a registry, signing ownership and official image/build provenance.
 - Verify the exact image's CPU architecture and speech/model variant.
 - Run fresh Windows/Docker Desktop and Linux installs with retained evidence.

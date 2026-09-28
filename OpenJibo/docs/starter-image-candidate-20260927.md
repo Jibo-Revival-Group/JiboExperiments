@@ -3,6 +3,10 @@
 Status: candidate identified; **not install/restore certified**. No image was
 pulled, no containers started, and no Azure resources changed during inspection.
 
+Follow-up: [the local acceptance record](starter-acceptance-20260927.md) documents
+the subsequent pull, isolated installation and synthetic restore tests after
+Docker was enabled. The prerequisites below describe the earlier inspection.
+
 ## Candidate identity
 
 ```text

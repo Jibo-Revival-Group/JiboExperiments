@@ -99,9 +99,7 @@ public sealed class PostgreSqlCloudUserRepositoryTests
     private static async Task ApplyStateMigrationsAsync(string connectionString)
     {
         var directory = Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql");
-        var scripts = Directory.GetFiles(directory, "*.sql")
-            .Where(path => !path.EndsWith(".personal-memory.sql", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase);
+        var scripts = PostgreSqlIsolatedStateMigrationScripts.GetPaths(directory);
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
         foreach (var script in scripts)

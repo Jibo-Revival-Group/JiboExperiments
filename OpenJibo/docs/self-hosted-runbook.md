@@ -95,6 +95,22 @@ variables first. Redact credentials before sharing any diagnostics.
 
 Rebuild is required any time you change `OPENJIBO_ENABLE_LOCAL_WHISPER` or `OPENJIBO_WHISPER_MODEL`, since those are Docker build arguments, not just runtime environment variables.
 
+Local Whisper compilation defaults to two concurrent jobs instead of the host's
+CPU count. `WHISPER_BUILD_JOBS` accepts 1–32; available RAM, not CPU count alone,
+should determine the value. This bounds the Whisper compile, not every .NET or
+Docker build process. For a manually prepared preview image, for example:
+
+```text
+docker build --build-arg ENABLE_LOCAL_WHISPER=true --build-arg WHISPER_MODEL=base.en --build-arg WHISPER_BUILD_JOBS=1 -t openjibo-cloud:speech-preview .
+```
+
+This builds locally and does not publish or start anything. The local tag is not
+a verified digest reference for distribution. The CPU build disables native-host
+tuning and newer x86 feature requirements conservatively; this may reduce speech
+performance and has not yet established a supported old-hardware matrix.
+Inspect the resulting executable/model and test real audio before promotion.
+See [speech build preflight](speech-build-preflight-20260928.md).
+
 ### Prebuilt-image starter foundation
 
 The launchers also accept an explicitly selected image digest. This is an

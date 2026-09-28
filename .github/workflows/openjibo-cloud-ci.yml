@@ -69,6 +69,14 @@ jobs:
       - name: Validate offline standalone starter verification
         run: python3 -B -m unittest discover -s tests -p test_verify_openjibo_starter_bundle.py
 
+      - name: Validate Docker build context privacy
+        run: python3 -B -m unittest discover -s tests -p test_docker_build_context.py
+        env:
+          OPENJIBO_TEST_DOCKER_CONTEXT: "1"
+
+      - name: Validate local Whisper build contract
+        run: python3 -B -m unittest discover -s tests -p test_whisper_docker_build_contract.py
+
       - name: Validate OpenJiboCloud staging PostgreSQL bootstrap contract
         shell: bash
         run: bash ./scripts/cloud/test-openjibo-cloud-staging-bootstrap-contract.sh

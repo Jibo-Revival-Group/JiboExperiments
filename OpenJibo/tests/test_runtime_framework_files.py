@@ -66,6 +66,18 @@ class FrameworkFilesTests(unittest.TestCase):
                 framework.main()
         self.assertEqual(error.exception.code, 2)
 
+    def test_cli_malformed_package_metadata_fails_with_bounded_diagnostic(self):
+        args = ["compare", "--inventory", "inventory", "--cpu-profile", "portable",
+                "--framework-tar", "framework.tar", "--output", "report.json"]
+        diagnostic = io.StringIO()
+        with patch.object(sys, "argv", args), patch.object(framework, "compare",
+                side_effect=framework.notices.metadata.ET.ParseError("untrusted metadata")), \
+                contextlib.redirect_stderr(diagnostic):
+            with self.assertRaises(SystemExit) as error:
+                framework.main()
+        self.assertEqual(error.exception.code, 1)
+        self.assertNotIn("untrusted metadata", diagnostic.getvalue())
+
     def run_comparison(self, document, raw=None, release=None):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

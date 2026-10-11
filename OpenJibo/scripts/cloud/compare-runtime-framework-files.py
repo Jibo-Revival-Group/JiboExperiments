@@ -173,7 +173,8 @@ def main():
             for item in report["packages"]], "stable_promotion_allowed": False}, sort_keys=True))
         if any(not item["all_selected_payload_files_match"] for item in report["packages"]):
             parser.exit(2, "Framework payload differs or is missing; review the preserved report.\n")
-    except (OSError, ValueError, KeyError, TypeError, tarfile.TarError, zipfile.BadZipFile):
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, notices.metadata.ET.ParseError,
+            tarfile.TarError, zipfile.BadZipFile):
         parser.exit(1, "Framework comparison failed; preserve existing evidence. No trust approval recorded.\n")
 
 

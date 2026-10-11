@@ -254,6 +254,31 @@ not evidence that every linked dependency is permissively licensed. Actual-image
 results must be reviewed before this gap is considered narrowed; stable promotion
 and license approval remain false.
 
+[Run 38116012218](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38116012218)
+passed for both images. Independently checked downloaded report hashes and
+inventory bindings agree. Both libraries have SHA-256
+`11b0836441b899e1b2183fc10eda5a5f637c03547fdfe5b97774e2cbd5aeb72c`,
+and the same configuration at byte offset 899408. The literal configuration
+contains `--enable-gpl` and `--enable-shared`, but not `--enable-version3` or
+`--enable-nonfree`. This is a concrete review input; do not assume this Ubuntu
+build is an LGPL-only build. No legal approval or complete source offer follows
+from these results.
+
+### Speech model byte identity
+
+`collect-runtime-model-evidence.py` streams SHA-256 over the concrete shipped
+`ggml-base.en.bin` copied from a stopped container. The reviewed expected size
+is 147,964,211 bytes and SHA-256 is
+`a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002`.
+These values were observed on 2026-10-11 in the model publisher's
+[HTTPS LFS metadata](https://huggingface.co/api/models/ggerganov/whisper.cpp/tree/main?recursive=false).
+The metadata URL is mutable; the expected size/hash are pinned in tooling.
+The report is bound to the reviewed image inventory. No model is loaded,
+executed, installed or uploaded as an artifact. Passing proves byte equality
+to that reviewed digest, not publisher-signature trust, conversion
+reproducibility, accuracy across robots, or redistribution approval. Those
+separate checks remain open.
+
 [Run 38107600594](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38107600594)
 passed scanning, signing and workflow-local verification for both profiles.
 The trusted evidence-tooling commit is

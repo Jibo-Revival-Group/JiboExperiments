@@ -54,6 +54,7 @@ jobs:
           docker cp "$container:/usr/bin/whisper.cpp/LICENSE" - > evidence/whisper.tar
           docker cp "$container:/usr/share/common-licenses" - > evidence/common.tar
           docker cp "$container:/usr/lib/x86_64-linux-gnu/libavutil.so.58.29.100" - > evidence/ffmpeg-library.tar
+          docker cp "$container:/usr/bin/whisper.cpp/models/ggml-base.en.bin" - > evidence/model.tar
       - name: Build bounded notice-review bundle
         env:
           PROFILE: ${{ matrix.cpu_profile }}
@@ -99,6 +100,14 @@ jobs:
             --library-tar evidence/ffmpeg-library.tar \
             --output evidence/ffmpeg-build-review.json
           sha256sum evidence/ffmpeg-build-review.json >> evidence/SHA256SUMS
+      - name: Hash copied speech model without loading it
+        env:
+          PROFILE: ${{ matrix.cpu_profile }}
+        run: |
+          python3 -B OpenJibo/scripts/cloud/collect-runtime-model-evidence.py \
+            --inventory evidence/runtime.syft.json --cpu-profile "$PROFILE" \
+            --model-tar evidence/model.tar --output evidence/model-review.json
+          sha256sum evidence/model-review.json >> evidence/SHA256SUMS
       - uses: actions/upload-artifact@v7
         with:
           name: runtime-notices-${{ matrix.cpu_profile }}-${{ github.run_id }}
@@ -114,6 +123,7 @@ jobs:
             evidence/ffmpeg-source-review.zip
             evidence/ffmpeg-source-review.json
             evidence/ffmpeg-build-review.json
+            evidence/model-review.json
             evidence/SHA256SUMS
           if-no-files-found: error
           retention-days: 90

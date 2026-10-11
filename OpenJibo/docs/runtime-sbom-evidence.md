@@ -62,9 +62,10 @@ preserved under `artifact-output/runtime-notices-38108346933/`. These unsigned
 review bundles preserve extracted texts and hashes; they are not a completed
 license approval or signed release-notice attachment.
 
-The next technical review items are NuGet notice/source metadata, exact distro
-corresponding-source availability, FFmpeg build configuration, and native/model
-coverage. Owner sign-off will be recorded against a specific completed packet,
+Remaining technical review items include NuGet notice coverage, verified distro
+corresponding source and signatures, and native build/source linkage. FFmpeg
+configuration and model byte identity are now separately recorded below; they
+do not close those broader gates. Owner sign-off will name a completed packet,
 not inferred from authorization to gather evidence.
 
 ### Exact-version NuGet declarations
@@ -86,7 +87,9 @@ evidence is retained in `artifact-output/runtime-nuget-20261011/portable-review.
 This initial local sample predates retaining scanner SHA-512 values in the
 review report; subsequent workflow bundles retain all distinct supplied hashes.
 
-Package archive hashes have **not** been verified. Neither a matching manifest
+At this initial manifest-only stage, package archive hashes had **not** been
+verified. The later archive/content checks below supersede that stage, subject
+to their recorded gaps. Neither a matching manifest
 ID/version nor a license expression proves the exact image's archive contents,
 notice completeness or source availability. Framework/project/unclassified .NET
 records remain outside this package-manifest lane. External license URLs and
@@ -278,6 +281,14 @@ executed, installed or uploaded as an artifact. Passing proves byte equality
 to that reviewed digest, not publisher-signature trust, conversion
 reproducibility, accuracy across robots, or redistribution approval. Those
 separate checks remain open.
+
+[Run 38116205355](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38116205355)
+passed for both profiles. Both shipped models match the expected 147,964,211
+bytes and SHA-256 above. Independent local checks of the downloaded report
+checksums and inventory bindings passed. Evidence is retained under
+`artifact-output/runtime-notices-38116205355/`. This closes the narrow model
+byte-identity check for these two digests, not the separate license/conversion
+or physical-robot acceptance gates.
 
 [Run 38107600594](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38107600594)
 passed scanning, signing and workflow-local verification for both profiles.

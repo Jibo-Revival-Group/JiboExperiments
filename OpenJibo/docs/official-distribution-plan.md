@@ -268,7 +268,12 @@ collections and exact-version NuGet manifest evidence. Linux jobs additionally
 verified 51 scanner-supplied NuGet content hashes and retained 27 selected notice
 files; two framework package hashes and notice completeness remain open. Exact
 Ubuntu FFmpeg source candidates have passed local descriptor-listed checksum
-checks, but source signatures and binary/build matching remain unverified.
+checks. Nonexecuting reads of both shipped FFmpeg libraries now confirm the
+same embedded configuration, including `--enable-gpl` and `--enable-shared`;
+do not treat this Ubuntu build as LGPL-only. Both shipped speech models match
+the reviewed publisher LFS size/SHA-256. Source signatures, complete native
+build/source matching, model conversion/terms review and notice coverage remain
+open; these narrow checks do not clear redistribution or stable promotion.
 
 This advances D2 evidence, not stable approval. Next technical work is completing
 notice coverage, source/build and model linkage, and preparing the exact-image

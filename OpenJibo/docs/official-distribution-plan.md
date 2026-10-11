@@ -256,5 +256,24 @@ Registry ownership is now settled: Transcendent-Software-LLC owns
 and AVX2 publication, digest-pinned starter ZIP verification, and independent
 registry-pull/provenance verification. Package visibility was made public by the
 owner, and anonymous manifest reads for both exact digests returned 200 with
-matching identities. SBOM and stable release trust remain
-pending. No stable/latest tag, production deployment or robot change was made.
+matching identities. Signed SBOM inventory and independent signature checks are
+now recorded in the [runtime evidence record](runtime-sbom-evidence.md); complete
+license/notice review and stable release trust remain pending. No stable/latest
+tag, production deployment or robot change was made.
+
+### Release-review progress, 2026-10-11
+
+Both pinned profiles now have offline dependency checklists, shipped notice
+collections and exact-version NuGet manifest evidence. Linux jobs additionally
+verified 51 scanner-supplied NuGet content hashes and retained 27 selected notice
+files; two framework package hashes and notice completeness remain open. Exact
+Ubuntu FFmpeg source candidates have passed local descriptor-listed checksum
+checks, but source signatures and binary/build matching remain unverified.
+
+This advances D2 evidence, not stable approval. Next technical work is completing
+notice coverage, source/build and model linkage, and preparing the exact-image
+owner-review packet. Physical-robot acceptance remains deferred at the user's
+request. D4 public-site/domain rollout, D5 hybrid admission, D6 managed-provider
+starters, D7 updates/mirrors, AutoMod conversion/onboarding and the separate
+robot-build/OTA lane remain distinct deliverables; none is certified by these
+isolated-runtime package checks.

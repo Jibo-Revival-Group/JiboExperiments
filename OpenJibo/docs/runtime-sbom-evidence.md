@@ -149,6 +149,13 @@ signature has been verified, and matching the actual image binary/build
 configuration remains open. It is not a complete corresponding-source offer
 for FFmpeg's linked dependencies or a legal approval.
 
+Both profile jobs passed in
+[run 38115159426](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38115159426).
+Each downloaded source bundle was independently checked against its three
+recorded SHA-256 values and exact file sizes. Evidence is preserved under
+`artifact-output/runtime-notices-38115159426/`; source signatures and actual
+image-binary linkage remain unverified.
+
 ### Upstream review inputs
 
 The [original Whisper project](https://github.com/openai/whisper#license) states

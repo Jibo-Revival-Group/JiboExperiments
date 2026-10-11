@@ -98,14 +98,16 @@ def inspect_manifest(data, package):
     return fields
 
 
-def collect(inventory, profile, output, fetch=False, downloader=download):
+def collect(inventory, profile, output, fetch=False, downloader=download,
+            release_version=policy.LEGACY_RELEASE):
     if fetch and (output is None or Path(output).exists()):
         raise ValueError("Select a fresh output path before fetching")
     document, inventory_hash = policy.load_inventory(inventory)
-    reviewed = policy.review(document, profile, inventory_hash)
+    reviewed = policy.review(document, profile, inventory_hash, release_version)
     selected, excluded = packages(document)
     report = {"schema_version": 1, "runtime_image": reviewed["runtime_image"],
-              "source_commit": policy.SOURCE, "cpu_profile": profile,
+              "source_commit": reviewed["source_commit"], "cpu_profile": profile,
+              "release_version": release_version,
               "syft_json_sha256": inventory_hash, "package_count": len(selected),
               "excluded_dotnet_records": excluded, "packages": [],
               "license_review_approved": False, "stable_promotion_allowed": False,
@@ -138,6 +140,8 @@ def main():
     parser.add_argument("--inventory", required=True)
     parser.add_argument("--cpu-profile", required=True, choices=sorted(policy.DIGESTS))
     parser.add_argument("--output")
+    parser.add_argument("--release-version", choices=[policy.LEGACY_RELEASE, policy.AUDIO_RELEASE],
+                        default=policy.LEGACY_RELEASE)
     parser.add_argument("--fetch", action="store_true", help="Fetch manifests from fixed nuget.org endpoint; otherwise plan only")
     args = parser.parse_args()
     if args.fetch and not args.output:
@@ -145,7 +149,8 @@ def main():
     if args.fetch and Path(args.output).exists():
         parser.error("Output exists; preserve it and select a fresh path")
     try:
-        print(json.dumps(collect(args.inventory, args.cpu_profile, args.output, args.fetch), sort_keys=True))
+        print(json.dumps(collect(args.inventory, args.cpu_profile, args.output, args.fetch,
+                                 release_version=args.release_version), sort_keys=True))
     except (OSError, ValueError, TypeError, AttributeError, KeyError, ET.ParseError):
         parser.exit(1, "NuGet evidence collection failed; no license approval recorded. Preserve existing evidence.\n")
 

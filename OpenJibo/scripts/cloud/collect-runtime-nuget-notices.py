@@ -102,15 +102,17 @@ def verify_content(data, item, verifier):
     return report
 
 
-def collect(inventory, profile, output, fetch=False, downloader=download, verifier=None):
+def collect(inventory, profile, output, fetch=False, downloader=download, verifier=None,
+            release_version=metadata.policy.LEGACY_RELEASE):
     if fetch and (output is None or Path(output).exists()):
         raise ValueError("Select a fresh output before fetching")
     if verifier is not None and not Path(verifier).is_file():
         raise ValueError("Verifier must be built before collection")
     document, inventory_hash = metadata.policy.load_inventory(inventory)
-    review = metadata.policy.review(document, profile, inventory_hash)
+    review = metadata.policy.review(document, profile, inventory_hash, release_version)
     selected, excluded = metadata.packages(document)
-    report = {"schema_version": 1, "runtime_image": review["runtime_image"], "source_commit": metadata.policy.SOURCE,
+    report = {"schema_version": 1, "runtime_image": review["runtime_image"], "source_commit": review["source_commit"],
+              "release_version": release_version,
               "cpu_profile": profile, "syft_json_sha256": inventory_hash, "packages": [],
               "excluded_dotnet_records": excluded, "license_review_approved": False,
               "stable_promotion_allowed": False,
@@ -153,6 +155,8 @@ def collect(inventory, profile, output, fetch=False, downloader=download, verifi
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inventory", required=True)
+    parser.add_argument("--release-version", choices=[metadata.policy.LEGACY_RELEASE, metadata.policy.AUDIO_RELEASE],
+                        default=metadata.policy.LEGACY_RELEASE)
     parser.add_argument("--cpu-profile", required=True, choices=sorted(metadata.policy.DIGESTS))
     parser.add_argument("--output")
     parser.add_argument("--fetch", action="store_true")
@@ -160,7 +164,7 @@ def main():
     args = parser.parse_args()
     try:
         print(json.dumps(collect(args.inventory, args.cpu_profile, args.output, args.fetch,
-                                 verifier=args.content_verifier), sort_keys=True))
+                                  verifier=args.content_verifier, release_version=args.release_version), sort_keys=True))
     except (OSError, ValueError, TypeError, AttributeError, KeyError, zipfile.BadZipFile, RuntimeError, subprocess.SubprocessError):
         parser.exit(1, "NuGet archive collection failed; preserve existing evidence. No approval recorded.\n")
 

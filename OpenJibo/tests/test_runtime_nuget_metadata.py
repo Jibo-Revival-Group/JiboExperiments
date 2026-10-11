@@ -31,6 +31,26 @@ MANIFEST = b'''<?xml version="1.0"?><package xmlns="http://schemas.microsoft.com
 
 
 class NugetMetadataTests(unittest.TestCase):
+    def test_audio_candidate_requires_explicit_release_and_records_its_source(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path, output = Path(temp) / "inventory.json", Path(temp) / "out.zip"
+            document = inventory()
+            identity = document["source"]["metadata"]
+            identity["manifestDigest"] = nuget.policy.AUDIO_DIGESTS["portable"]
+            identity["labels"]["org.opencontainers.image.revision"] = nuget.policy.AUDIO_SOURCE
+            identity["labels"]["org.openjibo.ffmpeg-profile"] = "audio"
+            path.write_text(json.dumps(document))
+            with self.assertRaises(ValueError):
+                nuget.collect(path, "portable", output, True, lambda url: MANIFEST)
+            self.assertFalse(output.exists())
+            nuget.collect(path, "portable", output, True, lambda url: MANIFEST,
+                          release_version=nuget.policy.AUDIO_RELEASE)
+            with zipfile.ZipFile(output) as archive:
+                report = json.loads(archive.read("review.json"))
+            self.assertEqual(report["source_commit"], nuget.policy.AUDIO_SOURCE)
+            self.assertEqual(report["release_version"], nuget.policy.AUDIO_RELEASE)
+            self.assertFalse(report["stable_promotion_allowed"])
+
     def test_deduplicates_exact_versions_only_and_excludes_projects(self):
         doc = {"artifacts": [artifact(), artifact(), artifact(version="2.0.0"),
                              dict(artifact(), metadata={"type": "project"})]}

@@ -178,7 +178,36 @@ Remote raw inputs remain at
 `/home/jake-dubin/openjibo-candidate-notices-20261011T162811Z`.
 
 Owner review is required before these images become the recommended default or
-stable release. Open technical evidence still includes exact-candidate NuGet
-notice/content linkage, native source/build completeness and model conversion/
+stable release. Open technical evidence still includes the remaining NuGet
+notice/content gaps below, native source/build completeness and model conversion/
 terms linkage. Do not use the old images' supplemental evidence as approval for
 the new digests, or treat owner approval as filling those technical gaps.
+
+### Exact-candidate NuGet collection (2026-10-11)
+
+The metadata and package-notice collectors now require the explicit new release
+policy for these inventories; their default still validates the legacy preview.
+Both reject a candidate inventory under the legacy policy before fetching or
+creating an output. Reports bind the release, image digest, build source and
+inventory hash. The package collector reads bounded public NuGet archives as
+data; it does not install packages or execute package code.
+
+Fresh collection for each profile downloaded 53 exact package versions and
+retained 80 selected files: 53 manifests and 27 license/notice files. The SDK
+NuGet verifier matched the scanner content hashes for 51 packages. The
+`Microsoft.AspNetCore.App.Runtime.linux-x64` and
+`Microsoft.NETCore.App.Runtime.linux-x64` packages, both version `10.0.12`, have
+no scanner hash and remain unverified by this content-linkage check. Raw archive
+SHA-512 does not match NuGet's content-hash representation; the SDK verification,
+not raw archive equality, is the linkage evidence.
+
+Manifest declarations were 33 MIT, 19 Apache-2.0 and one PostgreSQL. They are
+upstream declarations, not legal approval. Thirty-six packages contained no
+separately selected notice file; this is a review gap, not proof that each lacks
+required notices. Publisher-signature trust and complete notice obligations
+remain unapproved.
+
+Candidate-specific bundles are retained as `nuget-notices-review.zip` beside
+each profile's `notices-review.zip` in
+`artifact-output/audio-candidate-notices-20261011/`. Existing evidence was not
+overwritten. No release assets, recommended downloads or deployments changed.

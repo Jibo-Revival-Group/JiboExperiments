@@ -41,6 +41,26 @@ def item(hashes=()):
 
 
 class NugetNoticesTests(unittest.TestCase):
+    def test_audio_candidate_archive_evidence_is_bound_to_explicit_release(self):
+        with tempfile.TemporaryDirectory() as temp:
+            inventory, output = Path(temp) / "inventory.json", Path(temp) / "notices.zip"
+            document = fixture.inventory()
+            identity = document["source"]["metadata"]
+            identity["manifestDigest"] = notices.metadata.policy.AUDIO_DIGESTS["portable"]
+            identity["labels"]["org.opencontainers.image.revision"] = notices.metadata.policy.AUDIO_SOURCE
+            identity["labels"]["org.openjibo.ffmpeg-profile"] = "audio"
+            inventory.write_text(json.dumps(document))
+            with self.assertRaises(ValueError):
+                notices.collect(inventory, "portable", output, True, lambda url: package())
+            self.assertFalse(output.exists())
+            notices.collect(inventory, "portable", output, True, lambda url: package(),
+                            release_version=notices.metadata.policy.AUDIO_RELEASE)
+            with zipfile.ZipFile(output) as archive:
+                report = json.loads(archive.read("review.json"))
+            self.assertEqual(report["source_commit"], notices.metadata.policy.AUDIO_SOURCE)
+            self.assertEqual(report["release_version"], notices.metadata.policy.AUDIO_RELEASE)
+            self.assertFalse(report["stable_promotion_allowed"])
+
     def test_actual_sdk_verifier_accepts_expected_content_and_refuses_tampering(self):
         verifier = ROOT / "OpenJibo/scripts/cloud/nuget-content-verifier/bin/Debug/net10.0/NugetContentVerifier.dll"
         self.assertTrue(verifier.is_file(), "Build NugetContentVerifier before running this suite")

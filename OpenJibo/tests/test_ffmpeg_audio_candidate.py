@@ -1,6 +1,10 @@
 import importlib.util
+import array
 from pathlib import Path
+import sys
+import tempfile
 import unittest
+import wave
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("probe", ROOT / "OpenJibo/scripts/cloud/probe-ffmpeg-audio-candidate.py")
@@ -56,6 +60,22 @@ class AudioCandidateTests(unittest.TestCase):
         for forbidden in ("docker push", "gh release", "az ", "packages: write", "contents: write", "secrets."):
             self.assertNotIn(forbidden, workflow)
 
+    def test_full_runtime_acceptance_is_opt_in_and_azure_is_disabled(self):
+        workflow = (ROOT / ".github/workflows/openjibo-speech-build-preview.yml").read_text()
+        self.assertIn("options: [distro, audio]", workflow)
+        self.assertIn("default: distro", workflow)
+        self.assertIn('if: env.FFMPEG_PROFILE == \'audio\'', workflow)
+        self.assertIn('--build-arg FFMPEG_PROFILE="$FFMPEG_PROFILE"', workflow)
+        self.assertIn("--turns 3", workflow)
+        self.assertIn("--mode authenticated --robots 2", workflow)
+        self.assertIn("provider=whisper-server-buffered-audio", workflow)
+        self.assertIn("compose down -v", workflow)
+        self.assertNotIn("docker push", workflow)
+        overlay = (ROOT / "OpenJibo/scripts/cloud/compose-speech-audio-candidate.yml").read_text()
+        self.assertIn('OpenJibo__Stt__EnableAzureSpeech: "false"', overlay)
+        self.assertIn('"127.0.0.1:8080:8080"', overlay)
+        self.assertIn("ports: !reset []", overlay)
+
     def test_comparison_detects_duration_or_content_regressions(self):
         pcm = [1000, -1000] * 8000
         self.assertEqual(probe.compare(pcm, pcm)["normalized_rmse"], 0)
@@ -66,6 +86,24 @@ class AudioCandidateTests(unittest.TestCase):
         args = probe.convert_args("raw.pcm", "output.wav")
         self.assertEqual(args[:7], ["-y", "-f", "s16le", "-ar", "48000", "-ac", "2"])
         self.assertIn(probe.FILTER, args)
+
+    def test_fixture_duration_includes_stop_detection_interval(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "fixture.wav"
+            for count, expected in ((24000, True), (16000, False), (32000, False)):
+                samples = array.array("h", [2000, -2000] * (count // 2))
+                if sys.byteorder != "little":
+                    samples.byteswap()
+                with wave.open(str(output), "wb") as wav:
+                    wav.setnchannels(1)
+                    wav.setsampwidth(2)
+                    wav.setframerate(16000)
+                    wav.writeframes(samples.tobytes())
+                if expected:
+                    self.assertEqual(len(probe.read_pcm(output)), count)
+                else:
+                    with self.assertRaises(ValueError):
+                        probe.read_pcm(output)
 
 
 if __name__ == "__main__":

@@ -26,6 +26,8 @@ jobs:
       - name: Test restricted conversion and preserve build evidence
         run: |
           mkdir evidence
+          cp "$RUNNER_TEMP/fixtures"/reference-*.wav evidence/
+          sha256sum "$RUNNER_TEMP/fixtures"/* > evidence/fixture-SHA256SUMS
           image=openjibo-ffmpeg-audio:candidate
           git rev-parse HEAD > evidence/source-commit.txt
           docker image inspect "$image" --format 'ID={{.Id}} Size={{.Size}} Platform={{.Os}}/{{.Architecture}}' > evidence/image.txt

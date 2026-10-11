@@ -54,7 +54,9 @@ def read_pcm(path):
         pcm = array.array("h", wav.readframes(wav.getnframes()))
     if sys.byteorder != "little":
         pcm.byteswap()
-    if len(pcm) < 12000 or len(pcm) > 20000 or max(map(abs, pcm)) < 1000:
+    # The 1-second tone retains ~0.5 seconds while stop_duration is detected.
+    # Check both reference and candidate, not just a guessed tone-only duration.
+    if len(pcm) < 22000 or len(pcm) > 26000 or max(map(abs, pcm)) < 1000:
         raise ValueError("Missing or implausible synthetic audio")
     return pcm
 

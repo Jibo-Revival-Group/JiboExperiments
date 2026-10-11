@@ -1,0 +1,10 @@
+# CI-only overlay for an ephemeral candidate stack; no published/runtime defaults change.
+services:
+  api:
+    environment:
+      OpenJibo__Stt__EnableAzureSpeech: "false"
+      OpenJibo__Stt__WhisperThreads: "4"
+    ports: !override
+      - "127.0.0.1:8080:8080"
+  postgres:
+    ports: !reset []

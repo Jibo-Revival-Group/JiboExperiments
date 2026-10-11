@@ -50,6 +50,10 @@ expected non-silent interval, and agree with distro-reference output within
 20 ms and normalized PCM RMSE 0.025. An invalid input must fail. Synthetic
 fixtures are generated on the runner; no private speech recordings are used.
 This tests decoding/filtering, not speech accuracy or actual robot behavior.
+The two-second input contains one second of tone; the production filter retains
+approximately another half-second while detecting `stop_duration=0.5`. Both
+reference and candidate must therefore produce about 1.5 seconds, not a
+tone-only one-second result. Reference WAVs and fixture hashes are retained.
 
 After the isolated stage passes, a full runtime candidate must be built with
 `--build-arg FFMPEG_PROFILE=audio`. Portable and AVX2 Whisper profiles each need
@@ -58,3 +62,12 @@ The existing publication workflow intentionally continues using the distro
 default until that separate promotion decision. Physical-robot acceptance
 remains deferred, not waived. No stable/latest tag or deployment is authorized
 by this candidate experiment.
+
+`openjibo-speech-build-preview.yml` now has an explicit `ffmpeg_profile=audio`
+selection (default remains `distro`). It builds portable and AVX2 Whisper
+candidates, starts an ephemeral localhost-only PostgreSQL/API stack, disables
+Azure Speech, checks two authenticated synthetic robots, and sends three
+Ogg/Opus turns synthesized on the runner. Successful transcripts must use the
+warm local Whisper server and return the cloud-version response contract. CI
+stack volumes are removed after the job; operator installations are untouched.
+This adds acoustic/protocol integration evidence without publishing an image.

@@ -2,6 +2,12 @@ name: openjibo-speech-build-preview
 
 on:
   workflow_dispatch:
+    inputs:
+      ffmpeg_profile:
+        description: FFmpeg profile; audio is an unpublished opt-in candidate
+        type: choice
+        options: [distro, audio]
+        default: distro
 
 permissions:
   contents: read
@@ -10,6 +16,8 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      FFMPEG_PROFILE: ${{ inputs.ffmpeg_profile || 'distro' }}
     strategy:
       fail-fast: false
       matrix:
@@ -22,6 +30,8 @@ jobs:
           CPU_PROFILE: ${{ matrix.cpu_profile }}
         run: |
           python3 -B OpenJibo/tests/test_whisper_docker_build_contract.py
+          python3 -B OpenJibo/tests/test_ffmpeg_audio_candidate.py
+          case "$FFMPEG_PROFILE" in distro|audio) ;; *) exit 1 ;; esac
           if [ "$CPU_PROFILE" = avx2 ]; then
             python3 -B OpenJibo/scripts/cloud/preflight-whisper-avx2.py
           fi
@@ -36,6 +46,7 @@ jobs:
             --build-arg WHISPER_CPU_PROFILE="$CPU_PROFILE" \
             --build-arg WHISPER_MODEL=base.en \
             --build-arg WHISPER_BUILD_JOBS=2 \
+            --build-arg FFMPEG_PROFILE="$FFMPEG_PROFILE" \
             -t "openjibo-speech-preview:$CPU_PROFILE" .
 
       - name: Retain source and compiled profile evidence
@@ -45,6 +56,7 @@ jobs:
           mkdir -p build-evidence
           git rev-parse HEAD > build-evidence/source-commit.txt
           printf '%s\n' "$CPU_PROFILE" > build-evidence/cpu-profile.txt
+          printf '%s\n' "$FFMPEG_PROFILE" > build-evidence/ffmpeg-profile.txt
           docker image inspect "openjibo-speech-preview:$CPU_PROFILE" \
             --format 'ID={{.Id}} Platform={{.Os}}/{{.Architecture}}' \
             > build-evidence/image.txt
@@ -65,10 +77,68 @@ jobs:
             "openjibo-speech-preview:$CPU_PROFILE" \
             /usr/bin/whisper.cpp/models/ggml-base.en.bin \
             > build-evidence/model-sha256.txt
+          docker run --rm --pull never --network none --entrypoint /usr/bin/ffmpeg \
+            "openjibo-speech-preview:$CPU_PROFILE" -buildconf \
+            > build-evidence/ffmpeg-buildconf.txt 2>&1
+
+      - uses: actions/setup-node@v6
+        if: env.FFMPEG_PROFILE == 'audio'
+        with:
+          node-version: '24'
+      - name: Prepare synthetic speech and protocol probes
+        if: env.FFMPEG_PROFILE == 'audio'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg espeak-ng
+          espeak-ng -v en-us -s 140 -w "$RUNNER_TEMP/speech.wav" 'cloud version'
+          ffmpeg -y -i "$RUNNER_TEMP/speech.wav" -c:a libopus "$RUNNER_TEMP/speech.ogg"
+          npm --prefix OpenJibo/src/Jibo.Cloud/node ci --ignore-scripts
+      - name: Exercise full local runtime with synthetic acoustic turns
+        if: env.FFMPEG_PROFILE == 'audio'
+        working-directory: OpenJibo
+        env:
+          CPU_PROFILE: ${{ matrix.cpu_profile }}
+          COMPOSE_PROJECT_NAME: openjibo-speech-audio-candidate
+          COMPOSE_FILE: docker-compose.yml:scripts/cloud/compose-speech-audio-candidate.yml
+          OPENJIBO_POSTGRES_PASSWORD: candidate-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.cpu_profile }}
+        run: |
+          docker tag "openjibo-speech-preview:$CPU_PROFILE" openjibo-cloud:self-hosted
+          bash scripts/cloud/invoke-openjibo-self-hosted-stack.sh --skip-build --run-migration
+          ready=false
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/health; then ready=true; break; fi
+            sleep 3
+          done
+          test "$ready" = true
+          test "$(docker compose exec -T api printenv OpenJibo__Stt__EnableAzureSpeech)" = false
+          node src/Jibo.Cloud/node/invoke-jetstream-compatibility-probe.mjs \
+            --entrypoint-url http://localhost:8080 --hub-url ws://localhost:8080 \
+            --notification-url ws://localhost:8080 --mode authenticated --robots 2 \
+            --device-prefix ffmpeg-audio-candidate --skip-turn \
+            > ../build-evidence/socket-probe.txt
+          node src/Jibo.Cloud/node/invoke-real-audio-probe.mjs \
+            --audio "$RUNNER_TEMP/speech.ogg" --base-url http://localhost:8080 \
+            --robot-id speech-acceptance-ffmpeg-audio --turns 3 \
+            > ../build-evidence/acoustic-probe.json
+          docker compose logs --no-color api > ../build-evidence/api-logs.txt
+          test "$(grep -c 'Resolve transcript succeeded.*provider=whisper-server-buffered-audio' ../build-evidence/api-logs.txt)" -ge 3
+      - name: Capture and remove temporary candidate stack
+        if: always() && env.FFMPEG_PROFILE == 'audio'
+        working-directory: OpenJibo
+        env:
+          COMPOSE_PROJECT_NAME: openjibo-speech-audio-candidate
+          COMPOSE_FILE: docker-compose.yml:scripts/cloud/compose-speech-audio-candidate.yml
+          OPENJIBO_POSTGRES_PASSWORD: candidate-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.cpu_profile }}
+        run: |
+          if [ -f .env ]; then
+            docker compose logs --no-color > ../build-evidence/stack-logs.txt
+            docker compose down -v
+          fi
 
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
-          name: speech-build-evidence-${{ matrix.cpu_profile }}-${{ github.sha }}
+          name: speech-build-evidence-${{ env.FFMPEG_PROFILE }}-${{ matrix.cpu_profile }}-${{ github.sha }}
           path: build-evidence/
           if-no-files-found: error
           retention-days: 14

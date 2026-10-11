@@ -83,3 +83,41 @@ and LGPL declarations in FFmpeg-related copyright metadata, requiring build-
 configuration and notice review rather than an automatic compatibility verdict.
 Initial evidence is retained under `artifact-output/runtime-sbom-38107379753/`;
 this first run predates SBOM signing and makes no signature claim.
+
+## Signed inventory acceptance
+
+[Run 38107600594](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38107600594)
+passed scanning, signing and workflow-local verification for both profiles.
+The trusted evidence-tooling commit is
+`67eccca5959cf263ef9e4fab2227bfe8f4d9a4b3`; the image build source remains
+`fd32678bb29ade975c71a9bcd7dc7a89babaf541`. This does not rebuild the images.
+Downloaded artifacts are retained in `artifact-output/runtime-sbom-38107600594/`.
+
+Independent local verification with `verify-runtime-sbom.py` passed for both
+profiles. The verifier snapshots the proof before invoking GitHub CLI, checks
+the exact SPDX JSON matches the signed predicate, requires the reviewed image
+subject and SPDX 2.3 predicate, then enforces signer/source/main-ref/issuer/hosted-
+runner policy cryptographically. It never accepts the publisher's saved
+verification report as proof. A real negative check using the wrong evidence
+commit (`51404e7eedf5eb98784ec3b5cf6aa4bc8555d407`) was rejected.
+
+Verified SPDX file hashes:
+
+- Portable: `be941d9305911684b5209b8964c24c21fd3684df2235d8414cd22bc9720b72c3`.
+- AVX2: `dd45b6edfc3323fc45eac8cf5a9eb035ab00b23155e55d02bfc17ace4d124bb6`.
+
+To repeat acceptance of this exact evidence run after downloading its artifacts,
+run the following from the repository root (with a capable `gh` CLI):
+
+```bash
+python3 -B OpenJibo/scripts/cloud/verify-runtime-sbom.py \
+  --spdx artifact-output/runtime-sbom-38107600594/runtime-sbom-portable-38107600594/runtime.spdx.json \
+  --attestation artifact-output/runtime-sbom-38107600594/runtime-sbom-portable-38107600594/sbom-attestation.json \
+  --cpu-profile portable \
+  --evidence-commit 67eccca5959cf263ef9e4fab2227bfe8f4d9a4b3
+```
+
+Select a newly reviewed evidence commit explicitly for a later run; do not read
+the expected trust anchor from the unverified downloaded report. This command
+does not install containers or certify licenses. Raw Syft JSON and gap reports
+remain supplemental unsigned artifacts; the signature covers the SPDX predicate.

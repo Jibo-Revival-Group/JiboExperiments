@@ -118,8 +118,10 @@ data-encryption keys. Isolated installation must not require a Cloud account.
 
 The [digest-scoped SBOM evidence lane](runtime-sbom-evidence.md) scans the existing
 signed portable/AVX2 preview without rebuilding or deploying it. It retains
-native/SPDX inventories and a gap report; supplemental notices, owner license
-review and signed SBOM verification remain explicit stable-release gates.
+native/SPDX inventories and a gap report. SPDX signing and independent positive/
+negative signature verification passed for both exact preview images. Supplemental
+native/model notices and owner license review remain stable-release gates; neither
+the scanner nor the signature approves redistribution terms.
 
 Host adapters supply infrastructure/networking, HTTPS, secret injection,
 storage, backup and process lifecycle—not host-specific forks of robot logic.

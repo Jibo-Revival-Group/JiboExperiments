@@ -1,13 +1,19 @@
 import importlib.util
+import base64
 import json
 from pathlib import Path
 import tempfile
+import subprocess
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("sbom", ROOT / "OpenJibo/scripts/cloud/review-runtime-sbom.py")
 sbom = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sbom)
+spec = importlib.util.spec_from_file_location("sbom_verifier", ROOT / "OpenJibo/scripts/cloud/verify-runtime-sbom.py")
+verifier = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(verifier)
 
 
 class RuntimeSbomTests(unittest.TestCase):
@@ -81,6 +87,43 @@ class RuntimeSbomTests(unittest.TestCase):
         self.assertIn('.spdxVersion == "SPDX-2.3"', workflow)
         self.assertIn('--source-digest "$GITHUB_SHA" --deny-self-hosted-runners', workflow)
         self.assertIn("--bundle evidence/sbom-attestation.json", workflow)
+
+    def test_independent_verifier_checks_exact_payload_and_signer(self):
+        with tempfile.TemporaryDirectory() as temp:
+            spdx = Path(temp) / "sbom.json"
+            proof = Path(temp) / "proof.json"
+            document = {"spdxVersion": "SPDX-2.3", "SPDXID": "SPDXRef-DOCUMENT"}
+            statement = {"_type": "https://in-toto.io/Statement/v1", "predicateType": verifier.PREDICATE,
+                         "predicate": document, "subject": [{"name": sbom.IMAGE,
+                             "digest": {"sha256": sbom.DIGESTS["portable"][7:]}}]}
+            spdx.write_text(json.dumps(document))
+            proof.write_text(json.dumps({"dsseEnvelope": {"payload": base64.b64encode(json.dumps(statement).encode()).decode()}}))
+
+            def run(command, **kwargs):
+                self.assertIn(verifier.WORKFLOW, command)
+                self.assertIn("--deny-self-hosted-runners", command)
+                self.assertIn("--source-ref", command)
+                self.assertIn("a" * 40, command)
+                self.assertIn(verifier.PREDICATE, command)
+                snapshot = Path(command[command.index("--bundle") + 1])
+                self.assertNotEqual(snapshot, proof)
+                self.assertEqual(snapshot.read_bytes(), proof.read_bytes())
+                return subprocess.CompletedProcess(command, 0, '[{"verificationResult":{"verified":true}}]', '')
+
+            with patch.object(verifier.subprocess, "run", side_effect=run):
+                self.assertTrue(verifier.verify(spdx, proof, "portable", "a" * 40)["sbom_verified"])
+            with patch.object(verifier.subprocess, "run", return_value=subprocess.CompletedProcess([], 1, "", "failed")):
+                with self.assertRaises(ValueError):
+                    verifier.verify(spdx, proof, "portable", "a" * 40)
+            for profile, commit in [("avx2", "a" * 40), ("portable", "short")]:
+                with self.assertRaises(ValueError):
+                    verifier.verify(spdx, proof, profile, commit)
+            document["tampered"] = True
+            spdx.write_text(json.dumps(document))
+            with patch.object(verifier.subprocess, "run") as run:
+                with self.assertRaises(ValueError):
+                    verifier.verify(spdx, proof, "portable", "a" * 40)
+                run.assert_not_called()
 
 
 if __name__ == "__main__":

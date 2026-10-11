@@ -43,12 +43,36 @@ of unresolved third-party terms or stable promotion. Final approval should name
 the exact images, evidence and remaining conditions reviewed.
 
 `openjibo-runtime-notices-evidence.yml` collects copyright texts from the exact
-image's `/usr/share/doc` and Whisper's shipped `LICENSE` using `docker create`
+image's `/usr/share/doc`, `/usr/share/common-licenses` and Whisper's shipped `LICENSE` using `docker create`
 and `docker cp`. The container is never started. The bounded tar reader never
 extracts archive paths onto the host or follows links; skipped links are listed
 for review. A fresh ZIP records each notice's hash and the selected image.
 These workflow artifacts are review inputs, not a complete notice bundle or a
 corresponding-source offer. Existing releases and runtime images stay unchanged.
+
+The first [notice collection run 38108240257](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38108240257)
+passed for both profiles and retained 289 copyright/license files per image,
+with 76 documentation links deliberately not followed. It predates the addition
+of shared common-license texts and is not a complete notice set.
+
+### Upstream review inputs
+
+The [original Whisper project](https://github.com/openai/whisper#license) states
+that its code and model weights use MIT terms. The image uses the converted
+GGML `base.en` model fetched through
+[Whisper.cpp's model downloader](https://github.com/ggml-org/whisper.cpp/blob/v1.9.3/models/download-ggml-model.sh),
+which selects a Hugging Face `resolve/main` URL. The publisher checked model
+SHA-256 `a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002`.
+Upstream licensing information is useful but does not replace retaining the
+original model notice and the exact converted-file/source linkage.
+
+[FFmpeg's licensing guidance](https://ffmpeg.org/legal.html) distinguishes the
+default licensing from optional GPL/nonfree build configurations and discusses
+distribution/source requirements. The inventory identifies Ubuntu FFmpeg
+`7:6.1.1-3ubuntu5`; do not substitute an unpatched upstream archive for the
+corresponding Ubuntu build source. Copyright files and package metadata alone
+do not prove the actual executable's configuration or that all required source
+material is available. These are review inputs, not a legal compliance opinion.
 
 The repository's MIT license is not a blanket license for all container contents.
 Before stable distribution, review the actual shipped bytes and retain applicable

@@ -49,12 +49,14 @@ jobs:
           trap 'docker rm "$container" >/dev/null' EXIT
           docker cp "$container:/usr/share/doc" - > evidence/docs.tar
           docker cp "$container:/usr/bin/whisper.cpp/LICENSE" - > evidence/whisper.tar
+          docker cp "$container:/usr/share/common-licenses" - > evidence/common.tar
       - name: Build bounded notice-review bundle
         env:
           PROFILE: ${{ matrix.cpu_profile }}
         run: |
           python3 -B OpenJibo/scripts/cloud/package-runtime-notices.py \
             --docs-tar evidence/docs.tar --whisper-tar evidence/whisper.tar \
+            --common-tar evidence/common.tar \
             --inventory evidence/runtime.syft.json --cpu-profile "$PROFILE" \
             --output evidence/notices-review.zip > evidence/review.json
           sha256sum evidence/notices-review.zip evidence/runtime.syft.json > evidence/SHA256SUMS

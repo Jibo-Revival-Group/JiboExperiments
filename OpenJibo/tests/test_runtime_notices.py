@@ -39,6 +39,13 @@ class RuntimeNoticesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             notices.collect(archive([("LICENSE", b"", "link")]), whisper=True)
 
+    def test_collects_referenced_common_license_texts(self):
+        files, links = notices.collect(archive([
+            ("common-licenses/GPL-2", b"Actual common license", "file"),
+            ("common-licenses/GPL", b"", "link")]), common=True)
+        self.assertEqual(files["notices/common-licenses/GPL-2"], b"Actual common license")
+        self.assertEqual(len(links), 1)
+
     def test_rejects_traversal_absolute_and_duplicate_members(self):
         for path in ("../copyright", "/doc/pkg/copyright", "doc/../pkg/copyright", "doc\\pkg\\copyright"):
             with self.assertRaises(ValueError):

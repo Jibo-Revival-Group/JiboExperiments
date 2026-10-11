@@ -25,7 +25,7 @@ def read_tar(path):
     return data
 
 
-def collect(data, whisper=False):
+def collect(data, whisper=False, common=False):
     notices, links, seen = {}, [], set()
     with tarfile.open(fileobj=io.BytesIO(data), mode="r:") as archive:
         for index, member in enumerate(archive):
@@ -44,8 +44,9 @@ def collect(data, whisper=False):
                 continue
             if not member.isfile():
                 raise ValueError("Unsupported archive entry")
-            selected = name == "LICENSE" if whisper else bool(
-                re.fullmatch(r"doc/[a-z0-9][a-z0-9+.-]*/copyright", name))
+            selected = name == "LICENSE" if whisper else bool(re.fullmatch(
+                r"common-licenses/[A-Za-z0-9_.+-]+" if common else
+                r"doc/[a-z0-9][a-z0-9+.-]*/copyright", name))
             if not selected:
                 continue
             if member.size <= 0 or member.size > MAX_NOTICE:
@@ -61,14 +62,17 @@ def collect(data, whisper=False):
     return notices, links
 
 
-def package(docs_tar, whisper_tar, inventory, profile, output):
+def package(docs_tar, whisper_tar, common_tar, inventory, profile, output):
     document, inventory_hash = policy.load_inventory(inventory)
     review = policy.review(document, profile, inventory_hash)
     docs = read_tar(docs_tar)
     whisper = read_tar(whisper_tar)
+    common = read_tar(common_tar)
     notices, links = collect(docs)
     native, native_links = collect(whisper, whisper=True)
+    shared, shared_links = collect(common, common=True)
     notices.update(native)
+    notices.update(shared)
     if sum(map(len, notices.values())) > MAX_TOTAL:
         raise ValueError("Combined notice collection exceeds size limit")
     manifest = {
@@ -76,9 +80,10 @@ def package(docs_tar, whisper_tar, inventory, profile, output):
         "cpu_profile": profile, "source_commit": policy.SOURCE,
         "syft_json_sha256": inventory_hash,
         "input_tar_sha256": {"docs": hashlib.sha256(docs).hexdigest(),
-                             "whisper": hashlib.sha256(whisper).hexdigest()},
+                             "whisper": hashlib.sha256(whisper).hexdigest(),
+                             "common_licenses": hashlib.sha256(common).hexdigest()},
         "files": {name: hashlib.sha256(data).hexdigest() for name, data in sorted(notices.items())},
-        "unfollowed_links": links + native_links,
+        "unfollowed_links": links + native_links + shared_links,
         "review_owner": "Repository owner (designated by user)",
         "license_review_approved": False, "stable_promotion_allowed": False,
         "remaining_review": ["NuGet notices missing from final filesystem inventory",
@@ -92,7 +97,7 @@ def package(docs_tar, whisper_tar, inventory, profile, output):
             bundle.writestr(name, data)
         bundle.writestr("manifest.json", json.dumps(manifest, indent=2, sort_keys=True))
     return {"packaged": True, "notice_count": len(notices),
-            "unfollowed_link_count": len(links) + len(native_links),
+            "unfollowed_link_count": len(links) + len(native_links) + len(shared_links),
             "runtime_image": review["runtime_image"], "license_review_approved": False}
 
 
@@ -100,12 +105,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--docs-tar", required=True)
     parser.add_argument("--whisper-tar", required=True)
+    parser.add_argument("--common-tar", required=True)
     parser.add_argument("--inventory", required=True)
     parser.add_argument("--cpu-profile", required=True, choices=sorted(policy.DIGESTS))
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     try:
-        print(json.dumps(package(args.docs_tar, args.whisper_tar, args.inventory,
+        print(json.dumps(package(args.docs_tar, args.whisper_tar, args.common_tar, args.inventory,
                                  args.cpu_profile, args.output), sort_keys=True))
     except (OSError, ValueError, TypeError, AttributeError, tarfile.TarError):
         parser.exit(1, "Notice packaging failed; preserve inputs and inspect the bounded archive/image policy.\n")

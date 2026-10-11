@@ -77,7 +77,8 @@ class RuntimeSbomTests(unittest.TestCase):
         self.assertIn("syft-version: v1.54.1", workflow)
         self.assertIn("fffec3d851af758d56fee099cf3fbf8aa8779843", workflow)
         self.assertIn("push-to-registry: false", workflow)
-        self.assertIn("--predicate-type https://spdx.dev/Document", workflow)
+        self.assertIn("--predicate-type https://spdx.dev/Document/v2.3", workflow)
+        self.assertIn('.spdxVersion == "SPDX-2.3"', workflow)
         self.assertIn('--source-digest "$GITHUB_SHA" --deny-self-hosted-runners', workflow)
         self.assertIn("--bundle evidence/sbom-attestation.json", workflow)
 

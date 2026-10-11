@@ -60,6 +60,8 @@ jobs:
           python3 -B OpenJibo/scripts/cloud/review-runtime-sbom.py \
             --inventory evidence/runtime.syft.json --cpu-profile "$PROFILE" \
             > evidence/review.json
+          jq -e '.spdxVersion == "SPDX-2.3" and .SPDXID == "SPDXRef-DOCUMENT"' \
+            evidence/runtime.spdx.json >/dev/null
           sha256sum evidence/runtime.syft.json evidence/runtime.spdx.json evidence/review.json \
             > evidence/SHA256SUMS
       - name: Attest inventory for the existing image digest
@@ -84,7 +86,7 @@ jobs:
             --signer-workflow transcendentsoftware-jd/JiboExperiments/.github/workflows/openjibo-runtime-sbom-evidence.yml \
             --source-digest "$GITHUB_SHA" --deny-self-hosted-runners \
             --cert-oidc-issuer https://token.actions.githubusercontent.com \
-            --predicate-type https://spdx.dev/Document \
+            --predicate-type https://spdx.dev/Document/v2.3 \
             --bundle evidence/sbom-attestation.json --format json \
             > evidence/attestation-verification.json
           jq -e 'type == "array" and length > 0 and all(.[]; .verificationResult != null)' \

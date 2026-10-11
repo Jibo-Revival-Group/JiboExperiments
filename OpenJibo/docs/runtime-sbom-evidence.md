@@ -93,6 +93,35 @@ records remain outside this package-manifest lane. External license URLs and
 license-file references are saved as declarations only, never followed. These
 supplemental ZIPs are unsigned and do not replace the signed SPDX evidence.
 
+### NuGet archive notices and content integrity
+
+`collect-runtime-nuget-notices.py` has a separate explicit fetch lane for the
+same package versions. It reads ZIPs only in memory: no archive extraction,
+package installation or execution. Each download is capped at 128 MiB, combined
+downloads at 512 MiB, and copied manifests/notice files at 32 MiB. Unsafe paths,
+duplicate names, encrypted members, links and oversized selected files fail.
+External license links are still not followed. Files outside the notice naming
+patterns are not copied, so this is not a completeness assertion.
+
+The SDK-backed `NugetContentVerifier` checks signed-package archive integrity and
+compares NuGet's content hash with the scanner-supplied SHA-512 value. This
+uses SDK NuGet libraries without adding package references; the library version
+is recorded per check. NuGet content hashes and raw ZIP hashes are distinct for
+signed packages; see [NuGet's archive-reader implementation](https://github.com/NuGet/NuGet.Client/blob/dev/src/NuGet.Core/NuGet.Packaging/PackageArchiveReader.cs).
+Certificate/signer trust is **not** verified by this lane. Missing scanner hashes
+are explicitly reported rather than guessed. Integrity/hash failures stop
+collection; they never enable approval or downgrade to unsigned acceptance.
+
+Initial portable collection on 2026-10-11 downloaded 83,546,721 bytes for 53
+packages, preserved 80 manifest/notice files and verified 51 content hashes.
+Two framework package records have no scanner hash, and 36 packages have no
+selected notice files. These gaps remain open even when a manifest declares a
+license expression. Local evidence is retained under
+`artifact-output/runtime-nuget-notices-20261011/`; the initial `portable.zip`
+predates content verification, while `portable-content-verified.zip` includes it.
+The supplemental bundles remain unsigned. Positive, modified-content and forged
+signature tests exercise the SDK verifier; no runtime image or release changed.
+
 ### Upstream review inputs
 
 The [original Whisper project](https://github.com/openai/whisper#license) states

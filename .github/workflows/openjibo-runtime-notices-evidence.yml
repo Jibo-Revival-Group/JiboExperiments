@@ -17,6 +17,9 @@ jobs:
         cpu_profile: [portable, avx2]
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
       - name: Select reviewed image
         id: image
         env:
@@ -68,6 +71,16 @@ jobs:
             --inventory evidence/runtime.syft.json --cpu-profile "$PROFILE" \
             --fetch --output evidence/nuget-metadata-review.zip > evidence/nuget-review.json
           sha256sum evidence/nuget-metadata-review.zip >> evidence/SHA256SUMS
+      - name: Collect bounded NuGet archive notice files without installing packages
+        env:
+          PROFILE: ${{ matrix.cpu_profile }}
+        run: |
+          dotnet build OpenJibo/scripts/cloud/nuget-content-verifier/NugetContentVerifier.csproj --nologo
+          python3 -B OpenJibo/scripts/cloud/collect-runtime-nuget-notices.py \
+            --inventory evidence/runtime.syft.json --cpu-profile "$PROFILE" \
+            --content-verifier OpenJibo/scripts/cloud/nuget-content-verifier/bin/Debug/net10.0/NugetContentVerifier.dll \
+            --fetch --output evidence/nuget-notices-review.zip > evidence/nuget-notices-review.json
+          sha256sum evidence/nuget-notices-review.zip >> evidence/SHA256SUMS
       - uses: actions/upload-artifact@v7
         with:
           name: runtime-notices-${{ matrix.cpu_profile }}-${{ github.run_id }}
@@ -78,6 +91,8 @@ jobs:
             evidence/review.json
             evidence/nuget-metadata-review.zip
             evidence/nuget-review.json
+            evidence/nuget-notices-review.zip
+            evidence/nuget-notices-review.json
             evidence/SHA256SUMS
           if-no-files-found: error
           retention-days: 90

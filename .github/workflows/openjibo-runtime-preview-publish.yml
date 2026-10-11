@@ -102,6 +102,13 @@ jobs:
             /usr/bin/whisper.cpp/models/ggml-base.en.bin > release-evidence/model-sha256.txt
           grep -q '^a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002 ' release-evidence/model-sha256.txt
           git rev-parse HEAD > release-evidence/source-commit.txt
+          container=$(docker create --network none "$tag")
+          docker cp "$container:/usr/bin/whisper.cpp/openjibo-source-commit.txt" release-evidence/whisper-source-commit.txt
+          docker cp "$container:/usr/bin/whisper.cpp/openjibo-source.tar.gz" release-evidence/whisper-source.tar.gz
+          docker cp "$container:/usr/bin/whisper.cpp/openjibo-source-sha256.txt" release-evidence/whisper-source-sha256.txt
+          docker rm "$container"
+          grep -qx '371b5a7561823ab2bb32142d2751e35e7534727b' release-evidence/whisper-source-commit.txt
+          test "$(sha256sum release-evidence/whisper-source.tar.gz | cut -d ' ' -f1)" = "$(cut -d ' ' -f1 release-evidence/whisper-source-sha256.txt)"
           printf '%s\n' "$FFMPEG_PROFILE" > release-evidence/ffmpeg-profile.txt
           docker run --rm --pull never --network none --entrypoint ffmpeg "$tag" -buildconf \
             > release-evidence/ffmpeg-buildconf.txt 2>&1

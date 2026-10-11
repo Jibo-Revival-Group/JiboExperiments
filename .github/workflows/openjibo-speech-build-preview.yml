@@ -57,6 +57,13 @@ jobs:
           git rev-parse HEAD > build-evidence/source-commit.txt
           printf '%s\n' "$CPU_PROFILE" > build-evidence/cpu-profile.txt
           printf '%s\n' "$FFMPEG_PROFILE" > build-evidence/ffmpeg-profile.txt
+          container=$(docker create --network none "openjibo-speech-preview:$CPU_PROFILE")
+          docker cp "$container:/usr/bin/whisper.cpp/openjibo-source-commit.txt" build-evidence/whisper-source-commit.txt
+          docker cp "$container:/usr/bin/whisper.cpp/openjibo-source.tar.gz" build-evidence/whisper-source.tar.gz
+          docker cp "$container:/usr/bin/whisper.cpp/openjibo-source-sha256.txt" build-evidence/whisper-source-sha256.txt
+          docker rm "$container"
+          grep -qx '371b5a7561823ab2bb32142d2751e35e7534727b' build-evidence/whisper-source-commit.txt
+          test "$(sha256sum build-evidence/whisper-source.tar.gz | cut -d ' ' -f1)" = "$(cut -d ' ' -f1 build-evidence/whisper-source-sha256.txt)"
           docker image inspect "openjibo-speech-preview:$CPU_PROFILE" \
             --format 'ID={{.Id}} Platform={{.Os}}/{{.Architecture}}' \
             > build-evidence/image.txt

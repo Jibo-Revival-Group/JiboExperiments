@@ -1,7 +1,8 @@
 # Set to "false" for managed/hosted builds that rely on Azure Speech instead, to keep image size and build time down.
 ARG ENABLE_LOCAL_WHISPER=true
-# Pinned ggml-org/whisper.cpp release tag.
+# Human-readable ggml-org/whisper.cpp release ref plus an immutable checkout guard.
 ARG WHISPER_CPP_REF=v1.9.3
+ARG WHISPER_CPP_COMMIT=371b5a7561823ab2bb32142d2751e35e7534727b
 # Any model name accepted by whisper.cpp's download-ggml-model.sh, e.g. base.en, small.en.
 ARG WHISPER_MODEL=base.en
 # Candidate-only audio profile; existing builds/deployments retain distro FFmpeg.
@@ -36,6 +37,7 @@ RUN dotnet publish "src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Migrations/Jibo.Cloud.M
 # get working local transcription with zero extra environment wiring.
 FROM build AS whisper-true
 ARG WHISPER_CPP_REF
+ARG WHISPER_CPP_COMMIT
 ARG WHISPER_MODEL
 # Keep the default safe for memory-limited builders; override only with sufficient RAM.
 ARG WHISPER_BUILD_JOBS=2
@@ -49,9 +51,17 @@ RUN case "${WHISPER_BUILD_JOBS}" in ''|*[!0-9]*) echo 'WHISPER_BUILD_JOBS must b
         *) echo 'WHISPER_CPU_PROFILE must be portable or avx2' >&2; exit 1 ;; \
        esac \
     && apt-get update \
-    && apt-get install -y --no-install-recommends build-essential cmake git curl \
+    && apt-get install -y --no-install-recommends build-essential cmake git curl gzip \
     && rm -rf /var/lib/apt/lists/* \
     && git clone --branch "${WHISPER_CPP_REF}" --depth 1 https://github.com/ggml-org/whisper.cpp.git /usr/bin/whisper.cpp \
+    && test "${#WHISPER_CPP_COMMIT}" -eq 40 \
+    && case "${WHISPER_CPP_COMMIT}" in *[!0-9a-f]*) echo 'WHISPER_CPP_COMMIT must be a lowercase full commit ID' >&2; exit 1 ;; esac \
+    && test "$(git -C /usr/bin/whisper.cpp rev-parse HEAD)" = "${WHISPER_CPP_COMMIT}" \
+    && git -C /usr/bin/whisper.cpp diff --exit-code HEAD -- \
+    && printf '%s\n' "${WHISPER_CPP_COMMIT}" > /usr/bin/whisper.cpp/openjibo-source-commit.txt \
+    && git -C /usr/bin/whisper.cpp archive --format=tar --output=/usr/bin/whisper.cpp/openjibo-source.tar HEAD \
+    && gzip -n /usr/bin/whisper.cpp/openjibo-source.tar \
+    && sha256sum /usr/bin/whisper.cpp/openjibo-source.tar.gz > /usr/bin/whisper.cpp/openjibo-source-sha256.txt \
     && cmake -S /usr/bin/whisper.cpp -B /usr/bin/whisper.cpp/build -DCMAKE_BUILD_TYPE=Release \
         -DGGML_NATIVE=OFF -DGGML_SSE42="$whisper_simd" -DGGML_AVX="$whisper_simd" -DGGML_AVX2="$whisper_simd" \
         -DGGML_FMA="$whisper_simd" -DGGML_F16C="$whisper_simd" -DGGML_BMI2="$whisper_simd" \

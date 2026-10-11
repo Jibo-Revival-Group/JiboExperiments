@@ -229,3 +229,34 @@ Reports bind each profile's inventory, source and digest. Raw inputs remain at
 were copied into each local candidate review directory as `model-review.json`.
 This proves byte equality with the reviewed publisher LFS digest, not signed
 publisher provenance, conversion reproducibility, accuracy or terms clearance.
+
+### Whisper checkout identity and future-build guard
+
+Read-only copies of `.git/HEAD` in both tested candidate containers report
+`371b5a7561823ab2bb32142d2751e35e7534727b`. On 2026-10-11, upstream `v1.9.3`
+resolved to that same commit (annotated tag object
+`7246b7311e089fe092c4abe7cfad5d0921f8be00`). This is retained checkout metadata,
+not independent proof that every shipped binary was compiled from those bytes.
+
+Future Docker builds pair `WHISPER_CPP_REF=v1.9.3` with that full
+`WHISPER_CPP_COMMIT`. After cloning, the build checks the exact HEAD and clean
+tracked source before compilation, then retains a Git source archive, its hash
+and the commit ID. A moved tag fails instead of silently changing code. Custom
+source refs require an explicitly matching full commit ID. Portable/AVX2 CPU
+settings and model selection are unchanged.
+
+The speech-build and preview-publisher workflows copy this evidence from a
+stopped container and verify its identity and checksum before accepting it.
+Existing registry digests do not gain these files retroactively; a new build
+must pass before any new publication or acceptance claim. The archive captures
+Git-tracked checkout source, not compiler/system dependencies, independently
+reproducible binaries, submodule contents or complete corresponding-source
+obligations. Native-source completeness and release-owner review remain open.
+
+Offline build contracts and the actual Docker RUN shell syntax passed. On an
+isolated Ubuntu checkout, the correct commit passed and a different 40-character
+commit plus an invalid short value were rejected. The pre-compilation archive
+SHA-256 was `b2771600e40e0817112242402359b5a7c3712c4623283913142f6b5978038537`;
+the public-source test remains at
+`/home/jake-dubin/openjibo-whisper-source-guard.IQSLTS`. Full native image-build
+validation is separate and must pass before treating the guarded build as tested.

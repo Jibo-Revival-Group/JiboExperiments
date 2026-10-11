@@ -10,7 +10,12 @@ jobs:
   inventory:
     if: github.repository == 'transcendentsoftware-jd/JiboExperiments' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
+    environment: openjibo-runtime-release
     timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -31,6 +36,7 @@ jobs:
           PY
           )
           printf 'reference=%s\n' "$reference" >> "$GITHUB_OUTPUT"
+          printf 'digest=%s\n' "${reference#*@}" >> "$GITHUB_OUTPUT"
           mkdir evidence
           printf '%s\n' "$reference" > evidence/runtime-image.txt
       - name: Download pinned inventory scanner
@@ -56,6 +62,35 @@ jobs:
             > evidence/review.json
           sha256sum evidence/runtime.syft.json evidence/runtime.spdx.json evidence/review.json \
             > evidence/SHA256SUMS
+      - name: Attest inventory for the existing image digest
+        id: attestation
+        uses: actions/attest@v4.2.2
+        with:
+          subject-name: ghcr.io/transcendent-software-llc/openjibo-runtime
+          subject-digest: ${{ steps.image.outputs.digest }}
+          sbom-path: evidence/runtime.spdx.json
+          push-to-registry: false
+      - name: Verify and retain signed inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_HOST: github.com
+          IMAGE: ${{ steps.image.outputs.reference }}
+          BUNDLE: ${{ steps.attestation.outputs.bundle-path }}
+        run: |
+          test -s "$BUNDLE"
+          cp "$BUNDLE" evidence/sbom-attestation.json
+          gh attestation verify "oci://$IMAGE" \
+            --repo transcendentsoftware-jd/JiboExperiments \
+            --signer-workflow transcendentsoftware-jd/JiboExperiments/.github/workflows/openjibo-runtime-sbom-evidence.yml \
+            --source-digest "$GITHUB_SHA" --deny-self-hosted-runners \
+            --cert-oidc-issuer https://token.actions.githubusercontent.com \
+            --predicate-type https://spdx.dev/Document \
+            --bundle evidence/sbom-attestation.json --format json \
+            > evidence/attestation-verification.json
+          jq -e 'type == "array" and length > 0 and all(.[]; .verificationResult != null)' \
+            evidence/attestation-verification.json >/dev/null
+          sha256sum evidence/sbom-attestation.json evidence/attestation-verification.json \
+            >> evidence/SHA256SUMS
       - uses: actions/upload-artifact@v7
         with:
           name: runtime-sbom-${{ matrix.cpu_profile }}-${{ github.run_id }}

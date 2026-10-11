@@ -20,13 +20,20 @@ Each CPU profile retains these workflow artifacts for 90 days:
 - Review report bound to the scanner's manifest digest, Linux/amd64 platform,
   image source-commit label and CPU-profile label.
 - SHA-256 checksums of both inventories and the report.
+- Signed SPDX attestation bundle and workflow-local cryptographic verification.
 
 The reviewed image pins are shared in `review-runtime-sbom.py`. Changing them
 requires code review. A wrong identity, unexpected scanner version or empty
 inventory fails the workflow. The report lists packages without complete SPDX
 license expressions, but even a zero-gap report **never approves licenses** or
-unblocks stable promotion. These uploaded artifacts are not signed release SBOM
-attestations; signing and independent verification remain separate work.
+unblocks stable promotion. The SPDX attestation is issued for the existing image
+digest, with registry pushing disabled; it does not change the image or its tags.
+Verification fixes the repository, signer workflow, GitHub OIDC issuer, hosted
+runner requirement and exact evidence-tooling commit. That tooling commit is
+distinct from the older image build source commit. The signature establishes
+inventory provenance, not license approval. Workflow-local verification is not
+independent operator acceptance; that check is performed against downloaded
+evidence separately.
 
 ## Supplemental inventory and owner review
 
@@ -57,7 +64,22 @@ and [Anchore scanner action](https://github.com/anchore/sbom-action).
 ## Remaining gates
 
 Generate and inspect both inventories; supplement missing native/model evidence;
-record notices and owner review; bind a signed SBOM attestation to each image;
-independently verify that attestation. Stable promotion still also needs the
+record notices and owner review; independently verify each signed SBOM
+attestation. Stable promotion still also needs the
 separate supported-host/robot and encrypted-data recovery evidence. Passing an
 inventory check changes none of those acceptance boundaries.
+
+## First scan, 2026-10-10
+
+[Run 38107379753](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38107379753)
+passed for both immutable images. Each inventory contains 405 package records:
+294 Debian, 93 .NET, 12 binary, three Java archive and three npm records.
+These are records, not necessarily unique dependencies. Each report flags 307
+records without complete SPDX expressions; this includes unnormalized textual
+license declarations and missing declarations, not 307 proven license violations.
+Whisper appears as npm metadata in its shipped source tree; this does not certify
+its compiled native library inventory or model terms. The scanner reports GPL
+and LGPL declarations in FFmpeg-related copyright metadata, requiring build-
+configuration and notice review rather than an automatic compatibility verdict.
+Initial evidence is retained under `artifact-output/runtime-sbom-38107379753/`;
+this first run predates SBOM signing and makes no signature claim.

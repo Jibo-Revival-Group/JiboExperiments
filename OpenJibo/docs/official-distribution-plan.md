@@ -116,6 +116,11 @@ private keys, user data or already-enrolled server identity. Generate credential
 per installation and persist them across upgrades; never silently regenerate
 data-encryption keys. Isolated installation must not require a Cloud account.
 
+The [digest-scoped SBOM evidence lane](runtime-sbom-evidence.md) scans the existing
+signed portable/AVX2 preview without rebuilding or deploying it. It retains
+native/SPDX inventories and a gap report; supplemental notices, owner license
+review and signed SBOM verification remain explicit stable-release gates.
+
 Host adapters supply infrastructure/networking, HTTPS, secret injection,
 storage, backup and process lifecycle—not host-specific forks of robot logic.
 Start with generic Docker Compose/Linux and the existing Azure path. Track

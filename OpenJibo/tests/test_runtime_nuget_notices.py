@@ -41,6 +41,43 @@ def item(hashes=()):
 
 
 class NugetNoticesTests(unittest.TestCase):
+    def test_declared_license_file_is_copied_by_exact_safe_path_not_filename_guess(self):
+        # Build a package with the nonstandard, explicitly declared notice path.
+        out = io.BytesIO()
+        with zipfile.ZipFile(out, "w") as archive:
+            archive.writestr("Test.Package.nuspec", fixture.MANIFEST.replace(b"../LICENSE", b"docs/terms.txt"))
+            archive.writestr("docs/terms.txt", b"exact terms")
+        files, report = notices.inspect_package(out.getvalue(), item())
+        self.assertEqual(files["docs/terms.txt"], b"exact terms")
+        self.assertEqual(report["declared_license_file_status"], "copied_exact_package_member")
+        self.assertFalse(report["package_signature_verified"])
+
+    def test_unsafe_or_external_license_references_are_preserved_but_unfollowed(self):
+        for reference in ("../LICENSE", "/LICENSE", "https://example.invalid/terms", "docs\\terms.txt", "docs/./terms.txt"):
+            out = io.BytesIO()
+            with zipfile.ZipFile(out, "w") as archive:
+                archive.writestr("Test.Package.nuspec", fixture.MANIFEST.replace(b"../LICENSE", reference.encode()))
+            files, report = notices.inspect_package(out.getvalue(), item())
+            self.assertEqual(report["declared_license_file_status"], "unsafe_reference_unfollowed")
+            self.assertEqual(len(files), 1)
+
+    def test_missing_case_mismatch_directory_and_oversized_declared_license(self):
+        for member, expected in (("other.txt", "referenced_member_missing"),
+                                 ("DOCS/terms.txt", "referenced_member_missing"),
+                                 ("docs/terms.txt/", "referenced_member_is_directory")):
+            out = io.BytesIO()
+            with zipfile.ZipFile(out, "w") as archive:
+                archive.writestr("Test.Package.nuspec", fixture.MANIFEST.replace(b"../LICENSE", b"docs/terms.txt"))
+                archive.writestr(member, b"terms")
+            _, report = notices.inspect_package(out.getvalue(), item())
+            self.assertEqual(report["declared_license_file_status"], expected)
+        out = io.BytesIO()
+        with zipfile.ZipFile(out, "w") as archive:
+            archive.writestr("Test.Package.nuspec", fixture.MANIFEST.replace(b"../LICENSE", b"docs/terms.txt"))
+            archive.writestr("docs/terms.txt", b"x" * (notices.MAX_NOTICE + 1))
+        with self.assertRaises(ValueError):
+            notices.inspect_package(out.getvalue(), item())
+
     def test_audio_candidate_archive_evidence_is_bound_to_explicit_release(self):
         with tempfile.TemporaryDirectory() as temp:
             inventory, output = Path(temp) / "inventory.json", Path(temp) / "notices.zip"

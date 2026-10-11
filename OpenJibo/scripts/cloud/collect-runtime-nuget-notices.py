@@ -39,10 +39,25 @@ def download(url):
     return data
 
 
+def declared_license_path(manifest):
+    declaration = manifest.get("license")
+    if declaration is None:
+        return None, "missing_declaration"
+    if declaration["attributes"].get("type") != "file":
+        return None, "not_file_declaration"
+    name = declaration["text"]
+    path = PurePosixPath(name)
+    if (not name or len(name) > 2048 or path.is_absolute() or ".." in path.parts
+            or str(path) != name or "\\" in name or ":" in name or "\x00" in name):
+        return None, "unsafe_reference_unfollowed"
+    return name, "pending"
+
+
 def inspect_package(data, item):
     if not data or len(data) > MAX_PACKAGE:
         raise ValueError("Invalid package size")
-    files, seen, manifest = {}, set(), None
+    files, seen, members, manifest = {}, set(), {}, None
+    license_status = "missing_declaration"
     with zipfile.ZipFile(io.BytesIO(data)) as archive:
         for index, member in enumerate(archive.infolist()):
             name = member.filename.rstrip("/")
@@ -54,6 +69,7 @@ def inspect_package(data, item):
                     or stat.S_ISLNK(member.external_attr >> 16)):
                 raise ValueError("Unsafe, ambiguous or unsupported package member")
             seen.add(name.casefold())
+            members[name] = member
             if name == ".signature.p7s" and member.file_size > MAX_NOTICE:
                 raise ValueError("Oversized package signature metadata")
             if member.is_dir():
@@ -76,11 +92,32 @@ def inspect_package(data, item):
             files[name] = content
             if sum(map(len, files.values())) > MAX_NOTICES:
                 raise ValueError("Oversized notice collection")
+        if manifest is not None:
+            reference, license_status = declared_license_path(manifest)
+            if reference is not None:
+                member = members.get(reference)
+                if member is None:
+                    license_status = "referenced_member_missing"
+                else:
+                    if member.is_dir():
+                        license_status = "referenced_member_is_directory"
+                    else:
+                        if not 0 < member.file_size <= MAX_NOTICE:
+                            raise ValueError("Invalid declared license member size")
+                        with archive.open(member) as stream:
+                            content = stream.read(MAX_NOTICE + 1)
+                        if len(content) != member.file_size:
+                            raise ValueError("Truncated declared license member")
+                        files[reference] = content
+                        if sum(map(len, files.values())) > MAX_NOTICES:
+                            raise ValueError("Oversized notice collection")
+                        license_status = "copied_exact_package_member"
     if manifest is None:
         raise ValueError("Missing package manifest")
     raw_hash = "sha512-" + base64.b64encode(hashlib.sha512(data).digest()).decode("ascii")
     scanner_hashes = item["scanner_sha512_values"]
     return files, {"manifest_fields": manifest, "notice_member_count": len(files) - 1,
+                   "declared_license_file_status": license_status,
                    "archive_sha256": hashlib.sha256(data).hexdigest(),
                    "raw_archive_sha512": raw_hash,
                    "raw_archive_sha512_matches_scanner": len(scanner_hashes) == 1 and scanner_hashes[0] == raw_hash,

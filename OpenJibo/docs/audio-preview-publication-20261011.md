@@ -300,3 +300,27 @@ Initial and corrected reports and raw copies remain at
 reports are copied to each local candidate evidence directory as
 `framework-review.json`. NuGet notice completeness, signature trust and the
 remaining native/model review work remain open.
+
+### Safe declared-license-file selection
+
+The NuGet archive collector now copies an explicitly declared license file even
+when its basename is not `LICENSE` or `NOTICE`. The reference must be an exact,
+canonical relative path to a validated regular member inside that same package.
+Traversal, absolute paths, URLs, backslashes and normalization/case guesses are
+not followed. Missing or directory references are recorded, oversized members
+fail, and all existing ZIP/combined-size guards still apply. The manifest's
+untrusted declaration remains evidence, not approval or proof of notice adequacy.
+
+This repair is covered by positive and negative offline fixtures. Inspection of
+the retained exact-candidate reports found that all 53 package declarations in
+each profile are expressions, not file references. Thus it does not add files
+to these candidate review bundles or resolve the 36-package notice-coverage
+finding. No repeated package downloads or replacement evidence bundles were
+needed for that determination.
+
+The guarded-source build has passed unpublished two-profile validation, but its
+source files cannot be added retroactively to immutable existing images. A new
+experimental preview publication requires release-owner authorization. It must
+use a new release/image identity, preserve all existing assets and leave the
+recommended download and stable channel unchanged. Build success is not license
+approval, and no deployment is implied.

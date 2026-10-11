@@ -313,5 +313,10 @@ SPDX and starter provenance verification. Both exact digests passed native
 Ubuntu preparation, fresh startup, sockets, recorded local speech and restart
 persistence; AVX2 also passed overlap and a second phrase. Preparation/launch
 requires explicit version/profile selection, with unchanged recommendations
-and no deployments. Fresh backup/restore and the owner-review/licensing gates
-remain open; no previous-image findings are silently transferred to this one.
+and no deployments. Both exact profiles subsequently passed fresh synthetic
+backup/restore and post-restore socket/local-speech checks. A new image-bound
+review packet verifies the downloaded signed SPDX bytes and retains fresh notice
+copies and exact NuGet manifests without treating declarations as clearance.
+Owner-review/licensing, physical-robot and upgrade/rollback gates remain open;
+no previous-image findings are silently transferred to this one. A change to the
+recommended experimental download remains a separate owner decision.

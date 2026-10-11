@@ -17,6 +17,58 @@ spec.loader.exec_module(verifier)
 
 
 class RuntimeSbomTests(unittest.TestCase):
+    def test_guarded_spdx_bytes_require_exact_publisher_and_source(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            spdx, proof = root / 'spdx.json', root / 'proof.json'
+            document = {'spdxVersion': 'SPDX-2.3', 'SPDXID': 'SPDXRef-DOCUMENT'}
+            spdx.write_text(json.dumps(document))
+            for profile in sbom.GUARDED_DIGESTS:
+                statement = {'_type': 'https://in-toto.io/Statement/v1', 'predicateType': verifier.PREDICATE,
+                    'subject': [{'name': sbom.IMAGE, 'digest': {'sha256': sbom.GUARDED_DIGESTS[profile][7:]}}],
+                    'predicate': document}
+                proof.write_text(json.dumps({'dsseEnvelope': {'payload': base64.b64encode(json.dumps(statement).encode()).decode()}}))
+                def run(command, **kwargs):
+                    self.assertIn(verifier.PUBLISHER_WORKFLOW, command)
+                    self.assertIn(sbom.GUARDED_SOURCE, command)
+                    self.assertIn('--deny-self-hosted-runners', command)
+                    self.assertIn('--cert-oidc-issuer', command)
+                    return subprocess.CompletedProcess(command, 0, '[{"verificationResult":{"verified":true}}]', '')
+                with patch.object(verifier.subprocess, 'run', side_effect=run):
+                    report = verifier.verify(spdx, proof, profile, sbom.GUARDED_SOURCE, sbom.GUARDED_RELEASE)
+                    self.assertTrue(report['sbom_verified'])
+                    self.assertFalse(report['license_review_approved'])
+                with patch.object(verifier.subprocess, 'run') as run:
+                    for release, commit in ((sbom.GUARDED_RELEASE, 'a' * 40), (sbom.LEGACY_RELEASE, sbom.GUARDED_SOURCE), (sbom.AUDIO_RELEASE, sbom.AUDIO_SOURCE)):
+                        with self.assertRaises(ValueError):
+                            verifier.verify(spdx, proof, profile, commit, release)
+                    document['tampered'] = True
+                    spdx.write_text(json.dumps(document))
+                    with self.assertRaises(ValueError):
+                        verifier.verify(spdx, proof, profile, sbom.GUARDED_SOURCE, sbom.GUARDED_RELEASE)
+                    run.assert_not_called()
+                    del document['tampered']
+                    spdx.write_text(json.dumps(document))
+
+    def test_guarded_policy_is_explicit_and_rejects_cross_release_evidence(self):
+        for profile in sbom.GUARDED_DIGESTS:
+            document = self.fixture(profile)
+            metadata = document['source']['metadata']
+            metadata['manifestDigest'] = sbom.GUARDED_DIGESTS[profile]
+            metadata['labels']['org.opencontainers.image.revision'] = sbom.GUARDED_SOURCE
+            metadata['labels']['org.openjibo.ffmpeg-profile'] = 'audio'
+            report = sbom.review(document, profile, 'a' * 64, sbom.GUARDED_RELEASE)
+            self.assertEqual(report['source_commit'], sbom.GUARDED_SOURCE)
+            self.assertFalse(report['license_review_approved'])
+            for release in (sbom.LEGACY_RELEASE, sbom.AUDIO_RELEASE):
+                with self.assertRaises(ValueError):
+                    sbom.review(document, profile, 'a' * 64, release)
+            metadata['labels']['org.openjibo.ffmpeg-profile'] = 'distro'
+            with self.assertRaises(ValueError):
+                sbom.review(document, profile, 'a' * 64, sbom.GUARDED_RELEASE)
+        with self.assertRaises(ValueError):
+            sbom.release_policy(sbom.GUARDED_RELEASE, 'auto')
+
     def fixture(self, profile="portable"):
         return {"source": {"type": "image", "metadata": {
             "manifestDigest": sbom.DIGESTS[profile], "os": "linux", "architecture": "amd64",

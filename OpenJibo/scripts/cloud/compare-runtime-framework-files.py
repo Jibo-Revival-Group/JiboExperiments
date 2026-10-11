@@ -160,7 +160,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inventory", required=True)
     parser.add_argument("--cpu-profile", required=True, choices=sorted(policy.DIGESTS))
-    parser.add_argument("--release-version", choices=[policy.LEGACY_RELEASE, policy.AUDIO_RELEASE], default=policy.LEGACY_RELEASE)
+    parser.add_argument("--release-version", choices=policy.RELEASES, default=policy.LEGACY_RELEASE)
     parser.add_argument("--framework-tar", required=True)
     parser.add_argument("--hostfxr-tar", help="Optional separate TAR containing only the relocated libhostfxr.so")
     parser.add_argument("--output", required=True)

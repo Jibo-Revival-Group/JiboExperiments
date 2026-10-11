@@ -192,7 +192,7 @@ def collect(inventory, profile, output, fetch=False, downloader=download, verifi
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inventory", required=True)
-    parser.add_argument("--release-version", choices=[metadata.policy.LEGACY_RELEASE, metadata.policy.AUDIO_RELEASE],
+    parser.add_argument("--release-version", choices=metadata.policy.RELEASES,
                         default=metadata.policy.LEGACY_RELEASE)
     parser.add_argument("--cpu-profile", required=True, choices=sorted(metadata.policy.DIGESTS))
     parser.add_argument("--output")

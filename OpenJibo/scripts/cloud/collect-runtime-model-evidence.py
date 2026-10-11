@@ -65,7 +65,7 @@ def collect(inventory, profile, model_tar, output, release_version=policy.LEGACY
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inventory", required=True)
-    parser.add_argument("--release-version", choices=[policy.LEGACY_RELEASE, policy.AUDIO_RELEASE],
+    parser.add_argument("--release-version", choices=policy.RELEASES,
                         default=policy.LEGACY_RELEASE)
     parser.add_argument("--cpu-profile", required=True, choices=sorted(policy.DIGESTS))
     parser.add_argument("--model-tar", required=True)

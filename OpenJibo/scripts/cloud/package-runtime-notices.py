@@ -170,7 +170,7 @@ def main():
     parser.add_argument("--inventory", required=True)
     parser.add_argument("--cpu-profile", required=True, choices=sorted(policy.DIGESTS))
     parser.add_argument("--output", required=True)
-    parser.add_argument("--release-version", choices=[policy.LEGACY_RELEASE, policy.AUDIO_RELEASE], default=policy.LEGACY_RELEASE)
+    parser.add_argument("--release-version", choices=policy.RELEASES, default=policy.LEGACY_RELEASE)
     args = parser.parse_args()
     try:
         print(json.dumps(package(args.docs_tar, args.whisper_tar, args.common_tar, args.inventory,

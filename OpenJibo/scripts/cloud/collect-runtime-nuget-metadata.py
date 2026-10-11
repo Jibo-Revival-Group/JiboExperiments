@@ -140,7 +140,7 @@ def main():
     parser.add_argument("--inventory", required=True)
     parser.add_argument("--cpu-profile", required=True, choices=sorted(policy.DIGESTS))
     parser.add_argument("--output")
-    parser.add_argument("--release-version", choices=[policy.LEGACY_RELEASE, policy.AUDIO_RELEASE],
+    parser.add_argument("--release-version", choices=policy.RELEASES,
                         default=policy.LEGACY_RELEASE)
     parser.add_argument("--fetch", action="store_true", help="Fetch manifests from fixed nuget.org endpoint; otherwise plan only")
     args = parser.parse_args()

@@ -18,7 +18,23 @@ AUDIO_DIGESTS = {
     "portable": "sha256:e1b2aa06fc1f69bd498c5394388636331ba646abf2f39ca66ddcb6c0ee2697a9",
     "avx2": "sha256:5e051559692710205532ec27866d4eb5810e9e69685bfa8c6d3676948f7afb7c",
 }
+GUARDED_RELEASE = "runtime-preview-38165346370"
+GUARDED_SOURCE = "b9dd0de89dfdb7bea558c2ae0923eefd50758b52"
+GUARDED_DIGESTS = {
+    "portable": "sha256:f8f475c3ca78fb89e2a78b18e989e39dfb4e51dbe70c323bf3a4f7895eb98468",
+    "avx2": "sha256:e40b84cce0428fd75d2c2c938af587286253bee56caecd098b0d3e127c578881",
+}
+RELEASES = (LEGACY_RELEASE, AUDIO_RELEASE, GUARDED_RELEASE)
 MAX_BYTES = 64 * 1024 * 1024
+
+
+def release_policy(release_version, profile):
+    releases = {LEGACY_RELEASE: (SOURCE, DIGESTS), AUDIO_RELEASE: (AUDIO_SOURCE, AUDIO_DIGESTS),
+                GUARDED_RELEASE: (GUARDED_SOURCE, GUARDED_DIGESTS)}
+    if release_version not in releases or profile not in DIGESTS:
+        raise ValueError("Unreviewed release or CPU policy")
+    source, digests = releases[release_version]
+    return source, digests[profile]
 
 
 def load_inventory(path):
@@ -30,10 +46,7 @@ def load_inventory(path):
 
 
 def review(document, profile, sha256, release_version=LEGACY_RELEASE):
-    if release_version not in (LEGACY_RELEASE, AUDIO_RELEASE):
-        raise ValueError("Unreviewed release policy")
-    expected_source = SOURCE if release_version == LEGACY_RELEASE else AUDIO_SOURCE
-    digest = (DIGESTS if release_version == LEGACY_RELEASE else AUDIO_DIGESTS)[profile]
+    expected_source, digest = release_policy(release_version, profile)
     source = document.get("source", {})
     metadata = source.get("metadata", {})
     labels = metadata.get("labels", {})
@@ -46,7 +59,7 @@ def review(document, profile, sha256, release_version=LEGACY_RELEASE):
                 "https://github.com/transcendentsoftware-jd/JiboExperiments"
             or descriptor.get("name") != "syft" or descriptor.get("version") != "1.54.1"):
         raise ValueError("Inventory image, platform, source, profile or scanner does not match reviewed policy")
-    if release_version == AUDIO_RELEASE and labels.get("org.openjibo.ffmpeg-profile") != "audio":
+    if release_version != LEGACY_RELEASE and labels.get("org.openjibo.ffmpeg-profile") != "audio":
         raise ValueError("Audio preview configuration label does not match policy")
     packages = document.get("artifacts")
     if not isinstance(packages, list) or not packages or len(packages) > 100000:
@@ -88,7 +101,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inventory", required=True)
     parser.add_argument("--cpu-profile", choices=sorted(DIGESTS), required=True)
-    parser.add_argument("--release-version", choices=[LEGACY_RELEASE, AUDIO_RELEASE], default=LEGACY_RELEASE)
+    parser.add_argument("--release-version", choices=RELEASES, default=LEGACY_RELEASE)
     args = parser.parse_args()
     try:
         document, digest = load_inventory(args.inventory)

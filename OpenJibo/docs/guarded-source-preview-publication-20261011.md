@@ -96,12 +96,72 @@ New stacks, private environments and volumes are preserved alongside earlier
 tests. The starter regression suite passed 77 tests with two platform skips on
 Windows; the real preparations/launches above exercised native Linux paths.
 
+## Fresh backup/restore acceptance
+
+Both exact-digest synthetic stacks were backed up with their API stopped, using
+custom-format dumps of `openjibo_state` and `openjibo_memory`, a file-volume TAR
+and a private copy of the environment. Backup SHA-256 checks passed before
+restoration. Each restore used a fresh project/volumes and a separate loopback
+port (portable 8091, AVX2 8092), with no rebuild or floating runtime image.
+
+Both database restores completed. The two selected probe device rows matched
+before the restored API was started. The restored file-volume inventories also
+matched before startup: portable nine entries, AVX2 49 entries, comparing entry
+type/mode/size and SHA-256 of regular-file contents. This does not test a seeded
+personal-memory conversation, every database semantic or crash-consistent backup.
+
+Restored health, migrations and all sockets passed (545 / 546 ms). Three recorded
+cloud-version turns passed per profile through local Whisper: portable
+8373 / 7050 / 6775 ms; AVX2 3293 / 1082 / 1133 ms. Both restored APIs reported
+zero restarts and no OOM. Source APIs were returned to service. Only the two new
+restore projects' API/PostgreSQL containers were stopped after testing to spare
+laptop RAM; none of their containers or volumes was removed.
+
+Private backups remain on the laptop at
+`/home/jake-dubin/openjibo-guarded-backup-portable-38165346370` and
+`/home/jake-dubin/openjibo-guarded-backup-avx2-38165346370`. Test scripts and reports
+remain in `/home/jake-dubin/openjibo-guarded-tests.UPKrcp`; generated restore
+reports were copied locally to `artifact-output/guarded-restore-20261011/evidence/`.
+No private environment, database dump, volume archive or recording was copied
+to the workstation or published.
+
+## Fresh review packet, not approval
+
+Review tooling now accepts this release through a separate pinned policy, while
+preserving the earlier release identities/defaults. Cross-release inventories,
+wrong profiles, incorrect FFmpeg labels and untrusted sources fail closed.
+The SPDX verifier additionally compares the downloaded document to its exact
+signed predicate, then verifies that same signature snapshot with the fixed
+publisher workflow, build source, main ref and GitHub OIDC policy. Legacy
+evidence remains bound to its separate evidence workflow.
+
+Actual downloaded SPDX files passed these checks for both profiles. Their SHA-256
+values are portable `70b565da30cb31021768a0d8a5b42394ade45b6ba0b1724960e640717f5f7c0a`
+and AVX2 `5ffc0942291197dfbef6d3646110f94872bb745e803e487db85e3577f039c36b`.
+This verifies those SPDX bytes, not cryptographic coverage of their companion
+Syft JSON or complete dependency discovery.
+
+The separate Syft identity-policy checks report 210 inventory records per profile
+(98 deb, 93 dotnet, 13 binary, three Java and three npm), with 179 records lacking
+complete SPDX expression evidence. This is a scanner evidence gap, not a count
+of prohibited packages. Fresh read-only image-file copies produced 108 selected
+notice texts and 162 dependency-review entries per profile; 28 links were recorded
+without following them. Copies were limited to public software documentation and
+Whisper's LICENSE, not mounted application data.
+
+Each exact inventory also selected 53 NuGet identities and fetched their manifests
+from the fixed feed. The unsigned declarations were 33 MIT, 19 Apache-2.0 and one
+PostgreSQL per profile. This manifest-only packet does **not** verify package
+archive content hashes, complete notices or signature trust. Earlier package/model/
+framework findings are not inherited by these new image digests. Reports and
+review ZIPs are retained in `artifact-output/guarded-review-38165346370/` and on
+the laptop. The runtime evidence regression suite passed 63 offline tests.
+
 ## Remaining gates
 
 This establishes build/byte/provenance identity, not stable readiness,
-redistribution clearance or reproducible builds. Fresh backup/restore acceptance
-of these **new exact digests** remains to be run; the earlier image acceptance
-cannot be transferred automatically.
+redistribution clearance or reproducible builds. These fresh synthetic tests do
+not transfer acceptance to other image digests or upgrade an existing installation.
 Physical microphone/playback testing remains deferred.
 
 Notice completeness, native dependency and model terms, package signature trust
@@ -109,4 +169,6 @@ and complete-image corresponding-source review remain open. See the
 [earlier audio preview evidence](audio-preview-publication-20261011.md) for the
 separate prior-image notice and byte-linkage findings, not verification of the
 new inventories. The new release is explicitly selectable for experimental
-testing, not the site's recommended download or a stable channel.
+testing, not the site's recommended download or a stable channel. Changing the
+recommended experimental download is a separate owner decision; stable promotion
+still requires the outstanding review gates above.

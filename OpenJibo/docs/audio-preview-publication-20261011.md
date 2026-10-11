@@ -211,3 +211,21 @@ Candidate-specific bundles are retained as `nuget-notices-review.zip` beside
 each profile's `notices-review.zip` in
 `artifact-output/audio-candidate-notices-20261011/`. Existing evidence was not
 overwritten. No release assets, recommended downloads or deployments changed.
+
+### Candidate model-byte evidence (2026-10-11)
+
+The model collector also accepts only an explicitly selected candidate policy,
+keeping its legacy default. For each tested container, the inspected image ID
+matched the corresponding registry pin before `docker cp` copied only the model
+as a TAR stream. No process ran inside the containers and no service was stopped
+or restarted for this check. These were existing running test containers, not
+fresh stopped-image extractions; the collector does not attest acquisition or
+prove a container file was never modified.
+
+Both copied models matched the pinned expected size of 147,964,211 bytes and
+SHA-256 `a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002`.
+Reports bind each profile's inventory, source and digest. Raw inputs remain at
+`/home/jake-dubin/openjibo-candidate-model.z1gryk`; only the generated JSON reports
+were copied into each local candidate review directory as `model-review.json`.
+This proves byte equality with the reviewed publisher LFS digest, not signed
+publisher provenance, conversion reproducibility, accuracy or terms clearance.

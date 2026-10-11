@@ -40,14 +40,15 @@ def hash_model(path):
     return actual
 
 
-def collect(inventory, profile, model_tar, output):
+def collect(inventory, profile, model_tar, output, release_version=policy.LEGACY_RELEASE):
     if Path(output).exists():
         raise ValueError("Select a fresh output")
     document, inventory_hash = policy.load_inventory(inventory)
-    identity = policy.review(document, profile, inventory_hash)
+    identity = policy.review(document, profile, inventory_hash, release_version)
     digest = hash_model(model_tar)
     report = {"schema_version": 1, "runtime_image": identity["runtime_image"],
-              "cpu_profile": profile, "source_commit": policy.SOURCE,
+              "cpu_profile": profile, "source_commit": identity["source_commit"],
+              "release_version": release_version,
               "syft_json_sha256": inventory_hash, "model_path": MODEL,
               "model_size": EXPECTED_SIZE, "model_sha256": digest,
               "reviewed_publisher_lfs_sha256_matched": True,
@@ -55,7 +56,7 @@ def collect(inventory, profile, model_tar, output):
               "publisher_metadata_observed_date": "2026-10-11",
               "publisher_signature_verified": False, "model_license_review_approved": False,
               "license_review_approved": False, "stable_promotion_allowed": False,
-              "scope": "Stopped-image model bytes match a reviewed SHA-256/size from the publisher's HTTPS LFS metadata. No model loading, runtime execution, cryptographic publisher-signature verification, conversion reproducibility, model accuracy certification or legal approval. The main-branch metadata URL is mutable; expected bytes are pinned in reviewed tooling."}
+              "scope": "Copied model-file bytes match a reviewed SHA-256/size from the publisher's HTTPS LFS metadata. This collector does not attest how the TAR was obtained or prove the file was never modified in a container. No model loading, runtime execution, cryptographic publisher-signature verification, conversion reproducibility, model accuracy certification or legal approval. The main-branch metadata URL is mutable; expected bytes are pinned in reviewed tooling."}
     with Path(output).open("x", encoding="utf-8") as stream:
         json.dump(report, stream, indent=2, sort_keys=True)
     return report
@@ -64,12 +65,15 @@ def collect(inventory, profile, model_tar, output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inventory", required=True)
+    parser.add_argument("--release-version", choices=[policy.LEGACY_RELEASE, policy.AUDIO_RELEASE],
+                        default=policy.LEGACY_RELEASE)
     parser.add_argument("--cpu-profile", required=True, choices=sorted(policy.DIGESTS))
     parser.add_argument("--model-tar", required=True)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     try:
-        print(json.dumps(collect(args.inventory, args.cpu_profile, args.model_tar, args.output), sort_keys=True))
+        print(json.dumps(collect(args.inventory, args.cpu_profile, args.model_tar, args.output,
+                                 args.release_version), sort_keys=True))
     except (OSError, ValueError, TypeError, AttributeError, KeyError, tarfile.TarError):
         parser.exit(1, "Model evidence failed; no distribution approval recorded.\n")
 

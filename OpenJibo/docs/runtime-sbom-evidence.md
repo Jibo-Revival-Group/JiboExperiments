@@ -236,6 +236,24 @@ this first run predates SBOM signing and makes no signature claim.
 
 ## Signed inventory acceptance
 
+### Nonexecuting FFmpeg configuration collection
+
+`collect-ffmpeg-build-evidence.py` reads the concrete `libavutil.so.58.29.100`
+file copied from the stopped, digest-pinned runtime container. It checks the
+reviewed inventory identity, exact Ubuntu package version, ELF64/x86-64 header,
+and the package metadata's MD5 before preserving a SHA-256 and one unambiguous,
+NUL-delimited embedded ASCII configuration. MD5 provides metadata consistency
+only, not cryptographic authenticity. The collector never executes or loads the
+library, interprets configuration as shell commands, or extracts the TAR to disk.
+
+The evidence workflow collects this separately for portable and AVX2 images.
+Observed `--enable-gpl`, `--enable-version3`, `--enable-nonfree`, and
+`--enable-shared` switches are literal configuration evidence, not a legal
+classification or proof of complete corresponding source. A missing switch is
+not evidence that every linked dependency is permissively licensed. Actual-image
+results must be reviewed before this gap is considered narrowed; stable promotion
+and license approval remain false.
+
 [Run 38107600594](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38107600594)
 passed scanning, signing and workflow-local verification for both profiles.
 The trusted evidence-tooling commit is

@@ -94,6 +94,8 @@ jobs:
           python3 -B -m unittest discover -s tests -p test_runtime_nuget_notices.py
       - name: Validate bounded FFmpeg source evidence
         run: python3 -B -m unittest discover -s tests -p test_runtime_ffmpeg_source.py
+      - name: Validate nonexecuting FFmpeg configuration evidence
+        run: python3 -B -m unittest discover -s tests -p test_runtime_ffmpeg_build.py
 
       - name: Validate Docker build context privacy
         run: python3 -B -m unittest discover -s tests -p test_docker_build_context.py

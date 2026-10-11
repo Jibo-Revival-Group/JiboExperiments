@@ -71,3 +71,48 @@ Ogg/Opus turns synthesized on the runner. Successful transcripts must use the
 warm local Whisper server and return the cloud-version response contract. CI
 stack volumes are removed after the job; operator installations are untouched.
 This adds acoustic/protocol integration evidence without publishing an image.
+
+## Acceptance evidence, 2026-10-11
+
+[Isolated run 38137698853](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38137698853)
+passed source-signature verification, compilation, all four conversions and
+invalid-input rejection. Each output had 23,833 samples and normalized RMSE 0
+against the distro reference. The retained reference/output WAVs were compared
+again locally; source archive/signature/key hashes were checked independently.
+Local GPG verification against the published fingerprint passed, and a real
+wrong-file signature check was rejected. This is fingerprint-pinned signature
+verification, not a claim of independent web-of-trust certification.
+
+The initial isolated run failed a tone-only duration assertion even for its
+distro reference. That test was repaired to include the stop-detection interval;
+the comparison tolerances were not loosened. The initial full integration run
+built both profiles and passed sockets, but the short synthetic recording had
+too few Ogg pages for the unchanged robot probe. Explicit 100 ms Ogg pages fixed
+the fixture. These failures were test-fixture defects, not passing runtime
+acceptance results; their workflow records remain available.
+
+[Full run 38138200421](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38138200421)
+passed portable and AVX2 candidates at source commit
+`3b2e5984b8dc3a563e20568a2322d59773a20ed5`. Each profile passed two authenticated
+synthetic robot notification/listen/proactive socket checks and three acoustic
+turns returning `LISTEN`, `EOS`, `SKILL_ACTION`. Each turn matched the phrase
+and cloud-version instruction. Azure Speech was disabled and each profile logged
+three `whisper-server-buffered-audio` transcript successes.
+
+| Profile | Local build image ID (not a pullable registry digest) | Acoustic turn times |
+| --- | --- | --- |
+| Portable | `sha256:e0b70c787956389b446d03608bd853f65e1a504222bd61ddff7d2ffe76a053e6` | 8400, 6992, 6609 ms |
+| AVX2 | `sha256:0a93a4767135266336a2ea90a3126198bd43a4e8f512d1272f5e6540fc96d8a6` | 2032, 894, 1179 ms |
+
+Downloaded evidence is preserved in
+`artifact-output/ffmpeg-speech-candidate-38138200421/`. Independent local checks
+confirmed both socket reports, the audio FFmpeg configuration and the expected
+base.en model SHA-256. Timings are runner observations, not new capacity guarantees
+or a claim that FFmpeg caused the Whisper CPU-profile performance difference.
+
+The code commit's full default-profile CI
+[38138200202](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38138200202)
+also passed. Publication remains a separate decision: a newly published preview
+needs fresh digest/provenance/inventory checks and Ubuntu install acceptance.
+Do not substitute these ephemeral image IDs for published OCI digests. No old
+preview tags/digests, stable release or deployment was changed.

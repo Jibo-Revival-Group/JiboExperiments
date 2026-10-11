@@ -109,6 +109,13 @@ class PublicSiteTests(unittest.TestCase):
         for version in ('runtime-preview-37540893708', 'runtime-preview-38139481435'):
             self.assertIn('/releases/tag/' + version, page)
 
+    def test_unprovisioned_cloud_domain_is_not_a_live_signup_link(self):
+        page = (ROOT / 'index.html').read_text(encoding='utf-8')
+        self.assertIn('cloud.openjibo.com', page)
+        self.assertIn('public DNS setup is still', page)
+        self.assertNotIn('href="https://cloud.openjibo.com/', page)
+        self.assertIn('does not promise public signup or pricing', page)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -23,6 +23,10 @@ SIGNED_VERSION = "runtime-preview-37540893708"
 SIGNED_SHA256 = "5e38ef4e26920db0909f407ef7b53ac49ecd8d63f33dc9f631ca32f10ac66210"
 SIGNED_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:6bb69fd68d2c4863feaf17fd90319125ed1534f8cf728a4070ce04ee116c6010"
 SIGNED_SOURCE_COMMIT = "fd32678bb29ade975c71a9bcd7dc7a89babaf541"
+AUDIO_VERSION = "runtime-preview-38139481435"
+AUDIO_SHA256 = "42e967f6863b3f6a6ddd0cf7756f7ac840fb14f7326e928c0e9a73028a1c1b01"
+AUDIO_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:e1b2aa06fc1f69bd498c5394388636331ba646abf2f39ca66ddcb6c0ee2697a9"
+AUDIO_SOURCE_COMMIT = "0b7b56345177156a7da830cfc22c478b5f2b9c80"
 
 
 class ProvenancePrerequisiteError(ValueError):
@@ -42,6 +46,10 @@ def check_provenance_cli():
 
 
 def release_identity(version):
+    if version == AUDIO_VERSION:
+        return dict(version=version, archive_sha256=AUDIO_SHA256, runtime_image=AUDIO_IMAGE,
+                    source_commit=AUDIO_SOURCE_COMMIT, release_zip_attested=True,
+                    url=f"https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/{version}/starter-portable-preview.zip")
     if version == VERSION:
         return dict(version=version, archive_sha256=SHA256, runtime_image=IMAGE,
                     source_commit=SOURCE_COMMIT, release_zip_attested=False, url=URL)
@@ -150,7 +158,7 @@ def prepare(data, destination, require_provenance=False, attestation=None, versi
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--channel", required=True, choices=["preview"])
-    parser.add_argument("--version", required=True, choices=[VERSION, SIGNED_VERSION])
+    parser.add_argument("--version", required=True, choices=[VERSION, SIGNED_VERSION, AUDIO_VERSION])
     parser.add_argument("--destination", required=True, type=Path)
     parser.add_argument("--bundle", type=Path, help="Optional local copy of this exact release ZIP")
     parser.add_argument("--plan", action="store_true", help="Print pinned identity without downloading or writing")

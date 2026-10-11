@@ -83,6 +83,22 @@ class LauncherTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 launcher.checked_files(self.target)
 
+    def test_audio_manifest_is_separate_and_immutable(self):
+        archive = self.base / 'audio-fixture.zip'
+        builder.write_bundle(ROOT, launcher.AUDIO_IMAGE, archive)
+        self.target = self.base / 'audio-prepared'
+        with zipfile.ZipFile(archive) as source:
+            source.extractall(self.target)
+        raw = (self.target / 'MANIFEST.json').read_bytes()
+        with patch.object(launcher, 'AUDIO_MANIFEST_SHA256', hashlib.sha256(raw).hexdigest()):
+            self.assertEqual(launcher.checked_files(self.target), self.target)
+            _, report = self.check_with()
+            self.assertEqual(report['version'], 'runtime-preview-38139481435')
+            self.assertEqual(report['runtime_image'], launcher.AUDIO_IMAGE)
+        (self.target / 'MANIFEST.json').write_text('{}')
+        with self.assertRaises(ValueError):
+            launcher.checked_files(self.target)
+
     @unittest.skipIf(sys.platform == "win32", "Native Linux symlink contract")
     def test_symlink_rejected(self):
         (self.target / "extra").symlink_to(self.base)

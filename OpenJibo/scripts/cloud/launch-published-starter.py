@@ -20,12 +20,15 @@ MANIFEST_SHA256 = "d68cf6afee940d77e59b862da3566f94fbc163c6619f4c1f62f9b4870da3a
 IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:08b3e27362f47373696158ec619d9ac21e44e7bcf5995bce049b6dbac70d970b"
 SIGNED_MANIFEST_SHA256 = "c9ceaedd1339721a7fa1a32b64990623633a2abc2617ed6242be973079f38b86"
 SIGNED_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:6bb69fd68d2c4863feaf17fd90319125ed1534f8cf728a4070ce04ee116c6010"
+AUDIO_MANIFEST_SHA256 = "e0b04a517ce103ad0615b21cbcc51cc8ac4602db81fb796976ad3f0069bd2381"
+AUDIO_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:e1b2aa06fc1f69bd498c5394388636331ba646abf2f39ca66ddcb6c0ee2697a9"
 
 
 def manifest_identity(raw):
     approved = {
         MANIFEST_SHA256: ("runtime-preview-36863178102", IMAGE),
         SIGNED_MANIFEST_SHA256: ("runtime-preview-37540893708", SIGNED_IMAGE),
+        AUDIO_MANIFEST_SHA256: ("runtime-preview-38139481435", AUDIO_IMAGE),
     }
     identity = approved.get(hashlib.sha256(raw).hexdigest())
     if identity is None:

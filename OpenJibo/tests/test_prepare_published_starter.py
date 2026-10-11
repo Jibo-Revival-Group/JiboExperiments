@@ -24,6 +24,23 @@ builder = load("published_builder", ROOT / "OpenJibo/scripts/cloud/prepare-openj
 
 
 class PublishedStarterTests(unittest.TestCase):
+    def test_audio_candidate_is_explicit_and_always_signed(self):
+        identity = installer.release_identity(installer.AUDIO_VERSION)
+        self.assertTrue(identity['release_zip_attested'])
+        self.assertEqual(identity['runtime_image'], installer.AUDIO_IMAGE)
+        self.assertEqual(identity['archive_sha256'], installer.AUDIO_SHA256)
+        self.assertNotEqual(installer.AUDIO_IMAGE, installer.SIGNED_IMAGE)
+        with tempfile.TemporaryDirectory() as temp:
+            bundle = Path(temp) / 'audio.zip'
+            builder.write_bundle(ROOT, installer.AUDIO_IMAGE, bundle)
+            data = bundle.read_bytes()
+            target = Path(temp) / 'new'
+            with patch.object(installer, 'AUDIO_SHA256', hashlib.sha256(data).hexdigest()), patch.object(installer, 'verify_provenance', side_effect=ValueError('invalid signature')) as verify:
+                with self.assertRaises(ValueError):
+                    installer.prepare(data, target, version=installer.AUDIO_VERSION)
+                verify.assert_called_once_with(data, None, installer.AUDIO_VERSION)
+            self.assertFalse(target.exists())
+
     def test_old_cli_is_identified_as_prerequisite_failure(self):
         for result in (subprocess.CompletedProcess([], 1, "", 'unknown command "attestation"'),
                        subprocess.CompletedProcess([], 0, "--source-digest", "")):

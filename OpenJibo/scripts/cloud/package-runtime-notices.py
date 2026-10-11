@@ -114,9 +114,9 @@ def collect(data, whisper=False, common=False):
     return notices, links
 
 
-def package(docs_tar, whisper_tar, common_tar, inventory, profile, output):
+def package(docs_tar, whisper_tar, common_tar, inventory, profile, output, release_version=policy.LEGACY_RELEASE):
     document, inventory_hash = policy.load_inventory(inventory)
-    review = policy.review(document, profile, inventory_hash)
+    review = policy.review(document, profile, inventory_hash, release_version)
     docs = read_tar(docs_tar)
     whisper = read_tar(whisper_tar)
     common = read_tar(common_tar)
@@ -129,13 +129,13 @@ def package(docs_tar, whisper_tar, common_tar, inventory, profile, output):
         raise ValueError("Combined notice collection exceeds size limit")
     checklist = dependency_checklist(document, notices)
     checklist.update(runtime_image=review["runtime_image"], syft_json_sha256=inventory_hash,
-                     source_commit=policy.SOURCE, cpu_profile=profile)
+                     source_commit=review["source_commit"], cpu_profile=profile, release_version=release_version)
     checklist_bytes = json.dumps(checklist, indent=2, sort_keys=True).encode("utf-8")
     if len(checklist_bytes) > MAX_TOTAL:
         raise ValueError("Dependency checklist exceeds size limit")
     manifest = {
         "schema_version": 1, "runtime_image": review["runtime_image"],
-        "cpu_profile": profile, "source_commit": policy.SOURCE,
+        "cpu_profile": profile, "source_commit": review["source_commit"], "release_version": release_version,
         "syft_json_sha256": inventory_hash,
         "dependency_review_sha256": hashlib.sha256(checklist_bytes).hexdigest(),
         "input_tar_sha256": {"docs": hashlib.sha256(docs).hexdigest(),
@@ -170,10 +170,11 @@ def main():
     parser.add_argument("--inventory", required=True)
     parser.add_argument("--cpu-profile", required=True, choices=sorted(policy.DIGESTS))
     parser.add_argument("--output", required=True)
+    parser.add_argument("--release-version", choices=[policy.LEGACY_RELEASE, policy.AUDIO_RELEASE], default=policy.LEGACY_RELEASE)
     args = parser.parse_args()
     try:
         print(json.dumps(package(args.docs_tar, args.whisper_tar, args.common_tar, args.inventory,
-                                 args.cpu_profile, args.output), sort_keys=True))
+                                 args.cpu_profile, args.output, args.release_version), sort_keys=True))
     except (OSError, ValueError, TypeError, AttributeError, tarfile.TarError):
         parser.exit(1, "Notice packaging failed; preserve inputs and inspect the bounded archive/image policy.\n")
 

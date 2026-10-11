@@ -35,6 +35,26 @@ class RuntimeSbomTests(unittest.TestCase):
             self.assertFalse(result["license_review_approved"])
             self.assertFalse(result["stable_promotion_allowed"])
 
+    def test_audio_policy_is_explicit_and_cannot_replace_legacy(self):
+        for profile in sbom.AUDIO_DIGESTS:
+            document = self.fixture(profile)
+            metadata = document['source']['metadata']
+            metadata['manifestDigest'] = sbom.AUDIO_DIGESTS[profile]
+            metadata['labels']['org.opencontainers.image.revision'] = sbom.AUDIO_SOURCE
+            metadata['labels']['org.openjibo.ffmpeg-profile'] = 'audio'
+            result = sbom.review(document, profile, 'a' * 64, sbom.AUDIO_RELEASE)
+            self.assertEqual(result['release_version'], sbom.AUDIO_RELEASE)
+            self.assertFalse(result['stable_promotion_allowed'])
+            with self.assertRaises(ValueError):
+                sbom.review(document, profile, 'a' * 64)
+            metadata['labels']['org.openjibo.ffmpeg-profile'] = 'distro'
+            with self.assertRaises(ValueError):
+                sbom.review(document, profile, 'a' * 64, sbom.AUDIO_RELEASE)
+            with self.assertRaises(ValueError):
+                sbom.review(self.fixture(profile), profile, 'a' * 64, sbom.AUDIO_RELEASE)
+        with self.assertRaises(ValueError):
+            sbom.review(self.fixture(), 'portable', 'a' * 64, 'latest')
+
     def test_rejects_wrong_identity_platform_or_scanner(self):
         for key, value in [("manifestDigest", "sha256:" + "a" * 64), ("os", "windows"),
                            ("architecture", "arm64")]:

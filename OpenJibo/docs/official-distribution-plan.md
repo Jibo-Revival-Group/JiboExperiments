@@ -281,8 +281,14 @@ and existing published images while validating a restricted, source-pinned build
 This selection is not stable approval or a waiver of redistribution obligations.
 The isolated converter and both full portable/AVX2 acoustic/socket candidates
 have since passed, with retained evidence in that experiment record. A new
-preview publication, digest/provenance/inventory verification and Ubuntu
-acceptance are the next candidate gates; the publication default is unchanged.
+preview publication and independent digest/provenance/signed-inventory checks
+have now passed. Both portable and explicitly selected AVX2 published starters
+passed native Ubuntu acceptance over SSH, including recorded audio, restart
+persistence and sockets. AVX2 additionally passed two-client overlap and a
+second phrase. The [new candidate record](audio-preview-publication-20261011.md)
+preserves the exact identities, observations and candidate-specific owner-review
+bundles. Publication/build defaults and existing deployments are unchanged;
+this remains experimental, not stable or the site's recommended default.
 
 This advances D2 evidence, not stable approval. Next technical work is completing
 notice coverage, source/build and model linkage, and preparing the exact-image

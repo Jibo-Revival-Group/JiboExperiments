@@ -81,8 +81,8 @@ node OpenJibo/src/Jibo.Cloud/node/invoke-real-audio-probe.mjs \
 Expected: signed preparation, health pass, both synthetic robots connect to all
 three socket types, and all three acoustic turns match the phrase and return
 `LISTEN`, `EOS`, `SKILL_ACTION`. Portable timing is not expected to match AVX2.
-Next gates: fresh AVX2 starter integration/acceptance, remaining
-distribution notice/source review, and then separately approved release promotion.
+Both profiles' acceptance results are recorded below. Remaining gates are
+distribution notice/source review and separately approved release promotion.
 
 ## Native Ubuntu acceptance — passed over SSH
 
@@ -117,3 +117,68 @@ copied. The new project remains available for further inspection; no old stack
 was restarted or modified. This establishes portable fresh-install, recorded
 audio, restart and device-row persistence acceptance—not a new backup/restore,
 AVX2 published-starter, physical-robot or license-clearance result.
+
+## Published AVX2 native Ubuntu acceptance — passed
+
+The explicitly selected signed AVX2 ZIP was installed with the guarded launcher
+on 2026-10-11, using the same Ubuntu laptop. All eight local logical processors
+passed the feature check. Docker selected `unix:///var/run/docker.sock` and the
+host's Docker service had a running PID; the same-host confirmation was made
+for this inspected machine, not a remote daemon.
+
+Fresh directory:
+`/home/jake-dubin/Downloads/openjibo-avx2-ssh-20261011T162232Z`.
+Project: `openjibo-avx2-ssh-20261011162232`, loopback port 8088.
+Signed preparation, preflight and health passed. Azure Speech was disabled.
+Both authenticated robots passed all three socket types in 595 ms.
+
+Ten sequential cloud-version acoustic turns all passed: 2632 ms first turn,
+then 987–1659 ms warm turns (median 1094 ms). Two simultaneous clients passed
+five turns each in 957–1383 ms. A second, separately hash-checked recording
+matched `quick brown fox lazy dog time` in all three transcription turns,
+548, 590 and 587 ms. Replies were `LISTEN`, `EOS`, `SKILL_ACTION` for cloud-version
+and `LISTEN`, `EOS` for transcription. Overlap logs confirmed ten local Whisper
+successes. No OOM or automatic restart occurred; post-test RAM was 335.1 MiB,
+not a peak or a capacity certification.
+
+The initial overlap invocation used IDs lacking the required
+`speech-acceptance-` prefix and was rejected before audio was sent. It is retained
+as a failed probe invocation, not a runtime failure. Corrected IDs passed.
+Only the new API was stopped and its PostgreSQL restarted. Both device rows
+survived while the API was stopped; health recovered after one startup retry
+and all sockets passed again in 549 ms. The image ID matched the AVX2 pin.
+
+Results: `/home/jake-dubin/openjibo-avx2-ssh-results.XeXn9A`, copied to
+`artifact-output/ubuntu-avx2-preview-20261011/`. Existing stacks/backups were
+untouched. Neither profile's published acoustic acceptance certifies physical
+robot input/playback, additional speakers/noise, backup/restore, or licensing.
+
+## Candidate-specific owner-review packet
+
+The reviewer now accepts an explicitly selected `--release-version
+runtime-preview-38139481435` policy with these exact new image/source/profile
+pins and the audio FFmpeg label. Legacy defaults and digest policies remain
+unchanged; wrong-release and wrong-profile inputs are rejected.
+
+Both inventories have 210 records and 179 without a complete scanner SPDX
+expression. This is an evidence-completeness finding, not a count of prohibited
+components. License-text trees were copied read-only from the exact tested
+containers; no settings, databases, secrets or recordings were copied.
+Bounded notice packaging retained 108 notice files, 28 unfollowed links and
+162 grouped review entries per profile. No links were extracted/followed and
+no component was marked approved. FFmpeg's separate source/build/license evidence
+is retained in the image and publisher artifacts, not inferred from a scanner
+license string.
+
+The bundles are at
+`artifact-output/audio-candidate-notices-20261011/portable/notices-review.zip`
+and `artifact-output/audio-candidate-notices-20261011/avx2/notices-review.zip`.
+Each contains `dependency-review.json` and a source/digest-bound `manifest.json`.
+Remote raw inputs remain at
+`/home/jake-dubin/openjibo-candidate-notices-20261011T162811Z`.
+
+Owner review is required before these images become the recommended default or
+stable release. Open technical evidence still includes exact-candidate NuGet
+notice/content linkage, native source/build completeness and model conversion/
+terms linkage. Do not use the old images' supplemental evidence as approval for
+the new digests, or treat owner approval as filling those technical gaps.

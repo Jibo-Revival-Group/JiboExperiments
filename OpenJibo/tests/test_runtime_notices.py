@@ -134,6 +134,21 @@ class RuntimeNoticesTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 notices.package(docs, whisper, common, inventory, "avx2", root / "wrong.zip")
             self.assertFalse((root / "wrong.zip").exists())
+            candidate = json.loads(inventory.read_text())
+            metadata = candidate['source']['metadata']
+            metadata['manifestDigest'] = notices.policy.AUDIO_DIGESTS['portable']
+            metadata['labels']['org.opencontainers.image.revision'] = notices.policy.AUDIO_SOURCE
+            metadata['labels']['org.openjibo.ffmpeg-profile'] = 'audio'
+            inventory.write_text(json.dumps(candidate))
+            with self.assertRaises(ValueError):
+                notices.package(docs, whisper, common, inventory, 'portable', root / 'legacy-mismatch.zip')
+            candidate_output = root / 'candidate.zip'
+            notices.package(docs, whisper, common, inventory, 'portable', candidate_output, notices.policy.AUDIO_RELEASE)
+            with zipfile.ZipFile(candidate_output) as bundle:
+                manifest = json.loads(bundle.read('manifest.json'))
+                self.assertEqual(manifest['source_commit'], notices.policy.AUDIO_SOURCE)
+                self.assertEqual(manifest['release_version'], notices.policy.AUDIO_RELEASE)
+                self.assertFalse(manifest['stable_promotion_allowed'])
 
 
 if __name__ == "__main__":

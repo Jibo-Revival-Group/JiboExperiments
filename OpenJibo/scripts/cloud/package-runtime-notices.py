@@ -25,6 +25,58 @@ def read_tar(path):
     return data
 
 
+def dependency_checklist(document, notice_files):
+    """Group identical review evidence, not names alone; never infer approval."""
+    groups = {}
+    for package in document["artifacts"]:
+        metadata = package.get("metadata", {})
+        if metadata is None:
+            metadata = {}
+        if not isinstance(metadata, dict):
+            raise ValueError("Malformed package metadata")
+        identity = {}
+        for field in ("name", "version", "type", "purl"):
+            value = package.get(field, "")
+            if value is None:
+                value = ""
+            if not isinstance(value, str) or len(value) > 4096:
+                raise ValueError("Malformed package identity")
+            identity[field] = value
+        item = {"identity": identity, "review_status": "unreviewed",
+                "scanner_license_declarations": package.get("licenses", []),
+                "copied_notice": None, "source_verified": False}
+        if identity["type"] == "deb":
+            source = {}
+            for target, field, fallback in (("name", "source", identity["name"]),
+                                             ("version", "sourceVersion", identity["version"])):
+                value = metadata.get(field, "")
+                if not isinstance(value, str) or len(value) > 4096:
+                    raise ValueError("Malformed source metadata")
+                source[target] = {"value": value or fallback,
+                                  "basis": "scanner_metadata" if value else "inferred_binary_fallback"}
+            item["source_candidate"] = source
+            name = identity["name"]
+            if re.fullmatch(r"[a-z0-9][a-z0-9+.-]*", name):
+                candidate = "notices/doc/" + name + "/copyright"
+                if candidate in notice_files:
+                    item["copied_notice"] = candidate
+            item["required_check"] = "Verify exact distro source, patches/build configuration and notice coverage"
+        elif identity["type"] == "dotnet":
+            item["component_kind"] = ("nuget_package_metadata" if metadata.get("type") == "package"
+                                      and identity["purl"].startswith("pkg:nuget/") else "dotnet_record_unclassified")
+            item["required_check"] = "Verify package/framework/project identity, exact terms and required notices"
+        else:
+            item["required_check"] = "Verify shipped component identity, source and notice coverage"
+        key = json.dumps(item, sort_keys=True)
+        if key not in groups:
+            groups[key] = dict(item, inventory_record_count=0)
+        groups[key]["inventory_record_count"] += 1
+    return {"schema_version": 1, "inventory_record_count": len(document["artifacts"]),
+            "review_entry_count": len(groups), "entries": [groups[key] for key in sorted(groups)],
+            "license_review_approved": False,
+            "scope": "Offline review checklist. Matching notice paths are not completeness evidence. Source candidates are not verified corresponding source; no links are fetched or code executed."}
+
+
 def collect(data, whisper=False, common=False):
     notices, links, seen = {}, [], set()
     with tarfile.open(fileobj=io.BytesIO(data), mode="r:") as archive:
@@ -75,10 +127,17 @@ def package(docs_tar, whisper_tar, common_tar, inventory, profile, output):
     notices.update(shared)
     if sum(map(len, notices.values())) > MAX_TOTAL:
         raise ValueError("Combined notice collection exceeds size limit")
+    checklist = dependency_checklist(document, notices)
+    checklist.update(runtime_image=review["runtime_image"], syft_json_sha256=inventory_hash,
+                     source_commit=policy.SOURCE, cpu_profile=profile)
+    checklist_bytes = json.dumps(checklist, indent=2, sort_keys=True).encode("utf-8")
+    if len(checklist_bytes) > MAX_TOTAL:
+        raise ValueError("Dependency checklist exceeds size limit")
     manifest = {
         "schema_version": 1, "runtime_image": review["runtime_image"],
         "cpu_profile": profile, "source_commit": policy.SOURCE,
         "syft_json_sha256": inventory_hash,
+        "dependency_review_sha256": hashlib.sha256(checklist_bytes).hexdigest(),
         "input_tar_sha256": {"docs": hashlib.sha256(docs).hexdigest(),
                              "whisper": hashlib.sha256(whisper).hexdigest(),
                              "common_licenses": hashlib.sha256(common).hexdigest()},
@@ -95,8 +154,10 @@ def package(docs_tar, whisper_tar, common_tar, inventory, profile, output):
     with zipfile.ZipFile(output, "x", compression=zipfile.ZIP_DEFLATED) as bundle:
         for name, data in sorted(notices.items()):
             bundle.writestr(name, data)
+        bundle.writestr("dependency-review.json", checklist_bytes)
         bundle.writestr("manifest.json", json.dumps(manifest, indent=2, sort_keys=True))
     return {"packaged": True, "notice_count": len(notices),
+            "dependency_review_entry_count": checklist["review_entry_count"],
             "unfollowed_link_count": len(links) + len(native_links) + len(shared_links),
             "runtime_image": review["runtime_image"], "license_review_approved": False}
 

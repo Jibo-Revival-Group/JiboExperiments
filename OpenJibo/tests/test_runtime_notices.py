@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -29,6 +30,32 @@ def archive(entries):
 
 
 class RuntimeNoticesTests(unittest.TestCase):
+    def test_checklist_preserves_versions_and_source_evidence(self):
+        first = {"name": "libtest", "version": "1", "type": "deb", "licenses": []}
+        second = dict(first, version="2", metadata={"source": "test-src", "sourceVersion": "2-1"})
+        result = notices.dependency_checklist({"artifacts": [first, first, second]},
+                                              {"notices/doc/libtest/copyright": b"text"})
+        self.assertEqual(result["inventory_record_count"], 3)
+        self.assertEqual(result["review_entry_count"], 2)
+        entries = {entry["identity"]["version"]: entry for entry in result["entries"]}
+        self.assertEqual(entries["1"]["inventory_record_count"], 2)
+        self.assertEqual(entries["1"]["source_candidate"]["name"]["basis"], "inferred_binary_fallback")
+        self.assertEqual(entries["2"]["source_candidate"]["version"]["value"], "2-1")
+        self.assertFalse(entries["2"]["source_verified"])
+        self.assertEqual(entries["1"]["copied_notice"], "notices/doc/libtest/copyright")
+
+    def test_checklist_does_not_hide_differing_license_evidence_or_guess_nuget(self):
+        base = {"name": "Jibo.Cloud", "version": "1", "type": "dotnet", "licenses": []}
+        other = dict(base, licenses=[{"value": "MIT"}])
+        result = notices.dependency_checklist({"artifacts": [base, other]}, {})
+        self.assertEqual(result["review_entry_count"], 2)
+        self.assertTrue(all(e["component_kind"] == "dotnet_record_unclassified" for e in result["entries"]))
+        hostile = {"name": "../test", "version": "1", "type": "deb"}
+        entry = notices.dependency_checklist({"artifacts": [hostile]}, {})["entries"][0]
+        self.assertIsNone(entry["copied_notice"])
+        with self.assertRaises(ValueError):
+            notices.dependency_checklist({"artifacts": [dict(base, metadata=[])]}, {})
+
     def test_selects_copyright_without_extracting_or_following_links(self):
         content = archive([("doc/libtest/copyright", b"License text", "file"),
                            ("doc/other", b"", "link"), ("doc/libtest/README", b"ignored", "file")])
@@ -97,6 +124,9 @@ class RuntimeNoticesTests(unittest.TestCase):
                 manifest = json.loads(bundle.read("manifest.json"))
                 self.assertFalse(manifest["stable_promotion_allowed"])
                 self.assertEqual(manifest["source_commit"], notices.policy.SOURCE)
+                checklist_bytes = bundle.read("dependency-review.json")
+                self.assertEqual(manifest["dependency_review_sha256"], hashlib.sha256(checklist_bytes).hexdigest())
+                self.assertEqual(json.loads(checklist_bytes)["inventory_record_count"], 1)
             original = output.read_bytes()
             with self.assertRaises(FileExistsError):
                 notices.package(docs, whisper, common, inventory, "portable", output)

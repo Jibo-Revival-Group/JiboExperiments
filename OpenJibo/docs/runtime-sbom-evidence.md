@@ -112,6 +112,18 @@ and [Anchore scanner action](https://github.com/anchore/sbom-action).
 
 ## Remaining gates
 
+The notice-review bundle now includes an offline `dependency-review.json`,
+bound to the exact image and inventory hash and hashed in its manifest. It
+groups identical identity/license/source evidence while retaining versions,
+different declarations and original record counts. Debian source names and
+versions explicitly distinguish scanner metadata from inferred binary-package
+fallbacks; neither is marked verified corresponding source. A copied copyright
+path is an inspection aid, not proof of complete notices. .NET records are only
+classified as NuGet package metadata when the scanner supplies both package
+type and a NuGet package identifier; other assemblies remain unclassified.
+All entries start unreviewed. This checklist does not fetch links, execute image
+code, approve terms or enable stable promotion.
+
 Generate and inspect both inventories; supplement missing native/model evidence;
 record notices and owner review; independently verify each signed SBOM
 attestation. Stable promotion still also needs the

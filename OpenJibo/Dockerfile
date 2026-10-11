@@ -4,6 +4,8 @@ ARG ENABLE_LOCAL_WHISPER=true
 ARG WHISPER_CPP_REF=v1.9.3
 # Any model name accepted by whisper.cpp's download-ggml-model.sh, e.g. base.en, small.en.
 ARG WHISPER_MODEL=base.en
+# Candidate-only audio profile; existing builds/deployments retain distro FFmpeg.
+ARG FFMPEG_PROFILE=distro
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
@@ -62,14 +64,31 @@ RUN mkdir -p /usr/bin/whisper.cpp/build/bin /usr/bin/whisper.cpp/models
 
 FROM whisper-${ENABLE_LOCAL_WHISPER} AS whisper-stage
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
-WORKDIR /app
-ENV ASPNETCORE_URLS=http://+:8080
-EXPOSE 8080
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS ffmpeg-audio-build
+ARG FFMPEG_BUILD_JOBS=2
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential nasm curl gnupg xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+COPY scripts/cloud/build-ffmpeg-audio.sh /tmp/build-ffmpeg-audio.sh
+RUN sh /tmp/build-ffmpeg-audio.sh
 
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS ffmpeg-distro
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg libgomp1 \
     && rm -rf /var/lib/apt/lists/*
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS ffmpeg-audio
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=ffmpeg-audio-build /opt/openjibo-ffmpeg /opt/openjibo-ffmpeg
+COPY --from=ffmpeg-audio-build /usr/share/openjibo-ffmpeg /usr/share/openjibo-ffmpeg
+RUN ln -s /opt/openjibo-ffmpeg/bin/ffmpeg /usr/bin/ffmpeg
+
+FROM ffmpeg-${FFMPEG_PROFILE} AS runtime
+WORKDIR /app
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
 
 COPY --from=whisper-stage /usr/bin/whisper.cpp /usr/bin/whisper.cpp
 COPY --from=build /app/publish/api ./api

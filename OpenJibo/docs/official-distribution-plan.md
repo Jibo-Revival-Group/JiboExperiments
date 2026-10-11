@@ -275,6 +275,11 @@ the reviewed publisher LFS size/SHA-256. Source signatures, complete native
 build/source matching, model conversion/terms review and notice coverage remain
 open; these narrow checks do not clear redistribution or stable promotion.
 
+The owner selected a smaller audio-focused FFmpeg candidate on 2026-10-11.
+Its [opt-in experiment](ffmpeg-audio-candidate.md) preserves the distro default
+and existing published images while validating a restricted, source-pinned build.
+This selection is not stable approval or a waiver of redistribution obligations.
+
 This advances D2 evidence, not stable approval. Next technical work is completing
 notice coverage, source/build and model linkage, and preparing the exact-image
 owner-review packet. Physical-robot acceptance remains deferred at the user's

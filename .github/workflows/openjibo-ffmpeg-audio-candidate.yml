@@ -1,0 +1,62 @@
+name: openjibo-ffmpeg-audio-candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audio-candidate:
+    if: github.repository == 'transcendentsoftware-jd/JiboExperiments' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate opt-in candidate contract
+        run: python3 -B -m unittest discover -s OpenJibo/tests -p test_ffmpeg_audio_candidate.py
+      - name: Build candidate only; do not publish or deploy
+        working-directory: OpenJibo
+        run: docker build --progress plain --target ffmpeg-audio --build-arg FFMPEG_BUILD_JOBS=2 -t openjibo-ffmpeg-audio:candidate .
+      - name: Prepare synthetic reference audio
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          python3 -B OpenJibo/scripts/cloud/probe-ffmpeg-audio-candidate.py --prepare --fixtures "$RUNNER_TEMP/fixtures"
+      - name: Test restricted conversion and preserve build evidence
+        run: |
+          mkdir evidence
+          image=openjibo-ffmpeg-audio:candidate
+          git rev-parse HEAD > evidence/source-commit.txt
+          docker image inspect "$image" --format 'ID={{.Id}} Size={{.Size}} Platform={{.Os}}/{{.Architecture}}' > evidence/image.txt
+          container=$(docker create --network none --entrypoint /bin/false "$image")
+          trap 'docker rm "$container" >/dev/null' EXIT
+          docker cp "$container:/usr/share/openjibo-ffmpeg" evidence/
+          for name in stereo.wav audio.ogg audio.flac raw.pcm; do
+            input_options=()
+            if [ "$name" = raw.pcm ]; then input_options=(-f s16le -ar 48000 -ac 2); fi
+            docker run --rm --pull never --network none --read-only \
+              --mount "type=bind,source=$RUNNER_TEMP/fixtures,target=/fixtures,readonly" \
+              --mount "type=bind,source=$PWD/evidence,target=/results" \
+              --entrypoint /usr/bin/ffmpeg "$image" \
+              -y "${input_options[@]}" -i "/fixtures/$name" \
+              -af 'silenceremove=start_periods=1:start_duration=0.03:start_threshold=-45dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-45dB,volume=8dB' \
+              -ar 16000 -ac 1 -f wav "/results/$name.wav"
+          done
+          if docker run --rm --pull never --network none --read-only \
+            --mount "type=bind,source=$RUNNER_TEMP/fixtures,target=/fixtures,readonly" \
+            --entrypoint /usr/bin/ffmpeg "$image" -i /fixtures/invalid.ogg -f wav - > /dev/null 2> evidence/invalid-input.txt; then
+            echo 'Invalid input unexpectedly accepted' >&2; exit 1
+          fi
+          docker run --rm --pull never --network none --read-only --entrypoint /usr/bin/ffmpeg "$image" -buildconf > evidence/runtime-buildconf.txt 2>&1
+          grep -q -- '--disable-gpl' evidence/runtime-buildconf.txt
+          grep -q -- '--disable-autodetect' evidence/runtime-buildconf.txt
+          if grep -Eq -- '--enable-(gpl|nonfree|version3)' evidence/runtime-buildconf.txt; then exit 1; fi
+          python3 -B OpenJibo/scripts/cloud/probe-ffmpeg-audio-candidate.py --fixtures "$RUNNER_TEMP/fixtures" --results evidence > evidence/conversion-review.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ffmpeg-audio-candidate-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 90

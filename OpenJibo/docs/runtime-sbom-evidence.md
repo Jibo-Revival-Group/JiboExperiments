@@ -122,6 +122,33 @@ predates content verification, while `portable-content-verified.zip` includes it
 The supplemental bundles remain unsigned. Positive, modified-content and forged
 signature tests exercise the SDK verifier; no runtime image or release changed.
 
+Both Linux profile jobs passed in
+[run 38114995887](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38114995887).
+Downloaded bundles were checked independently: each contains 53 manifests and
+27 selected notice files, with 51 content-hash checks passed. The two missing
+scanner hashes are for `Microsoft.AspNetCore.App.Runtime.linux-x64` and
+`Microsoft.NETCore.App.Runtime.linux-x64`, both version `10.0.12`. These bundles
+do not certify that every scanner record represents a runtime-loaded assembly.
+
+### Exact Ubuntu FFmpeg source candidates
+
+`collect-ffmpeg-source-evidence.py` is tied to the same reviewed inventories and
+requires their FFmpeg Debian package to be exactly `7:6.1.1-3ubuntu5`. Explicit
+fetch preserves the [Ubuntu source descriptor](https://archive.ubuntu.com/ubuntu/pool/universe/f/ffmpeg/ffmpeg_6.1.1-3ubuntu5.dsc),
+its listed original archive and upstream signature, and Ubuntu's Debian
+packaging/patch archive. Only these fixed-version filenames are allowed; sizes
+and SHA-256 values must match the descriptor. No tar extraction, source build or
+image execution occurs. Existing outputs cannot be replaced.
+
+Initial portable collection on 2026-10-11 passed all three descriptor-listed
+archive checks and retained four files plus its review report in
+`artifact-output/runtime-nuget-notices-20261011/ffmpeg-source-portable.zip`.
+This establishes source-candidate availability and consistency with an HTTPS
+descriptor. Neither the descriptor's PGP signature nor the upstream detached
+signature has been verified, and matching the actual image binary/build
+configuration remains open. It is not a complete corresponding-source offer
+for FFmpeg's linked dependencies or a legal approval.
+
 ### Upstream review inputs
 
 The [original Whisper project](https://github.com/openai/whisper#license) states

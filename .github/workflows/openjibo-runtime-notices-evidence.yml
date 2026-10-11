@@ -81,6 +81,14 @@ jobs:
             --content-verifier OpenJibo/scripts/cloud/nuget-content-verifier/bin/Debug/net10.0/NugetContentVerifier.dll \
             --fetch --output evidence/nuget-notices-review.zip > evidence/nuget-notices-review.json
           sha256sum evidence/nuget-notices-review.zip >> evidence/SHA256SUMS
+      - name: Preserve exact-version FFmpeg source candidates
+        env:
+          PROFILE: ${{ matrix.cpu_profile }}
+        run: |
+          python3 -B OpenJibo/scripts/cloud/collect-ffmpeg-source-evidence.py \
+            --inventory evidence/runtime.syft.json --cpu-profile "$PROFILE" \
+            --fetch --output evidence/ffmpeg-source-review.zip > evidence/ffmpeg-source-review.json
+          sha256sum evidence/ffmpeg-source-review.zip >> evidence/SHA256SUMS
       - uses: actions/upload-artifact@v7
         with:
           name: runtime-notices-${{ matrix.cpu_profile }}-${{ github.run_id }}
@@ -93,6 +101,8 @@ jobs:
             evidence/nuget-review.json
             evidence/nuget-notices-review.zip
             evidence/nuget-notices-review.json
+            evidence/ffmpeg-source-review.zip
+            evidence/ffmpeg-source-review.json
             evidence/SHA256SUMS
           if-no-files-found: error
           retention-days: 90

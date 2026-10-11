@@ -1,75 +1,57 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Preview downloads and testing — OpenJibo</title><link rel="stylesheet" href="site.css"></head><body>
 <a class="skip" href="#main">Skip to content</a><header class="shell"><nav aria-label="Main"><a href="index.html">OpenJibo</a><a href="index.html#hosting">Hosting choices</a><a href="downloads.html" aria-current="page">Downloads and testing</a></nav></header>
-<main id="main" class="shell"><section class="hero"><p class="eyebrow">Signed preview · updated 2026-10-10</p><h1>Test the published starter.</h1><p class="lede">Linux/amd64 isolated fresh-install preview. Not a stable release, updater or robot conversion tool. Do not point it at an existing installation.</p><p>The current preview has independently verified image and ZIP provenance. Portable Linux installation, synthetic speech, restart persistence and isolated backup/restore passed on the test laptop. Signed provenance does not establish channel freshness, SBOM/license approval or physical-robot acceptance.</p></section>
-<section class="grid" id="signed-preview"><article class="card"><h2>Signed portable — default</h2><p>Explicit version: runtime-preview-37540893708. The preparer requires signature verification automatically.</p><a class="button primary" href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-37540893708/starter-portable-preview.zip">Download signed portable ZIP</a><p><a href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-37540893708/starter-portable-attestation.json">Portable signature bundle</a></p><p>SHA-256:</p><code class="digest">5e38ef4e26920db0909f407ef7b53ac49ecd8d63f33dc9f631ca32f10ac66210</code></article><article class="card"><h2>Signed AVX2 — opt-in</h2><p>Provenance passed; fresh installation of this AVX2 candidate remains untested. Requires AVX, AVX2, BMI2, F16C, FMA and SSE4.2 on the actual Docker host. The automatic preparer/launcher currently supports portable only.</p><a class="button secondary" href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-37540893708/starter-avx2-preview.zip">Download signed AVX2 ZIP</a><p><a href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-37540893708/starter-avx2-attestation.json">AVX2 signature bundle</a></p><p>SHA-256:</p><code class="digest">30e2e9b9555042698b2dc25e32fdd7b0da282d8e08fdaf4de53ad394c5dec6c2</code></article></section>
-<section class="panel"><h2>Prepare, inspect, then explicitly launch</h2><p>From a trusted, updated JiboExperiments checkout: inspect the preparer, verifier and launcher first. Prerequisites include native Linux x86_64, Python 3, Bash, OpenSSL, Docker Compose 2.24.4+ and GitHub CLI with attestation verification support. Ubuntu ESM may prefer an older CLI; stop if the capability check fails. GitHub authentication may be required.</p><p>Use a new directory, unused project and loopback port. This example uses 8087 to avoid the earlier test stacks. A failed attempt is retained for diagnosis; never delete keys or volumes to retry.</p>
+<main id="main" class="shell">
+<section class="hero"><p class="eyebrow">Experimental signed preview · updated 2026-10-11</p><h1>Test the published starter.</h1><p class="lede">Linux/amd64 isolated fresh-install preview. Not a stable release, updater or robot conversion tool. Do not point it at an existing installation.</p><p>The recommended experimental preview has independently verified image and ZIP provenance, signed SPDX inventory verification and a guarded Whisper source archive. Both profiles passed native Linux installation, recorded local speech, restart persistence and isolated backup/restore on the test laptop. License/notice review and physical-robot acceptance remain open; signed provenance is not clearance or stable readiness.</p></section>
+<section class="grid" id="signed-preview">
+<article class="card"><h2>Signed portable — default</h2><p>Explicit version: runtime-preview-38165346370. Signature verification is mandatory. Choose portable unless you have checked the actual Docker host's CPU capabilities.</p><a class="button primary" href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-38165346370/starter-portable-preview.zip">Download signed portable ZIP</a><p><a href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-38165346370/starter-portable-attestation.json">Portable signature bundle</a></p><p>SHA-256:</p><code class="digest">e8a63cc2ebe27be0499dc6ec5e235382b0063fcd26fc8caeb9e536adc5414cb8</code></article>
+<article class="card"><h2>Signed AVX2 — opt-in</h2><p>Fresh installation, recorded speech, two-client overlap and isolated restore passed on the test laptop. Requires AVX, AVX2, BMI2, F16C, FMA and SSE4.2 on the actual Docker host. Select AVX2 explicitly; client CPU flags do not certify a remote server.</p><a class="button secondary" href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-38165346370/starter-avx2-preview.zip">Download signed AVX2 ZIP</a><p><a href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-38165346370/starter-avx2-attestation.json">AVX2 signature bundle</a></p><p>SHA-256:</p><code class="digest">660b599a89ac71056699cbf66a1ac76f492c3b3d662702e8f5a3a1ab31daa569</code></article>
+</section>
+<section class="panel"><h2>Prepare, inspect, then explicitly launch</h2><p>Use a trusted, updated JiboExperiments checkout; inspect the preparer, verifier and launcher first. Prerequisites: native Linux x86_64, Python 3, Bash, OpenSSL, Docker Compose 2.24.4+ and GitHub CLI with attestation verification support. Ubuntu ESM may prefer an older CLI; stop if the capability check fails. GitHub authentication may be required.</p><p>Use a new directory, unused project and loopback port. Verify that 8093 is free. Failed attempts are retained for diagnosis; never delete keys or volumes to retry. The launcher disables Azure Speech for local testing.</p>
 <pre><code>(
 set -euo pipefail
 cd "$HOME/JiboExperiments"
 gh attestation verify --help &gt;/dev/null
 python3 -B OpenJibo/scripts/cloud/prepare-published-starter.py \
-  --channel preview --version runtime-preview-37540893708 \
-  --destination "$HOME/Downloads/openjibo-signed-site-test" --plan
+  --channel preview --version runtime-preview-38165346370 \
+  --destination "$HOME/Downloads/openjibo-guarded-site-test" --plan
 python3 -B OpenJibo/scripts/cloud/prepare-published-starter.py \
-  --channel preview --version runtime-preview-37540893708 \
-  --destination "$HOME/Downloads/openjibo-signed-site-test"
+  --channel preview --version runtime-preview-38165346370 \
+  --destination "$HOME/Downloads/openjibo-guarded-site-test"
 )</code></pre>
-<p>Expect <code>provenance_verified: true</code> and <code>docker_started: false</code>. Inspect the extracted README. Only then, authorize Docker and launch:</p>
+<p>Expect <code>provenance_verified: true</code> and <code>docker_started: false</code>. Inspect the extracted README. Only then authorize Docker and launch:</p>
 <pre><code>(
 set -euo pipefail
 cd "$HOME/JiboExperiments"
 sudo -v
 python3 -B OpenJibo/scripts/cloud/launch-published-starter.py \
-  --directory "$HOME/Downloads/openjibo-signed-site-test" \
-  --project openjibo-signed-site-test --port 8087 --sudo-docker
+  --directory "$HOME/Downloads/openjibo-guarded-site-test" \
+  --project openjibo-guarded-site-test --port 8093 --sudo-docker
 python3 -B OpenJibo/scripts/cloud/launch-published-starter.py \
-  --directory "$HOME/Downloads/openjibo-signed-site-test" \
-  --project openjibo-signed-site-test --port 8087 --sudo-docker --start
+  --directory "$HOME/Downloads/openjibo-guarded-site-test" \
+  --project openjibo-guarded-site-test --port 8093 --sudo-docker --start
 )</code></pre>
-<p>Health is not full acceptance. Run the <a href="https://github.com/transcendentsoftware-jd/JiboExperiments/blob/main/OpenJibo/docs/published-starter-provenance-20261006.md">documented socket/audio probes and review the recovery evidence</a>, adapting the URL to port 8087 and using synthetic IDs only in this new test stack. Keep <code>.env</code> and backups private. No automatic upgrade, production deployment or physical-robot conversion is performed.</p></section>
-<details class="panel" id="legacy-preview"><summary>Previous preview — checksum-only ZIPs (2026-10-01)</summary><p>The previous release remains unchanged. These older commands are retained for reference, not the preferred signed download path.</p>
-<section class="grid"><article class="card"><h2>Portable — default</h2><p>Choose this unless you have checked the actual Docker host's CPU capabilities.</p><a class="button primary" href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-36863178102/starter-portable-preview.zip">Download portable ZIP</a><p>SHA-256:</p><code class="digest">68f7181b4c50b08c632a482efd9f0a20be3ab3a2ad1de97fe6281a5e320b6a91</code></article><article class="card"><h2>AVX2 — opt-in</h2><p>Requires x86_64 with AVX, AVX2, BMI2, F16C, FMA and SSE4.2 on the Docker runtime host. Checking a client CPU does not certify a remote daemon.</p><a class="button secondary" href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-36863178102/starter-avx2-preview.zip">Download AVX2 ZIP</a><p>SHA-256:</p><code class="digest">eaab909b46e1166d08344c7582fb3833fe9bdc596a005e0ce4ee4a8c3bdb6466</code></article></section>
-<section class="panel"><h2>Fresh Linux test, separate from your working stacks</h2><p>Prerequisites: Linux x86_64, Docker Compose 2.24.4 or later, Python 3, Bash, OpenSSL and unzip. Leave the original stacks and volumes intact. Download the portable ZIP first; do not pipe a remote script into a shell.</p><ol><li>Download and inspect the <a href="https://github.com/transcendentsoftware-jd/JiboExperiments/blob/ef8014611bb85139701136b32eb440ab0f253617/OpenJibo/scripts/cloud/verify-openjibo-starter-bundle.py">pinned offline verifier</a>, saving it as <code>verify-openjibo-starter-bundle.py</code>.</li><li>Verify before extracting. Stop on any error.</li></ol>
-<pre><code>python3 -B verify-openjibo-starter-bundle.py \
-  --bundle starter-portable-preview.zip \
-  --expected-sha256 68f7181b4c50b08c632a482efd9f0a20be3ab3a2ad1de97fe6281a5e320b6a91</code></pre>
-<p>Create a new directory, extract, and inspect the README and launchers:</p><pre><code>mkdir openjibo-published-preview
-unzip starter-portable-preview.zip -d openjibo-published-preview
-cd openjibo-published-preview
-bash scripts/cloud/initialize-openjibo-compose-env.sh</code></pre>
-<p>Edit the generated <code>.env</code> privately to set a strong, unique <code>OPENJIBO_POSTGRES_PASSWORD</code>. Preserve encryption keys; do not copy sample values or paste secrets into an issue.</p><p>Create <code>test-port.compose.yaml</code> to use port 8082 and local speech:</p>
-<pre><code>services:
-  api:
-    ports: !override
-      - "127.0.0.1:8082:8080"
-    environment:
-      OpenJibo__Stt__EnableAzureSpeech: "false"
-      OpenJibo__Stt__WhisperThreads: "4"</code></pre>
-<p>The override requires Compose 2.24.4 or later. Check <code>docker compose version</code>. Confirm the project name is unused:</p>
-<pre><code>docker ps -a --filter label=com.docker.compose.project=openjibo-published-preview
-docker volume ls --filter label=com.docker.compose.project=openjibo-published-preview</code></pre>
-<p>If either lists existing resources, stop and choose an unused project name. Then launch the pinned images without rebuilding:</p>
-<pre><code>docker compose -p openjibo-published-preview \
-  -f docker-compose.yml -f test-port.compose.yaml \
-  up -d --no-build postgres migrate api
-docker compose -p openjibo-published-preview \
-  -f docker-compose.yml -f test-port.compose.yaml ps -a
-curl --fail-with-body --max-time 15 http://localhost:8082/health</code></pre>
-<p>Expected: PostgreSQL healthy, migrator exited with code 0, API running and health returns <code>ok: true</code>. For the current tester with a trusted checkout at <code>~/JiboExperiments</code> and Node installed, test authenticated sockets:</p>
-<pre><code>node ~/JiboExperiments/OpenJibo/src/Jibo.Cloud/node/invoke-jetstream-compatibility-probe.mjs \
-  --entrypoint-url http://localhost:8082 \
-  --hub-url ws://localhost:8082 \
-  --notification-url ws://localhost:8082 \
-  --mode authenticated --robots 2 \
-  --device-prefix published-preview --skip-turn</code></pre>
-<p>This deliberately creates two synthetic device records only in the new test stack. If you retained the previously verified <code>~/Downloads/cloud-version.ogg</code> fixture, run:</p>
-<pre><code>node ~/JiboExperiments/OpenJibo/src/Jibo.Cloud/node/invoke-real-audio-probe.mjs \
-  --audio ~/Downloads/cloud-version.ogg \
-  --base-url http://localhost:8082 \
-  --robot-id speech-acceptance-published --turns 3</code></pre>
-<p>Do not redirect a physical robot yet. Preserve results, image identities and bundle checksum. <a href="https://github.com/transcendentsoftware-jd/JiboExperiments/blob/main/OpenJibo/docs/native-linux-acceptance-20260928.md">Acceptance evidence and probe context</a>.</p><p>Stop the test with the same project and both Compose files followed by <code>stop</code>. Preserve files, keys and volumes. Never use <code>down -v</code> on data you wish to retain.</p></section>
-</details>
-<section class="panel"><h2>Acceptance boundaries</h2><p>The signed portable candidate passed authenticated socket and acoustic probes, API restart, database persistence with API stopped, and a separate restore of both databases plus API data using the preserved private environment. The restored probes passed too. These are user-reported native Ubuntu laptop results, not physical microphone/playback, sustained capacity, proactive transaction or encrypted-data decryption certification.</p><p>AVX2 fresh installation, Windows, SBOM/license review and stable channel protections remain outstanding. <a href="https://github.com/transcendentsoftware-jd/JiboExperiments/blob/main/OpenJibo/docs/published-starter-provenance-20261006.md">Signed-preview evidence and limits</a>.</p></section>
-<section class="panel"><h2>Installation and update roadmap</h2><p>Full installer still planned: download, inspect, run; stable by default once a stable release exists, explicit preview opt-in, and targeted version selection. Each selection resolves to verified immutable artifacts. Portable is the default; AVX2 needs an explicit capability check. No latest/stable selector or automatic upgrade is available today.</p><p>Updates will be separate, operator-reviewed operations with backups, migration compatibility and recovery checks. <a href="https://github.com/transcendentsoftware-jd/JiboExperiments/blob/main/OpenJibo/docs/runtime-registry-publication.md">Image digests and release evidence</a> · <a href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/tag/runtime-preview-36863178102">Preview release files</a></p></section>
+<p>Health is not full acceptance. Review the <a href="https://github.com/transcendentsoftware-jd/JiboExperiments/blob/main/OpenJibo/docs/guarded-source-preview-publication-20261011.md">exact-image acceptance and recovery evidence</a>. Run the <a href="https://github.com/transcendentsoftware-jd/JiboExperiments/blob/main/OpenJibo/docs/published-starter-provenance-20261006.md">documented socket/audio probes</a>, adapting the URL to port 8093 and using synthetic IDs only in this new test stack. Keep <code>.env</code> and backups private. No automatic upgrade, production deployment or physical-robot conversion is performed.</p></section>
+<section class="panel"><h2>Explicit AVX2 preparation</h2><p>Use only when Docker runs on this same native Linux host and all CPU prerequisites pass. Do not reuse the portable directory. Prepare with <code>--cpu-profile avx2</code>; launch with <code>--avx2-local-daemon</code>, which confirms locality but does not select a profile automatically.</p>
+<pre><code>(
+set -euo pipefail
+cd "$HOME/JiboExperiments"
+gh attestation verify --help &gt;/dev/null
+python3 -B OpenJibo/scripts/cloud/prepare-published-starter.py \
+  --channel preview --version runtime-preview-38165346370 --cpu-profile avx2 \
+  --destination "$HOME/Downloads/openjibo-guarded-avx2-site-test"
+sudo -v
+python3 -B OpenJibo/scripts/cloud/launch-published-starter.py \
+  --directory "$HOME/Downloads/openjibo-guarded-avx2-site-test" \
+  --project openjibo-guarded-avx2-site-test --port 8094 --sudo-docker \
+  --avx2-local-daemon
+python3 -B OpenJibo/scripts/cloud/launch-published-starter.py \
+  --directory "$HOME/Downloads/openjibo-guarded-avx2-site-test" \
+  --project openjibo-guarded-avx2-site-test --port 8094 --sudo-docker \
+  --avx2-local-daemon --start
+)</code></pre><p>Use port 8094 for follow-up probes. Choose portable when host compatibility is unknown.</p></section>
+<details class="panel" id="previous-signed-preview"><summary>Earlier signed previews — preserved, not recommended</summary><p><a href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/tag/runtime-preview-37540893708">First signed preview</a> and <a href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/tag/runtime-preview-38139481435">earlier audio preview</a> remain unchanged and explicitly selectable by reviewed version. Their evidence applies only to their own digests.</p></details>
+<details class="panel" id="legacy-preview"><summary>Previous preview — checksum-only ZIPs (2026-10-01)</summary><p>Preserved for reference, not the recommended signed path. Its image provenance was verified separately; the ZIPs have no signed ZIP provenance.</p><p><a href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-36863178102/starter-portable-preview.zip">Legacy portable ZIP</a> — SHA-256:</p><code class="digest">68f7181b4c50b08c632a482efd9f0a20be3ab3a2ad1de97fe6281a5e320b6a91</code><p><a href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/runtime-preview-36863178102/starter-avx2-preview.zip">Legacy AVX2 ZIP</a> — SHA-256:</p><code class="digest">eaab909b46e1166d08344c7582fb3833fe9bdc596a005e0ce4ee4a8c3bdb6466</code><p><a href="https://github.com/transcendentsoftware-jd/JiboExperiments/blob/main/OpenJibo/docs/published-starter-acceptance-20261006.md">Earlier acceptance instructions and limits</a>. Do not mix versions, signatures or expected checksums.</p></details>
+<section class="panel"><h2>Acceptance boundaries</h2><p>Both current profiles passed fresh native Ubuntu preparation, authenticated socket and recorded-audio probes, database persistence with API stopped, and separate restores of both databases plus API data using the preserved private environment. Restored file contents were checked before API startup; restored probes passed too. These are synthetic laptop results, not physical microphone/playback, sustained capacity, proactive transaction, existing-token survival or encrypted-data decryption certification.</p><p>Windows published-bundle acceptance, complete notices/license review, upgrade/rollback and stable channel protections remain outstanding. Signed SPDX verification does not establish dependency completeness or legal clearance.</p></section>
+<section class="panel"><h2>Installation and update roadmap</h2><p>Full installer still planned: download, inspect, run; stable by default once a stable release exists, explicit preview opt-in, and targeted version selection. Each selection resolves to verified immutable artifacts. Portable is the default; AVX2 needs an explicit capability check. No latest/stable selector or automatic upgrade is available today.</p><p>Updates will be separate, operator-reviewed operations with backups, migration compatibility and recovery checks. Stop this test with the same project and Compose files followed by <code>stop</code>; preserve files, keys and volumes. Do not remove volumes containing data you want to keep.</p><p><a href="https://github.com/transcendentsoftware-jd/JiboExperiments/blob/main/OpenJibo/docs/runtime-registry-publication.md">Image digests and release evidence</a> · <a href="https://github.com/transcendentsoftware-jd/JiboExperiments/releases/tag/runtime-preview-38165346370">Current experimental release files</a></p></section>
 </main><footer class="shell">Windows published-bundle acceptance remains pending. No ARM64, hybrid or managed starter certification is implied.</footer></body></html>

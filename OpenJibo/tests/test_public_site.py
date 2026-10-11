@@ -58,7 +58,7 @@ class PublicSiteTests(unittest.TestCase):
         for checksum in ("68f7181b4c50b08c632a482efd9f0a20be3ab3a2ad1de97fe6281a5e320b6a91", "eaab909b46e1166d08344c7582fb3833fe9bdc596a005e0ce4ee4a8c3bdb6466"):
             self.assertIn(checksum, page)
         self.assertIn("Not a stable release", page)
-        self.assertIn("127.0.0.1:8082:8080", page)
+        self.assertIn("loopback port", page)
         self.assertIn("operator-reviewed", page)
 
     def test_payload_has_no_operational_files(self):
@@ -68,13 +68,17 @@ class PublicSiteTests(unittest.TestCase):
         page = (ROOT / "downloads.html").read_text(encoding="utf-8")
         self.assertLess(page.index('id="signed-preview"'), page.index('id="legacy-preview"'))
         for profile in ("portable", "avx2"):
-            self.assertIn(f"runtime-preview-37540893708/starter-{profile}-preview.zip", page)
-            self.assertIn(f"runtime-preview-37540893708/starter-{profile}-attestation.json", page)
-        for digest in ("5e38ef4e26920db0909f407ef7b53ac49ecd8d63f33dc9f631ca32f10ac66210", "30e2e9b9555042698b2dc25e32fdd7b0da282d8e08fdaf4de53ad394c5dec6c2"):
+            self.assertIn(f"runtime-preview-38165346370/starter-{profile}-preview.zip", page)
+            self.assertIn(f"runtime-preview-38165346370/starter-{profile}-attestation.json", page)
+        for digest in ("e8a63cc2ebe27be0499dc6ec5e235382b0063fcd26fc8caeb9e536adc5414cb8", "660b599a89ac71056699cbf66a1ac76f492c3b3d662702e8f5a3a1ab31daa569"):
             self.assertIn(digest, page)
         self.assertIn("gh attestation verify --help", page)
         self.assertIn("set -euo pipefail", page)
-        self.assertIn("--port 8087", page)
+        self.assertIn("--port 8093", page)
+        self.assertIn("--port 8094", page)
+        self.assertIn("--cpu-profile avx2", page)
+        self.assertIn("--avx2-local-daemon", page)
+        self.assertNotIn("automatic preparer/launcher currently supports portable only", page)
         self.assertIn("--plan", page)
         self.assertIn("--start", page)
         self.assertIn("checksum-only ZIPs", page)
@@ -85,12 +89,25 @@ class PublicSiteTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("site_reviewed_preparer", script)
         preparer = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(preparer)
-        record = preparer.release_identity(preparer.SIGNED_VERSION)
         page = (ROOT / "downloads.html").read_text(encoding="utf-8")
-        self.assertIn(record["url"], page)
-        self.assertIn(record["archive_sha256"], page)
-        self.assertIn("--version " + record["version"], page)
-        self.assertTrue(record["release_zip_attested"])
+        primary = page.split('id="signed-preview"', 1)[1].split('</section>', 1)[0]
+        for profile in ('portable', 'avx2'):
+            record = preparer.release_identity(preparer.GUARDED_VERSION, profile)
+            self.assertIn(record["url"], primary)
+            self.assertIn(record["archive_sha256"], primary)
+            self.assertIn("--version " + record["version"], page)
+            self.assertTrue(record["release_zip_attested"])
+        for old in (preparer.VERSION, preparer.SIGNED_VERSION, preparer.AUDIO_VERSION):
+            self.assertNotIn(old, primary)
+
+    def test_promotion_keeps_experimental_limits_and_prior_releases(self):
+        page = (ROOT / 'downloads.html').read_text(encoding='utf-8')
+        for phrase in ('not clearance or stable readiness', 'License/notice review',
+                       'physical-robot acceptance remain open', 'existing-token survival',
+                       'No latest/stable selector', 'operator-reviewed'):
+            self.assertIn(phrase, page)
+        for version in ('runtime-preview-37540893708', 'runtime-preview-38139481435'):
+            self.assertIn('/releases/tag/' + version, page)
 
 
 if __name__ == "__main__":

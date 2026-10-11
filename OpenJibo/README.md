@@ -21,6 +21,13 @@ For local setup, use [docs/local-cloud-quickstart.md](docs/local-cloud-quickstar
 
 To self-host the Docker Compose stack on your own hardware, start with [docs/self-hosted-runbook.md](docs/self-hosted-runbook.md).
 
+For a fresh, digest-pinned native Linux experiment without a source build, use
+the [preview download instructions](https://transcendentsoftware-jd.github.io/JiboExperiments/downloads.html).
+The owner-selected experimental preview is `runtime-preview-38165346370`.
+Portable is the default; AVX2 requires explicit selection and actual daemon-host
+CPU checks. Both passed synthetic install/speech/restore testing, not stable
+or physical-robot certification. [Evidence and remaining gates](docs/guarded-source-preview-publication-20261011.md).
+
 For device bootstrap and OOBE QR setup, use:
 
 - [docs/device-bootstrap.md](docs/device-bootstrap.md)

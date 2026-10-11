@@ -169,6 +169,9 @@ and complete-image corresponding-source review remain open. See the
 [earlier audio preview evidence](audio-preview-publication-20261011.md) for the
 separate prior-image notice and byte-linkage findings, not verification of the
 new inventories. The new release is explicitly selectable for experimental
-testing, not the site's recommended download or a stable channel. Changing the
-recommended experimental download is a separate owner decision; stable promotion
-still requires the outstanding review gates above.
+testing, not a stable channel. After the fresh acceptance and review work, the
+owner approved recommending this release on the experimental downloads page on
+2026-10-11. Both profile links/checksums and preparation/launch instructions are
+updated, while earlier versions remain available. Stable promotion still
+requires the outstanding review gates above; the site recommendation is not a
+runtime deployment or approval of an existing-installation upgrade.

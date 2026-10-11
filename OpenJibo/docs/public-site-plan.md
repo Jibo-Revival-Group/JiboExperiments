@@ -8,6 +8,18 @@ Stand up a small public site and web app on `openjibo.com` that makes the projec
 
 ## Current Status (`2026-10-01`)
 
+Update, 2026-10-11: the owner approved recommending the guarded-source signed
+experimental preview `runtime-preview-38165346370`. The site source now pins both
+ZIP checksums and signature links to that release, with portable preparation/
+launch examples and explicitly gated AVX2 instructions. Both profiles have fresh
+native Linux synthetic installation, speech, restart and backup/restore evidence.
+The [acceptance record](guarded-source-preview-publication-20261011.md) retains
+exact identities and limits. Earlier releases remain linked and unchanged.
+This is a recommendation for experimental testing, not stable promotion or
+clearance of the remaining license/notice/physical-robot gates. Public-site
+workflow publication is separate from runtime deployment; no runtime deploy or
+custom-domain cutover is authorized by this update.
+
 Status: neutral preview published at
 https://transcendentsoftware-jd.github.io/JiboExperiments/.
 First publication passed:

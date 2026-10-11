@@ -4,6 +4,13 @@ This repository is the working lab for bringing Jibo back.
 
 The active OpenJibo work lives in [OpenJibo/README.md](OpenJibo/README.md), and the long-range story now lives in [OpenJibo/docs/roadmap.md](OpenJibo/docs/roadmap.md).
 
+For fresh native Linux self-hosting experiments, see the
+[preview downloads and testing site](https://transcendentsoftware-jd.github.io/JiboExperiments/downloads.html).
+The recommended experimental package is `runtime-preview-38165346370`, with
+mandatory signature verification and explicit AVX2 opt-in. It is not a stable
+release, updater or robot conversion tool; license/notice and live-robot gates
+remain open. [Exact package acceptance and limits](OpenJibo/docs/guarded-source-preview-publication-20261011.md).
+
 Repo hygiene: keep generated scratch output, temp captures, and local workspace state out of Git. The `.codex/` tree is ignored by default, and only intentionally shared configuration should be promoted to tracked files.
 
 Start here:

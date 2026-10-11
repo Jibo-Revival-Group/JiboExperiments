@@ -319,4 +319,7 @@ review packet verifies the downloaded signed SPDX bytes and retains fresh notice
 copies and exact NuGet manifests without treating declarations as clearance.
 Owner-review/licensing, physical-robot and upgrade/rollback gates remain open;
 no previous-image findings are silently transferred to this one. A change to the
-recommended experimental download remains a separate owner decision.
+recommended experimental download was subsequently approved by the owner on
+2026-10-11; site instructions now select the new exact version. Stable/latest,
+runtime deployment, custom domains and existing-installation updates remain
+separate gates.

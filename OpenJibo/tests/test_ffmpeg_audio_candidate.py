@@ -69,6 +69,7 @@ class AudioCandidateTests(unittest.TestCase):
         self.assertIn("--turns 3", workflow)
         self.assertIn("--mode authenticated --robots 2", workflow)
         self.assertIn("provider=whisper-server-buffered-audio", workflow)
+        self.assertIn("-page_duration 100000", workflow)
         self.assertIn("compose down -v", workflow)
         self.assertNotIn("docker push", workflow)
         overlay = (ROOT / "OpenJibo/scripts/cloud/compose-speech-audio-candidate.yml").read_text()

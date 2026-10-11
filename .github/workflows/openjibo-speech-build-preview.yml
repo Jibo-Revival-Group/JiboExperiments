@@ -91,7 +91,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ffmpeg espeak-ng
           espeak-ng -v en-us -s 140 -w "$RUNNER_TEMP/speech.wav" 'cloud version'
-          ffmpeg -y -i "$RUNNER_TEMP/speech.wav" -c:a libopus "$RUNNER_TEMP/speech.ogg"
+          # Short speech still needs several audio-bearing pages for the robot probe.
+          ffmpeg -y -i "$RUNNER_TEMP/speech.wav" -c:a libopus -page_duration 100000 "$RUNNER_TEMP/speech.ogg"
+          cp "$RUNNER_TEMP/speech.ogg" build-evidence/synthetic-speech.ogg
           npm --prefix OpenJibo/src/Jibo.Cloud/node ci --ignore-scripts
       - name: Exercise full local runtime with synthetic acoustic turns
         if: env.FFMPEG_PROFILE == 'audio'

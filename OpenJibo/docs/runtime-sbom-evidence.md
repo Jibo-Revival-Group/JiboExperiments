@@ -55,6 +55,18 @@ passed for both profiles and retained 289 copyright/license files per image,
 with 76 documentation links deliberately not followed. It predates the addition
 of shared common-license texts and is not a complete notice set.
 
+The expanded [run 38108346933](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38108346933)
+passed for both profiles, retaining 303 notice files per image including shared
+license texts. Each manifest lists 79 unfollowed links. Downloaded evidence is
+preserved under `artifact-output/runtime-notices-38108346933/`. These unsigned
+review bundles preserve extracted texts and hashes; they are not a completed
+license approval or signed release-notice attachment.
+
+The next technical review items are NuGet notice/source metadata, exact distro
+corresponding-source availability, FFmpeg build configuration, and native/model
+coverage. Owner sign-off will be recorded against a specific completed packet,
+not inferred from authorization to gather evidence.
+
 ### Upstream review inputs
 
 The [original Whisper project](https://github.com/openai/whisper#license) states

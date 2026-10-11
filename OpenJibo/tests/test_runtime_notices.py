@@ -1,8 +1,11 @@
 import importlib.util
 import io
+import json
 from pathlib import Path
 import tarfile
+import tempfile
 import unittest
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("notices", ROOT / "OpenJibo/scripts/cloud/package-runtime-notices.py")
@@ -69,6 +72,38 @@ class RuntimeNoticesTests(unittest.TestCase):
         for forbidden in ("docker run", "docker start", "docker build", "docker push", "contents: write", "az "):
             self.assertNotIn(forbidden, workflow)
         self.assertIn("docker create --network none --entrypoint /bin/false", workflow)
+
+    def test_package_preserves_bytes_identity_and_refuses_overwrite(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            docs, whisper, common, inventory, output = [root / name for name in
+                ("docs.tar", "whisper.tar", "common.tar", "inventory.json", "review.zip")]
+            docs.write_bytes(archive([("doc/pkg/copyright", b"Copyright bytes", "file")]))
+            whisper.write_bytes(archive([("LICENSE", b"Whisper bytes", "file")]))
+            common.write_bytes(archive([("common-licenses/GPL-2", b"Shared bytes", "file")]))
+            inventory.write_text(json.dumps({
+                "source": {"type": "image", "metadata": {
+                    "manifestDigest": notices.policy.DIGESTS["portable"], "os": "linux", "architecture": "amd64",
+                    "labels": {"org.opencontainers.image.revision": notices.policy.SOURCE,
+                               "org.openjibo.cpu-profile": "portable",
+                               "org.opencontainers.image.source": "https://github.com/transcendentsoftware-jd/JiboExperiments"}}},
+                "descriptor": {"name": "syft", "version": "1.54.1"},
+                "artifacts": [{"name": "pkg", "type": "deb", "licenses": []}]}))
+            report = notices.package(docs, whisper, common, inventory, "portable", output)
+            self.assertEqual(report["notice_count"], 3)
+            self.assertFalse(report["license_review_approved"])
+            with zipfile.ZipFile(output) as bundle:
+                self.assertEqual(bundle.read("notices/doc/pkg/copyright"), b"Copyright bytes")
+                manifest = json.loads(bundle.read("manifest.json"))
+                self.assertFalse(manifest["stable_promotion_allowed"])
+                self.assertEqual(manifest["source_commit"], notices.policy.SOURCE)
+            original = output.read_bytes()
+            with self.assertRaises(FileExistsError):
+                notices.package(docs, whisper, common, inventory, "portable", output)
+            self.assertEqual(output.read_bytes(), original)
+            with self.assertRaises(ValueError):
+                notices.package(docs, whisper, common, inventory, "avx2", root / "wrong.zip")
+            self.assertFalse((root / "wrong.zip").exists())
 
 
 if __name__ == "__main__":

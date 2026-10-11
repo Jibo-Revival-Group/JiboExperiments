@@ -54,17 +54,59 @@ Local artifacts: `artifact-output/runtime-preview-38165346370/`,
 `artifact-output/runtime-verification-38165660015/`, and
 `artifact-output/release-download-38165346370/`.
 
+## Native Ubuntu acceptance of the new digests
+
+The preparer now accepts this version by explicit selection only, with mandatory
+ZIP provenance verification. The launcher recognizes the exact manifest hashes
+below and preserves the native/local-daemon CPU check for AVX2. Older identities,
+defaults and the site's recommended download remain unchanged.
+
+| Profile | MANIFEST.json SHA-256 | Fresh local project / port |
+| --- | --- | --- |
+| portable | `287973b7e409ede338b0044dee79b7a3f846fea6219b6e3fd497c30e3fc4eb7b` | `openjibo-guarded-portable-38165346370` / 8089 |
+| avx2 | `25045af1b2d7342b1862eaef04470b1e2d49e81b0524a9942cf9ba6c42b39c80` | `openjibo-guarded-avx2-38165346370` / 8090 |
+
+Both fresh signed preparations, isolated loopback launches, migrations and health
+checks passed on the authorized Ubuntu laptop (i5-8250U, 8 logical CPUs, 8 GB
+RAM). The configured image reference was checked against the exact digest above;
+Azure Speech was disabled. Each profile passed two-robot authentication and all
+three socket connections. This `--skip-turn` socket check alone does not exercise
+speech or proactive response handling.
+
+Separate recorded-audio checks passed through `whisper-server-buffered-audio`:
+
+- Portable: three cloud-version turns, 9248 / 7346 / 6806 ms, all expected
+  LISTEN/EOS/SKILL_ACTION responses and phrase checks passed.
+- AVX2: ten cloud-version turns, first 3263 ms and remaining 1008–1699 ms;
+  three second-phrase transcription turns, 655 / 702 / 695 ms.
+- AVX2 overlap: two concurrent clients, five turns each, all passed in
+  1039–1471 ms with ten local Whisper provider entries.
+
+Containers reported running, zero restarts and no OOM after audio/overlap checks.
+These are bounded fixture results, not a capacity SLA or peak-memory study.
+Both profiles retained their two probe device rows across PostgreSQL restart
+while their API was stopped; rows were compared before API startup. Health and
+all sockets passed after restarting the API (573 / 618 ms socket checks).
+The probes then issued new tokens, so this does not prove old-token survival.
+
+Evidence remains at `/home/jake-dubin/openjibo-guarded-tests.UPKrcp` and locally
+at `artifact-output/ubuntu-guarded-preview-20261011/`. Only generated JSON/text
+reports were copied; secrets, databases and recordings were not transferred.
+New stacks, private environments and volumes are preserved alongside earlier
+tests. The starter regression suite passed 77 tests with two platform skips on
+Windows; the real preparations/launches above exercised native Linux paths.
+
 ## Remaining gates
 
 This establishes build/byte/provenance identity, not stable readiness,
-redistribution clearance or reproducible builds. Fresh installation, acoustic,
-restart and backup/restore acceptance of these **new exact digests** remains to
-be run; the earlier image acceptance cannot be transferred automatically.
+redistribution clearance or reproducible builds. Fresh backup/restore acceptance
+of these **new exact digests** remains to be run; the earlier image acceptance
+cannot be transferred automatically.
 Physical microphone/playback testing remains deferred.
 
 Notice completeness, native dependency and model terms, package signature trust
 and complete-image corresponding-source review remain open. See the
 [earlier audio preview evidence](audio-preview-publication-20261011.md) for the
 separate prior-image notice and byte-linkage findings, not verification of the
-new inventories. The new release is deliberately not added to the preparer's
-approved selectors or the site's recommended download until follow-up review.
+new inventories. The new release is explicitly selectable for experimental
+testing, not the site's recommended download or a stable channel.

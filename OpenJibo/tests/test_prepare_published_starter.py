@@ -24,6 +24,38 @@ builder = load("published_builder", ROOT / "OpenJibo/scripts/cloud/prepare-openj
 
 
 class PublishedStarterTests(unittest.TestCase):
+    def test_guarded_preview_is_explicit_signed_and_fail_closed(self):
+        for profile in ('portable', 'avx2'):
+            identity = installer.release_identity(installer.GUARDED_VERSION, profile)
+            self.assertTrue(identity['release_zip_attested'])
+            self.assertEqual(identity['source_commit'], installer.GUARDED_SOURCE_COMMIT)
+            self.assertIn(f'/starter-{profile}-preview.zip', identity['url'])
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                archive = root / 'fixture.zip'
+                builder.write_bundle(ROOT, identity['runtime_image'], archive, cpu_profile=profile)
+                data = archive.read_bytes()
+                hash_name = 'GUARDED_AVX2_SHA256' if profile == 'avx2' else 'GUARDED_SHA256'
+                with patch.object(installer, hash_name, hashlib.sha256(data).hexdigest()), patch.object(installer, 'verify_provenance', side_effect=ValueError('invalid signature')):
+                    with self.assertRaises(ValueError):
+                        installer.prepare(data, root / 'new', version=installer.GUARDED_VERSION, cpu_profile=profile)
+                self.assertFalse((root / 'new').exists())
+                with patch.object(installer, hash_name, hashlib.sha256(data).hexdigest()), patch.object(installer, 'verify_provenance') as verify:
+                    result = installer.prepare(data, root / 'valid', version=installer.GUARDED_VERSION, cpu_profile=profile)
+                    self.assertTrue(result['provenance_verified'])
+                    self.assertEqual(result['runtime_image'], identity['runtime_image'])
+                    self.assertFalse((root / 'valid' / '.env').exists())
+                    verify.assert_called_once()
+                wrong_profile = 'avx2' if profile == 'portable' else 'portable'
+                builder.write_bundle(ROOT, identity['runtime_image'], root / 'wrong.zip', cpu_profile=wrong_profile)
+                wrong = (root / 'wrong.zip').read_bytes()
+                with patch.object(installer, hash_name, hashlib.sha256(wrong).hexdigest()), patch.object(installer, 'verify_provenance'), self.assertRaises(ValueError):
+                    installer.prepare(wrong, root / 'wrong', version=installer.GUARDED_VERSION, cpu_profile=profile)
+                self.assertFalse((root / 'wrong').exists())
+        self.assertEqual(installer.release_identity(installer.VERSION)['runtime_image'], installer.IMAGE)
+        with self.assertRaises(ValueError):
+            installer.release_identity(installer.GUARDED_VERSION, 'auto')
+
     def test_avx2_is_explicit_signed_and_profile_bound(self):
         identity = installer.release_identity(installer.AUDIO_VERSION, 'avx2')
         self.assertTrue(identity['release_zip_attested'])

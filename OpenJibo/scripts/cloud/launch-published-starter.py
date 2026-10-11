@@ -24,6 +24,10 @@ AUDIO_MANIFEST_SHA256 = "e0b04a517ce103ad0615b21cbcc51cc8ac4602db81fb796976ad3f0
 AUDIO_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:e1b2aa06fc1f69bd498c5394388636331ba646abf2f39ca66ddcb6c0ee2697a9"
 AUDIO_AVX2_MANIFEST_SHA256 = "e6471f6b249a2f2e5a11ca249a6a6d6ed4a15cc33ee533fce5b6a33cc2104718"
 AUDIO_AVX2_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:5e051559692710205532ec27866d4eb5810e9e69685bfa8c6d3676948f7afb7c"
+GUARDED_MANIFEST_SHA256 = "287973b7e409ede338b0044dee79b7a3f846fea6219b6e3fd497c30e3fc4eb7b"
+GUARDED_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:f8f475c3ca78fb89e2a78b18e989e39dfb4e51dbe70c323bf3a4f7895eb98468"
+GUARDED_AVX2_MANIFEST_SHA256 = "25045af1b2d7342b1862eaef04470b1e2d49e81b0524a9942cf9ba6c42b39c80"
+GUARDED_AVX2_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:e40b84cce0428fd75d2c2c938af587286253bee56caecd098b0d3e127c578881"
 
 
 def manifest_identity(raw):
@@ -32,6 +36,8 @@ def manifest_identity(raw):
         SIGNED_MANIFEST_SHA256: ("runtime-preview-37540893708", SIGNED_IMAGE),
         AUDIO_MANIFEST_SHA256: ("runtime-preview-38139481435", AUDIO_IMAGE),
         AUDIO_AVX2_MANIFEST_SHA256: ("runtime-preview-38139481435", AUDIO_AVX2_IMAGE),
+        GUARDED_MANIFEST_SHA256: ("runtime-preview-38165346370", GUARDED_IMAGE),
+        GUARDED_AVX2_MANIFEST_SHA256: ("runtime-preview-38165346370", GUARDED_AVX2_IMAGE),
     }
     identity = approved.get(hashlib.sha256(raw).hexdigest())
     if identity is None:
@@ -132,7 +138,7 @@ def check(directory, project, port, docker, env, avx2_local_daemon=False):
     report = collect_preflight(docker, env)
     if not report["preflight_passed"]:
         raise ValueError("Host preflight failed: " + ",".join(report["issues"]))
-    if image == AUDIO_AVX2_IMAGE:
+    if image in (AUDIO_AVX2_IMAGE, GUARDED_AVX2_IMAGE):
         check_avx2_daemon(docker, env, avx2_local_daemon)
     server = report["docker_server"]
     if server["architecture"].lower() not in ("x86_64", "amd64"):

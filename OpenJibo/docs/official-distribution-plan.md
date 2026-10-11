@@ -306,3 +306,12 @@ request. D4 public-site/domain rollout, D5 hybrid admission, D6 managed-provider
 starters, D7 updates/mirrors, AutoMod conversion/onboarding and the separate
 robot-build/OTA lane remain distinct deliverables; none is certified by these
 isolated-runtime package checks.
+
+The [guarded-source preview](guarded-source-preview-publication-20261011.md)
+has now been published under a fresh identity and passed independent image,
+SPDX and starter provenance verification. Both exact digests passed native
+Ubuntu preparation, fresh startup, sockets, recorded local speech and restart
+persistence; AVX2 also passed overlap and a second phrase. Preparation/launch
+requires explicit version/profile selection, with unchanged recommendations
+and no deployments. Fresh backup/restore and the owner-review/licensing gates
+remain open; no previous-image findings are silently transferred to this one.

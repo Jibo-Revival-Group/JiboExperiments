@@ -28,6 +28,22 @@ REPORT = {"preflight_passed": True, "issues": [], "compose_version": "5.5.1",
 
 
 class LauncherTests(unittest.TestCase):
+    def test_guarded_profiles_preserve_avx2_launch_gate(self):
+        for profile in ('portable', 'avx2'):
+            image = launcher.GUARDED_AVX2_IMAGE if profile == 'avx2' else launcher.GUARDED_IMAGE
+            archive = self.base / (profile + '.zip')
+            builder.write_bundle(ROOT, image, archive, cpu_profile=profile)
+            self.target = self.base / profile
+            with zipfile.ZipFile(archive) as source:
+                source.extractall(self.target)
+            raw = (self.target / 'MANIFEST.json').read_bytes()
+            name = 'GUARDED_AVX2_MANIFEST_SHA256' if profile == 'avx2' else 'GUARDED_MANIFEST_SHA256'
+            with patch.object(launcher, name, hashlib.sha256(raw).hexdigest()), patch.object(launcher, 'check_avx2_daemon') as gate:
+                _, report = self.check_with()
+                self.assertEqual(report['runtime_image'], image)
+                self.assertEqual(report['version'], 'runtime-preview-38165346370')
+                self.assertEqual(gate.call_count, 1 if profile == 'avx2' else 0)
+
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)

@@ -29,6 +29,12 @@ AUDIO_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:e1b2aa0
 AUDIO_SOURCE_COMMIT = "0b7b56345177156a7da830cfc22c478b5f2b9c80"
 AUDIO_AVX2_SHA256 = "4fba38e4528d484238661a5c82150f1dd13594a9d40fa894203727edeb46192d"
 AUDIO_AVX2_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:5e051559692710205532ec27866d4eb5810e9e69685bfa8c6d3676948f7afb7c"
+GUARDED_VERSION = "runtime-preview-38165346370"
+GUARDED_SOURCE_COMMIT = "b9dd0de89dfdb7bea558c2ae0923eefd50758b52"
+GUARDED_SHA256 = "e8a63cc2ebe27be0499dc6ec5e235382b0063fcd26fc8caeb9e536adc5414cb8"
+GUARDED_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:f8f475c3ca78fb89e2a78b18e989e39dfb4e51dbe70c323bf3a4f7895eb98468"
+GUARDED_AVX2_SHA256 = "660b599a89ac71056699cbf66a1ac76f492c3b3d662702e8f5a3a1ab31daa569"
+GUARDED_AVX2_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:e40b84cce0428fd75d2c2c938af587286253bee56caecd098b0d3e127c578881"
 
 
 class ProvenancePrerequisiteError(ValueError):
@@ -50,6 +56,12 @@ def check_provenance_cli():
 def release_identity(version, cpu_profile="portable"):
     if cpu_profile not in ("portable", "avx2"):
         raise ValueError("Unreviewed CPU profile")
+    if version == GUARDED_VERSION:
+        avx2 = cpu_profile == "avx2"
+        return dict(version=version, archive_sha256=GUARDED_AVX2_SHA256 if avx2 else GUARDED_SHA256,
+                    runtime_image=GUARDED_AVX2_IMAGE if avx2 else GUARDED_IMAGE,
+                    source_commit=GUARDED_SOURCE_COMMIT, release_zip_attested=True,
+                    url=f"https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/{version}/starter-{cpu_profile}-preview.zip")
     if cpu_profile == "avx2":
         if version != AUDIO_VERSION:
             raise ValueError("AVX2 preparation is pinned only for the audio preview")
@@ -171,7 +183,7 @@ def prepare(data, destination, require_provenance=False, attestation=None, versi
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--channel", required=True, choices=["preview"])
-    parser.add_argument("--version", required=True, choices=[VERSION, SIGNED_VERSION, AUDIO_VERSION])
+    parser.add_argument("--version", required=True, choices=[VERSION, SIGNED_VERSION, AUDIO_VERSION, GUARDED_VERSION])
     parser.add_argument("--cpu-profile", choices=["portable", "avx2"], default="portable",
                         help="Explicit profile; AVX2 daemon-host compatibility is checked separately at launch")
     parser.add_argument("--destination", required=True, type=Path)

@@ -19,6 +19,11 @@ on:
         description: Optional successful publisher run to independently verify both starter ZIPs
         required: false
         type: string
+      ffmpeg_profile:
+        description: Expected new FFmpeg label; legacy skips this added check
+        type: choice
+        options: [legacy, distro, audio]
+        default: legacy
 
 permissions:
   contents: read
@@ -39,6 +44,7 @@ jobs:
       PORTABLE_DIGEST: ${{ inputs.portable_digest }}
       AVX2_DIGEST: ${{ inputs.avx2_digest }}
       PUBLICATION_RUN_ID: ${{ inputs.publication_run_id }}
+      FFMPEG_PROFILE: ${{ inputs.ffmpeg_profile }}
     steps:
       - uses: actions/checkout@v7
 
@@ -48,6 +54,7 @@ jobs:
           [[ "$PORTABLE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
           [[ "$AVX2_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
           test "$PORTABLE_DIGEST" != "$AVX2_DIGEST"
+          case "$FFMPEG_PROFILE" in legacy|distro|audio) ;; *) exit 1 ;; esac
           if [ -n "$PUBLICATION_RUN_ID" ]; then
             [[ "$PUBLICATION_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
           fi
@@ -83,6 +90,25 @@ jobs:
               --format '{{index .Config.Labels "org.opencontainers.image.revision"}} {{index .Config.Labels "org.openjibo.cpu-profile"}}' \
               > "verification/$profile-labels.txt"
             test "$(cat "verification/$profile-labels.txt")" = "$SOURCE_COMMIT $profile"
+            if [ "$FFMPEG_PROFILE" != legacy ]; then
+              label=$(docker image inspect "$IMAGE@$digest" --format '{{index .Config.Labels "org.openjibo.ffmpeg-profile"}}')
+              test "$label" = "$FFMPEG_PROFILE"
+              gh attestation verify "oci://$IMAGE@$digest" \
+                --repo transcendentsoftware-jd/JiboExperiments \
+                --signer-workflow transcendentsoftware-jd/JiboExperiments/.github/workflows/openjibo-runtime-preview-publish.yml \
+                --source-digest "$SOURCE_COMMIT" --deny-self-hosted-runners \
+                --cert-oidc-issuer https://token.actions.githubusercontent.com \
+                --predicate-type https://spdx.dev/Document/v2.3 --format json \
+                > "verification/$profile-sbom-provenance.json"
+            fi
+            if [ "$FFMPEG_PROFILE" = audio ]; then
+              container=$(docker create --network none "$IMAGE@$digest")
+              docker cp "$container:/usr/share/openjibo-ffmpeg" "verification/$profile-ffmpeg-source"
+              docker rm "$container"
+              (cd "verification/$profile-ffmpeg-source" && sha256sum --check SOURCE-SHA256SUMS)
+              grep -q -- '--disable-gpl' "verification/$profile-ffmpeg-source/buildconf.txt"
+              ! grep -Eq -- '--enable-(gpl|nonfree|version3)' "verification/$profile-ffmpeg-source/buildconf.txt"
+            fi
           done
 
       - name: Independently verify published starter ZIPs

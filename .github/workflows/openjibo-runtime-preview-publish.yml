@@ -2,6 +2,13 @@ name: openjibo-runtime-preview-publish
 
 on:
   workflow_dispatch:
+    inputs:
+      ffmpeg_profile:
+        description: Experimental audio-only FFmpeg or existing distro profile
+        type: choice
+        options: [distro, audio]
+        default: distro
+        required: true
 
 permissions:
   contents: read
@@ -28,6 +35,7 @@ jobs:
     env:
       IMAGE: ghcr.io/transcendent-software-llc/openjibo-runtime
       CPU_PROFILE: ${{ matrix.cpu_profile }}
+      FFMPEG_PROFILE: ${{ inputs.ffmpeg_profile }}
     steps:
       - uses: actions/checkout@v7
 
@@ -39,6 +47,7 @@ jobs:
         run: |
           test -n "$PUBLISH_TOKEN" || { echo 'Missing release-environment package token'; exit 1; }
           test -n "$PUBLISH_USER" || { echo 'Missing release-environment publishing username'; exit 1; }
+          case "$FFMPEG_PROFILE" in distro|audio) ;; *) exit 1 ;; esac
           ci_result=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow openjibo-cloud-ci.yml \
             --commit "$GITHUB_SHA" --limit 1 --json conclusion --jq '.[0].conclusion')
           test "$ci_result" = success || { echo 'Source commit must have passing runtime CI'; exit 1; }
@@ -61,9 +70,11 @@ jobs:
             --build-arg WHISPER_CPU_PROFILE="$CPU_PROFILE" \
             --build-arg WHISPER_MODEL=base.en \
             --build-arg WHISPER_BUILD_JOBS=2 \
+            --build-arg FFMPEG_PROFILE="$FFMPEG_PROFILE" \
             --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
             --label "org.opencontainers.image.revision=$GITHUB_SHA" \
             --label "org.openjibo.cpu-profile=$CPU_PROFILE" \
+            --label "org.openjibo.ffmpeg-profile=$FFMPEG_PROFILE" \
             -t "$IMAGE:preview-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$CPU_PROFILE" .
 
       - name: Verify compiled profile and executable
@@ -91,6 +102,18 @@ jobs:
             /usr/bin/whisper.cpp/models/ggml-base.en.bin > release-evidence/model-sha256.txt
           grep -q '^a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002 ' release-evidence/model-sha256.txt
           git rev-parse HEAD > release-evidence/source-commit.txt
+          printf '%s\n' "$FFMPEG_PROFILE" > release-evidence/ffmpeg-profile.txt
+          docker run --rm --pull never --network none --entrypoint ffmpeg "$tag" -buildconf \
+            > release-evidence/ffmpeg-buildconf.txt 2>&1
+          if [ "$FFMPEG_PROFILE" = audio ]; then
+            grep -q -- '--disable-gpl' release-evidence/ffmpeg-buildconf.txt
+            grep -q -- '--disable-autodetect' release-evidence/ffmpeg-buildconf.txt
+            ! grep -Eq -- '--enable-(gpl|nonfree|version3)' release-evidence/ffmpeg-buildconf.txt
+            container=$(docker create --network none "$tag")
+            docker cp "$container:/usr/share/openjibo-ffmpeg" release-evidence/ffmpeg-source
+            docker rm "$container"
+            (cd release-evidence/ffmpeg-source && sha256sum --check SOURCE-SHA256SUMS)
+          fi
 
       - name: Push preview and record registry digest
         id: image
@@ -102,6 +125,31 @@ jobs:
           [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
           printf '%s\n' "$reference" > release-evidence/runtime-image.txt
           printf 'digest=%s\n' "$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Download pinned inventory scanner
+        id: syft
+        uses: anchore/sbom-action/download-syft@fffec3d851af758d56fee099cf3fbf8aa8779843
+        with:
+          syft-version: v1.54.1
+
+      - name: Inventory immutable registry bytes
+        env:
+          SYFT: ${{ steps.syft.outputs.cmd }}
+          SYFT_CHECK_FOR_APP_UPDATE: 'false'
+        run: |
+          reference=$(cat release-evidence/runtime-image.txt)
+          "$SYFT" scan "registry:$reference" --scope squashed \
+            -o syft-json=release-evidence/runtime.syft.json \
+            -o spdx-json=release-evidence/runtime.spdx.json
+          jq -e '.spdxVersion == "SPDX-2.3" and .SPDXID == "SPDXRef-DOCUMENT"' release-evidence/runtime.spdx.json
+
+      - name: Attest preview inventory
+        uses: actions/attest@v4.2.2
+        with:
+          subject-name: ghcr.io/transcendent-software-llc/openjibo-runtime
+          subject-digest: ${{ steps.image.outputs.digest }}
+          sbom-path: release-evidence/runtime.spdx.json
+          push-to-registry: false
 
       - name: Attest preview image provenance
         uses: actions/attest-build-provenance@v4.2.2

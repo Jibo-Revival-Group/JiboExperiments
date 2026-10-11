@@ -24,6 +24,14 @@ class AudioCandidateTests(unittest.TestCase):
         self.assertIn("/usr/share/openjibo-ffmpeg", audio)
         publication = (ROOT / ".github/workflows/openjibo-runtime-preview-publish.yml").read_text()
         self.assertNotIn("FFMPEG_PROFILE=audio", publication)
+        self.assertIn("default: distro", publication)
+        self.assertIn('--build-arg FFMPEG_PROFILE="$FFMPEG_PROFILE"', publication)
+        self.assertIn('org.openjibo.ffmpeg-profile=$FFMPEG_PROFILE', publication)
+        self.assertIn('sbom-path: release-evidence/runtime.spdx.json', publication)
+        verification = (ROOT / ".github/workflows/openjibo-runtime-preview-verify.yml").read_text()
+        self.assertIn('default: legacy', verification)
+        self.assertIn('--predicate-type https://spdx.dev/Document/v2.3', verification)
+        self.assertIn('sha256sum --check SOURCE-SHA256SUMS', verification)
 
     def test_source_and_signer_pins_precede_extraction_and_compile(self):
         script = (ROOT / "OpenJibo/scripts/cloud/build-ffmpeg-audio.sh").read_text()

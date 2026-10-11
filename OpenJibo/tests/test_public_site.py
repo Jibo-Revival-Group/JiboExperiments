@@ -1,6 +1,7 @@
 """Offline contract checks for the neutral static-site payload."""
 from html.parser import HTMLParser
 from pathlib import Path
+import importlib.util
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1] / "src" / "OpenJibo.Site"
@@ -62,6 +63,34 @@ class PublicSiteTests(unittest.TestCase):
 
     def test_payload_has_no_operational_files(self):
         self.assertEqual({p.name for p in ROOT.iterdir()}, {"index.html", "downloads.html", "site.css"})
+
+    def test_signed_preview_is_primary_without_claiming_stable_certification(self):
+        page = (ROOT / "downloads.html").read_text(encoding="utf-8")
+        self.assertLess(page.index('id="signed-preview"'), page.index('id="legacy-preview"'))
+        for profile in ("portable", "avx2"):
+            self.assertIn(f"runtime-preview-37540893708/starter-{profile}-preview.zip", page)
+            self.assertIn(f"runtime-preview-37540893708/starter-{profile}-attestation.json", page)
+        for digest in ("5e38ef4e26920db0909f407ef7b53ac49ecd8d63f33dc9f631ca32f10ac66210", "30e2e9b9555042698b2dc25e32fdd7b0da282d8e08fdaf4de53ad394c5dec6c2"):
+            self.assertIn(digest, page)
+        self.assertIn("gh attestation verify --help", page)
+        self.assertIn("set -euo pipefail", page)
+        self.assertIn("--port 8087", page)
+        self.assertIn("--plan", page)
+        self.assertIn("--start", page)
+        self.assertIn("checksum-only ZIPs", page)
+        self.assertIn("encrypted-data decryption", page)
+
+    def test_primary_downloads_match_reviewed_preparer_pins(self):
+        script = ROOT.parents[1] / "scripts/cloud/prepare-published-starter.py"
+        spec = importlib.util.spec_from_file_location("site_reviewed_preparer", script)
+        preparer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(preparer)
+        record = preparer.release_identity(preparer.SIGNED_VERSION)
+        page = (ROOT / "downloads.html").read_text(encoding="utf-8")
+        self.assertIn(record["url"], page)
+        self.assertIn(record["archive_sha256"], page)
+        self.assertIn("--version " + record["version"], page)
+        self.assertTrue(record["release_zip_attested"])
 
 
 if __name__ == "__main__":

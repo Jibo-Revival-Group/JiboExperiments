@@ -175,12 +175,13 @@ does not prove proactive transaction replies. All six audio transactions matched
 This evidence is user-reported terminal output, not agent execution on the laptop.
 
 The signed portable preparation-to-launch-to-synthetic-speech path has passed.
-Restart persistence and separate backup/restore for this exact candidate remain
-open; older release recovery evidence is not silently transferred to it.
-Representative encrypted-data recovery and physical microphone/playback are also
+Restart persistence and separate backup/restore were subsequently tested for
+this exact candidate, as recorded below; older release recovery evidence was not
+silently transferred to it.
+Representative encrypted-data decryption and physical microphone/playback are also
 not proven. Preserve the private `.env`, data keys and all existing volumes.
 
-### Next: API restart without reinitialization
+### API restart test procedure
 
 This restarts only the signed candidate API, using its existing Docker
 configuration rather than recomputing Compose variables. It does not rerun the
@@ -206,3 +207,35 @@ node OpenJibo/src/Jibo.Cloud/node/invoke-jetstream-compatibility-probe.mjs \
   --mode authenticated --robots 2 --device-prefix signed-preview --skip-turn
 )
 ```
+
+## Recovery results recorded 2026-10-10
+
+User-reported terminal results close the exact signed portable candidate's
+restart and isolated restore smoke gates:
+
+- API restart recovered health after one connection-reset retry; both synthetic
+  robots reconnected in 608 ms.
+- With API stopped, SQL found `signed-preview-1` and `signed-preview-2` before
+  and after PostgreSQL restart. No intervening probe could recreate those rows.
+  The original API was restarted and health recovered afterward.
+- Both PostgreSQL databases were dumped while API was quiesced. The `/data`
+  volume and private environment were preserved along with Compose files; the
+  original API was then restarted. Backup checksums were verified before restore.
+- Fresh `openjibo-signed-restore-test` restored both databases. SQL found both
+  robot IDs before the restored API was started. The API data archive was then
+  restored into a separate volume and the saved environment was reused.
+- The restored migrator exited successfully and API startup completed on
+  loopback port 8086. Health output was partially garbled in the pasted terminal
+  text; subsequent authenticated socket and audio transactions directly
+  demonstrated a working API rather than relying on that truncated output.
+- Both restored robot socket checks passed in 570 ms. All three acoustic turns
+  matched `cloud version`, validated the cloud instruction and returned
+  `LISTEN`, `EOS`, `SKILL_ACTION` in 9352, 6996 and 7693 ms.
+
+The private backup remains on the user's laptop; it was not uploaded or inspected
+by the agent. Preserve both test stacks, keys and volumes. These results establish
+synthetic recovery behavior, not decryption of representative encrypted user
+data, physical robot behavior, AVX2 fresh installation, Windows or sustained
+capacity. There is still no stable channel, automatic update or production
+deployment. The public download page can now lead with this signed portable
+preview while retaining these limits and the unchanged previous release.

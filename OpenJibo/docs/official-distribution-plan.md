@@ -140,8 +140,11 @@ and its [first verified publication](published-starter-provenance-20261006.md).
 Reviewed two-version preparer/launcher pin integration is in place; the signed
 candidate's actual preparation and payload checks passed without Docker startup.
 User-reported fresh signed-candidate Linux launch, two socket batches and six
-acoustic turns passed on 2026-10-09. Exact-candidate restart persistence and
-separate backup/restore are next. Stable channel selection, Windows launch and signed
+acoustic turns passed on 2026-10-09. Exact-candidate API/database restart
+persistence and isolated restore with successful socket/audio probes are now
+recorded too. The download site leads with this signed portable preview, without
+claiming AVX2 fresh-install, Windows or representative encrypted-data decryption
+acceptance. Stable channel selection, Windows launch and signed
 channel metadata remain separate deliverables.
 
 Publish a neutral site preview with hosting choices, exact preview downloads,

@@ -37,6 +37,19 @@ evidence separately.
 
 ## Supplemental inventory and owner review
 
+The user designated themselves as the release-review owner and authorized
+continuing this work on 2026-10-10. That designation is not a blanket approval
+of unresolved third-party terms or stable promotion. Final approval should name
+the exact images, evidence and remaining conditions reviewed.
+
+`openjibo-runtime-notices-evidence.yml` collects copyright texts from the exact
+image's `/usr/share/doc` and Whisper's shipped `LICENSE` using `docker create`
+and `docker cp`. The container is never started. The bounded tar reader never
+extracts archive paths onto the host or follows links; skipped links are listed
+for review. A fresh ZIP records each notice's hash and the selected image.
+These workflow artifacts are review inputs, not a complete notice bundle or a
+corresponding-source offer. Existing releases and runtime images stay unchanged.
+
 The repository's MIT license is not a blanket license for all container contents.
 Before stable distribution, review the actual shipped bytes and retain applicable
 notices/terms for:

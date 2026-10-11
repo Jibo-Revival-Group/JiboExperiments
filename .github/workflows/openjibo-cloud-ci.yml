@@ -84,6 +84,9 @@ jobs:
       - name: Validate digest-scoped SBOM evidence policy
         run: python3 -B -m unittest discover -s tests -p test_runtime_sbom.py
 
+      - name: Validate bounded runtime notice collection
+        run: python3 -B -m unittest discover -s tests -p test_runtime_notices.py
+
       - name: Validate Docker build context privacy
         run: python3 -B -m unittest discover -s tests -p test_docker_build_context.py
         env:

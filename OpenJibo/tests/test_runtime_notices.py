@@ -1,0 +1,68 @@
+import importlib.util
+import io
+from pathlib import Path
+import tarfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+spec = importlib.util.spec_from_file_location("notices", ROOT / "OpenJibo/scripts/cloud/package-runtime-notices.py")
+notices = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(notices)
+
+
+def archive(entries):
+    result = io.BytesIO()
+    with tarfile.open(fileobj=result, mode="w") as tar:
+        for name, data, kind in entries:
+            entry = tarfile.TarInfo(name)
+            if kind == "link":
+                entry.type = tarfile.SYMTYPE
+                entry.linkname = "../other"
+                tar.addfile(entry)
+            else:
+                entry.size = len(data)
+                tar.addfile(entry, io.BytesIO(data))
+    return result.getvalue()
+
+
+class RuntimeNoticesTests(unittest.TestCase):
+    def test_selects_copyright_without_extracting_or_following_links(self):
+        content = archive([("doc/libtest/copyright", b"License text", "file"),
+                           ("doc/other", b"", "link"), ("doc/libtest/README", b"ignored", "file")])
+        files, links = notices.collect(content)
+        self.assertEqual(files, {"notices/doc/libtest/copyright": b"License text"})
+        self.assertEqual(links[0]["path"], "doc/other")
+
+    def test_whisper_requires_actual_license_bytes(self):
+        files, links = notices.collect(archive([("LICENSE", b"MIT notice", "file")]), whisper=True)
+        self.assertIn("notices/whisper/LICENSE", files)
+        with self.assertRaises(ValueError):
+            notices.collect(archive([("LICENSE", b"", "link")]), whisper=True)
+
+    def test_rejects_traversal_absolute_and_duplicate_members(self):
+        for path in ("../copyright", "/doc/pkg/copyright", "doc/../pkg/copyright", "doc\\pkg\\copyright"):
+            with self.assertRaises(ValueError):
+                notices.collect(archive([(path, b"notice", "file")]))
+        with self.assertRaises(ValueError):
+            notices.collect(archive([("doc/pkg/copyright", b"notice", "file")] * 2))
+
+    def test_rejects_empty_or_oversized_license(self):
+        with self.assertRaises(ValueError):
+            notices.collect(archive([("doc/pkg/copyright", b"", "file")]))
+        old = notices.MAX_NOTICE
+        try:
+            notices.MAX_NOTICE = 2
+            with self.assertRaises(ValueError):
+                notices.collect(archive([("doc/pkg/copyright", b"large", "file")]))
+        finally:
+            notices.MAX_NOTICE = old
+
+    def test_workflow_never_starts_or_publishes_images(self):
+        workflow = (ROOT / ".github/workflows/openjibo-runtime-notices-evidence.yml").read_text()
+        for forbidden in ("docker run", "docker start", "docker build", "docker push", "contents: write", "az "):
+            self.assertNotIn(forbidden, workflow)
+        self.assertIn("docker create --network none --entrypoint /bin/false", workflow)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,71 @@
+name: openjibo-runtime-notices-evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    if: github.repository == 'transcendentsoftware-jd/JiboExperiments' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        cpu_profile: [portable, avx2]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select reviewed image
+        id: image
+        env:
+          PROFILE: ${{ matrix.cpu_profile }}
+        run: |
+          reference=$(python3 -B - "$PROFILE" <<'PY'
+          import importlib.util, sys
+          spec = importlib.util.spec_from_file_location('policy', 'OpenJibo/scripts/cloud/review-runtime-sbom.py')
+          policy = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(policy)
+          print(policy.IMAGE + '@' + policy.DIGESTS[sys.argv[1]])
+          PY
+          )
+          printf 'reference=%s\n' "$reference" >> "$GITHUB_OUTPUT"
+          mkdir evidence
+          printf '%s\n' "$reference" > evidence/runtime-image.txt
+      - uses: anchore/sbom-action/download-syft@fffec3d851af758d56fee099cf3fbf8aa8779843
+        id: syft
+        with:
+          syft-version: v1.54.1
+      - name: Inventory and copy notices without starting the image
+        env:
+          IMAGE: ${{ steps.image.outputs.reference }}
+          SYFT: ${{ steps.syft.outputs.cmd }}
+          SYFT_CHECK_FOR_APP_UPDATE: 'false'
+        run: |
+          "$SYFT" scan "registry:$IMAGE" --scope squashed -o syft-json=evidence/runtime.syft.json
+          docker pull "$IMAGE"
+          container=$(docker create --network none --entrypoint /bin/false "$IMAGE")
+          trap 'docker rm "$container" >/dev/null' EXIT
+          docker cp "$container:/usr/share/doc" - > evidence/docs.tar
+          docker cp "$container:/usr/bin/whisper.cpp/LICENSE" - > evidence/whisper.tar
+      - name: Build bounded notice-review bundle
+        env:
+          PROFILE: ${{ matrix.cpu_profile }}
+        run: |
+          python3 -B OpenJibo/scripts/cloud/package-runtime-notices.py \
+            --docs-tar evidence/docs.tar --whisper-tar evidence/whisper.tar \
+            --inventory evidence/runtime.syft.json --cpu-profile "$PROFILE" \
+            --output evidence/notices-review.zip > evidence/review.json
+          sha256sum evidence/notices-review.zip evidence/runtime.syft.json > evidence/SHA256SUMS
+      - uses: actions/upload-artifact@v7
+        with:
+          name: runtime-notices-${{ matrix.cpu_profile }}-${{ github.run_id }}
+          path: |
+            evidence/notices-review.zip
+            evidence/runtime.syft.json
+            evidence/runtime-image.txt
+            evidence/review.json
+            evidence/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 90

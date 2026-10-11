@@ -324,3 +324,10 @@ experimental preview publication requires release-owner authorization. It must
 use a new release/image identity, preserve all existing assets and leave the
 recommended download and stable channel unchanged. Build success is not license
 approval, and no deployment is implied.
+
+The owner subsequently authorized a fresh publication from `b9dd0de8` after CI.
+Both profiles and independent verification passed; the new experimental
+prerelease retains the guarded Whisper source archive without changing this
+earlier release, recommended selectors or deployments. Exact identities and
+remaining gates are recorded in the
+[guarded-source publication record](guarded-source-preview-publication-20261011.md).

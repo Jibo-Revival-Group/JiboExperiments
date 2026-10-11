@@ -258,5 +258,45 @@ isolated Ubuntu checkout, the correct commit passed and a different 40-character
 commit plus an invalid short value were rejected. The pre-compilation archive
 SHA-256 was `b2771600e40e0817112242402359b5a7c3712c4623283913142f6b5978038537`;
 the public-source test remains at
-`/home/jake-dubin/openjibo-whisper-source-guard.IQSLTS`. Full native image-build
-validation is separate and must pass before treating the guarded build as tested.
+`/home/jake-dubin/openjibo-whisper-source-guard.IQSLTS`.
+
+Full native build validation subsequently passed for both profiles in
+[run 38161383222](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38161383222),
+at commit `2f7cdccdb8c4ffff8a883fd353edcd1406642077`. The retained source archives
+matched the same hash above, and each image passed all socket checks and three
+synthetic acoustic turns using local Whisper. Portable timings were 7198, 5986
+and 5771 ms; AVX2 timings were 2242, 616 and 964 ms. CI run 38161383798 passed.
+Artifacts are retained locally in `artifact-output/whisper-source-build-38161383222/`.
+These were unpublished ephemeral candidates, not replacements for the tested
+registry images or certification of physical robot behavior.
+
+### Framework file-linkage comparison
+
+The two framework package records lack scanner content hashes. A separate
+nonexecuting comparator now checks exact-version NuGet runtime payload files
+against read-only copies from each tested image, with the image/source/inventory
+policy checked before any download. It rejects unsafe TAR/ZIP members, links,
+duplicate mappings, oversized files and output overwrites. Missing or different
+payloads produce a retained report and a nonzero CLI result, not silent approval.
+
+The first copied shared-framework trees matched 143 ASP.NET files and 188 .NET
+files per profile, with no byte mismatches. The remaining NuGet payload file,
+`libhostfxr.so`, is installed at `/usr/share/dotnet/host/fxr/10.0.12/`, not in the
+shared-framework directory. An explicit separate single-file TAR and mapping
+accounted for this relocation; it was not guessed from a basename or counted
+as matched when absent.
+
+The corrected comparison matched all 143 selected ASP.NET and 189 selected .NET
+payload files for both candidate images. Each shared tree also contained a
+`.version` metadata file outside this NuGet payload selection; it is reported
+as uncompared. Reports retain copied-file and package-payload SHA-256 maps,
+input TAR hashes and exact package URLs. This is byte equality against public
+package downloads, not scanner content-hash verification, package-signature
+trust, complete-image correspondence, acquisition attestation or redistribution
+clearance. No package code or container process was executed for this check.
+
+Initial and corrected reports and raw copies remain at
+`/home/jake-dubin/openjibo-framework-evidence.LjiAr3`. Corrected generated JSON
+reports are copied to each local candidate evidence directory as
+`framework-review.json`. NuGet notice completeness, signature trust and the
+remaining native/model review work remain open.

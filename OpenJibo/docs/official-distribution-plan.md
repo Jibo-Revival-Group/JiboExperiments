@@ -290,6 +290,15 @@ preserves the exact identities, observations and candidate-specific owner-review
 bundles. Publication/build defaults and existing deployments are unchanged;
 this remains experimental, not stable or the site's recommended default.
 
+The future Whisper build now guards its release tag with the exact upstream
+commit and retains a checksummed pre-compilation source archive. Both guarded
+CPU-profile builds and acoustic/socket checks passed without publication. The
+new candidate record also retains independent file-level comparisons of both
+framework packages: 332 selected NuGet payload files matched per image,
+including an explicitly mapped relocated host library. These checks add source
+identity and file-linkage evidence; they do not clear signature trust, complete
+corresponding source, notices or model terms.
+
 This advances D2 evidence, not stable approval. Next technical work is completing
 notice coverage, source/build and model linkage, and preparing the exact-image
 owner-review packet. Physical-robot acceptance remains deferred at the user's

@@ -98,6 +98,8 @@ jobs:
         run: python3 -B -m unittest discover -s tests -p test_runtime_ffmpeg_build.py
       - name: Validate nonexecuting speech model evidence
         run: python3 -B -m unittest discover -s tests -p test_runtime_model_evidence.py
+      - name: Validate nonexecuting framework file comparison
+        run: python3 -B -m unittest discover -s tests -p test_runtime_framework_files.py
       - name: Validate opt-in audio FFmpeg candidate
         run: python3 -B -m unittest discover -s tests -p test_ffmpeg_audio_candidate.py
 

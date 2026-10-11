@@ -86,6 +86,8 @@ jobs:
 
       - name: Validate bounded runtime notice collection
         run: python3 -B -m unittest discover -s tests -p test_runtime_notices.py
+      - name: Validate bounded NuGet metadata evidence
+        run: python3 -B -m unittest discover -s tests -p test_runtime_nuget_metadata.py
 
       - name: Validate Docker build context privacy
         run: python3 -B -m unittest discover -s tests -p test_docker_build_context.py

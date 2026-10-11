@@ -60,6 +60,14 @@ jobs:
             --inventory evidence/runtime.syft.json --cpu-profile "$PROFILE" \
             --output evidence/notices-review.zip > evidence/review.json
           sha256sum evidence/notices-review.zip evidence/runtime.syft.json > evidence/SHA256SUMS
+      - name: Collect exact-version NuGet manifest declarations
+        env:
+          PROFILE: ${{ matrix.cpu_profile }}
+        run: |
+          python3 -B OpenJibo/scripts/cloud/collect-runtime-nuget-metadata.py \
+            --inventory evidence/runtime.syft.json --cpu-profile "$PROFILE" \
+            --fetch --output evidence/nuget-metadata-review.zip > evidence/nuget-review.json
+          sha256sum evidence/nuget-metadata-review.zip >> evidence/SHA256SUMS
       - uses: actions/upload-artifact@v7
         with:
           name: runtime-notices-${{ matrix.cpu_profile }}-${{ github.run_id }}
@@ -68,6 +76,8 @@ jobs:
             evidence/runtime.syft.json
             evidence/runtime-image.txt
             evidence/review.json
+            evidence/nuget-metadata-review.zip
+            evidence/nuget-review.json
             evidence/SHA256SUMS
           if-no-files-found: error
           retention-days: 90

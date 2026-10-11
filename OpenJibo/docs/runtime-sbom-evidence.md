@@ -67,6 +67,32 @@ corresponding-source availability, FFmpeg build configuration, and native/model
 coverage. Owner sign-off will be recorded against a specific completed packet,
 not inferred from authorization to gather evidence.
 
+### Exact-version NuGet declarations
+
+`collect-runtime-nuget-metadata.py` plans offline by default. Explicit `--fetch`
+collects manifests only from NuGet.org's fixed HTTPS package-content endpoint;
+redirects, arbitrary upstream URLs, XML entities and unsafe package identifiers
+are refused. It validates manifest package ID/version, caps individual manifests
+at 1 MiB and combined bytes at 16 MiB, and writes a fresh review ZIP without
+installing packages. Original manifest bytes and hashes are retained. See the
+[official package-content API](https://learn.microsoft.com/en-us/nuget/api/package-base-address-resource)
+for the endpoint contract.
+
+The portable image's 87 scanner package records select 53 distinct name/version
+pairs. Initial local collection succeeded for all 53: their manifests declare
+33 MIT, 19 Apache-2.0 and one PostgreSQL license expression. Every downloaded
+manifest hash was checked; raw declarations are not license clearance. The
+evidence is retained in `artifact-output/runtime-nuget-20261011/portable-review.zip`.
+This initial local sample predates retaining scanner SHA-512 values in the
+review report; subsequent workflow bundles retain all distinct supplied hashes.
+
+Package archive hashes have **not** been verified. Neither a matching manifest
+ID/version nor a license expression proves the exact image's archive contents,
+notice completeness or source availability. Framework/project/unclassified .NET
+records remain outside this package-manifest lane. External license URLs and
+license-file references are saved as declarations only, never followed. These
+supplemental ZIPs are unsigned and do not replace the signed SPDX evidence.
+
 ### Upstream review inputs
 
 The [original Whisper project](https://github.com/openai/whisper#license) states

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check, then explicitly launch a fresh portable preview on native Linux only."""
+"""Check, then explicitly launch a fresh reviewed preview on native Linux only."""
 import argparse
 import hashlib
 import importlib.util
@@ -22,6 +22,8 @@ SIGNED_MANIFEST_SHA256 = "c9ceaedd1339721a7fa1a32b64990623633a2abc2617ed6242be97
 SIGNED_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:6bb69fd68d2c4863feaf17fd90319125ed1534f8cf728a4070ce04ee116c6010"
 AUDIO_MANIFEST_SHA256 = "e0b04a517ce103ad0615b21cbcc51cc8ac4602db81fb796976ad3f0069bd2381"
 AUDIO_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:e1b2aa06fc1f69bd498c5394388636331ba646abf2f39ca66ddcb6c0ee2697a9"
+AUDIO_AVX2_MANIFEST_SHA256 = "e6471f6b249a2f2e5a11ca249a6a6d6ed4a15cc33ee533fce5b6a33cc2104718"
+AUDIO_AVX2_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:5e051559692710205532ec27866d4eb5810e9e69685bfa8c6d3676948f7afb7c"
 
 
 def manifest_identity(raw):
@@ -29,6 +31,7 @@ def manifest_identity(raw):
         MANIFEST_SHA256: ("runtime-preview-36863178102", IMAGE),
         SIGNED_MANIFEST_SHA256: ("runtime-preview-37540893708", SIGNED_IMAGE),
         AUDIO_MANIFEST_SHA256: ("runtime-preview-38139481435", AUDIO_IMAGE),
+        AUDIO_AVX2_MANIFEST_SHA256: ("runtime-preview-38139481435", AUDIO_AVX2_IMAGE),
     }
     identity = approved.get(hashlib.sha256(raw).hexdigest())
     if identity is None:
@@ -103,7 +106,21 @@ def collect_preflight(docker, env):
     return preflight.collect_report()
 
 
-def check(directory, project, port, docker, env):
+def check_avx2_daemon(docker, env, confirmed_local):
+    if not confirmed_local:
+        raise ValueError("AVX2 needs explicit confirmation that Docker runs on this native Linux host")
+    endpoint = run(docker + ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"], env)
+    if endpoint != "unix:///var/run/docker.sock":
+        raise ValueError("AVX2 launcher only supports the confirmed local system Docker socket")
+    spec = importlib.util.spec_from_file_location("launcher_cpu", Path(__file__).with_name("preflight-whisper-avx2.py"))
+    cpu = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cpu)
+    report = cpu.assess(platform.system(), platform.machine(), Path("/proc/cpuinfo").read_text())
+    if not report["avx2_cpu_prerequisites_passed"]:
+        raise ValueError("Local processors do not all support the AVX2 image prerequisites")
+
+
+def check(directory, project, port, docker, env, avx2_local_daemon=False):
     parameters(project, port)
     directory = checked_files(directory)
     version, image = manifest_identity((directory / "MANIFEST.json").read_bytes())
@@ -115,6 +132,8 @@ def check(directory, project, port, docker, env):
     report = collect_preflight(docker, env)
     if not report["preflight_passed"]:
         raise ValueError("Host preflight failed: " + ",".join(report["issues"]))
+    if image == AUDIO_AVX2_IMAGE:
+        check_avx2_daemon(docker, env, avx2_local_daemon)
     server = report["docker_server"]
     if server["architecture"].lower() not in ("x86_64", "amd64"):
         raise ValueError("Docker daemon architecture is not x86_64")
@@ -158,10 +177,10 @@ def wait_health(port):
     raise ValueError("Health deadline exceeded; retain files and volumes")
 
 
-def start(directory, project, port, docker, env):
+def start(directory, project, port, docker, env, avx2_local_daemon=False):
     # Recheck immediately before any mutation. Failed attempts are retained and
     # cannot be silently reinitialized or upgraded by this fresh-only launcher.
-    directory, report = check(directory, project, port, docker, env)
+    directory, report = check(directory, project, port, docker, env, avx2_local_daemon)
     lock = directory / ".preview-launch.lock"
     with lock.open("x") as stream:
         stream.write("Fresh launch attempted; preserve environment and volumes.\n")
@@ -188,13 +207,15 @@ def main():
     parser.add_argument("--port", required=True, type=int)
     parser.add_argument("--sudo-docker", action="store_true", help="Use preauthorized sudo -n for Docker only; do not run Python as root")
     parser.add_argument("--start", action="store_true", help="Explicitly initialize secrets and launch; default is read-only check")
+    parser.add_argument("--avx2-local-daemon", action="store_true",
+                        help="Confirm Docker daemon runs on this same native Linux host; required for AVX2, never selects a profile")
     args = parser.parse_args()
     docker = ["sudo", "-n", "docker"] if args.sudo_docker else ["docker"]
     try:
         if hasattr(os, "geteuid") and os.geteuid() == 0:
             raise ValueError("Run Python as your normal user; use --sudo-docker for Docker access")
         operation = start if args.start else check
-        result = operation(args.directory, args.project, args.port, docker, clean_environment())
+        result = operation(args.directory, args.project, args.port, docker, clean_environment(), args.avx2_local_daemon)
         if not args.start:
             _, result = result
         print(json.dumps(result, sort_keys=True))

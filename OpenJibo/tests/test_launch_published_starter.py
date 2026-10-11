@@ -99,6 +99,34 @@ class LauncherTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             launcher.checked_files(self.target)
 
+    def test_avx2_manifest_requires_daemon_confirmation(self):
+        archive = self.base / 'avx2.zip'
+        builder.write_bundle(ROOT, launcher.AUDIO_AVX2_IMAGE, archive, cpu_profile='avx2')
+        self.target = self.base / 'avx2-prepared'
+        with zipfile.ZipFile(archive) as source:
+            source.extractall(self.target)
+        raw = (self.target / 'MANIFEST.json').read_bytes()
+        with patch.object(launcher, 'AUDIO_AVX2_MANIFEST_SHA256', hashlib.sha256(raw).hexdigest()), patch.object(launcher, 'check_avx2_daemon', side_effect=ValueError('confirmation required')) as guard:
+            with self.assertRaises(ValueError):
+                self.check_with()
+            guard.assert_called_once_with(['docker'], {}, False)
+        self.assertFalse((self.target / '.env').exists())
+
+    def test_avx2_guard_rejects_remote_daemons_and_missing_cpu_flags(self):
+        with self.assertRaises(ValueError):
+            launcher.check_avx2_daemon(['docker'], {}, False)
+        for endpoint in ('tcp://remote:2376', 'ssh://remote', 'unix:///other.sock'):
+            with patch.object(launcher, 'run', return_value=endpoint), self.assertRaises(ValueError):
+                launcher.check_avx2_daemon(['docker'], {}, True)
+        flags = 'sse4_2 avx avx2 fma f16c bmi2'
+        for cpuinfo, passed in ((f'processor : 0\nflags : {flags}\n', True), ('processor : 0\nflags : avx\n', False)):
+            with patch.object(launcher, 'run', return_value='unix:///var/run/docker.sock'), patch.object(launcher.platform, 'system', return_value='Linux'), patch.object(launcher.platform, 'machine', return_value='x86_64'), patch.object(launcher.Path, 'read_text', return_value=cpuinfo):
+                if passed:
+                    launcher.check_avx2_daemon(['docker'], {}, True)
+                else:
+                    with self.assertRaises(ValueError):
+                        launcher.check_avx2_daemon(['docker'], {}, True)
+
     @unittest.skipIf(sys.platform == "win32", "Native Linux symlink contract")
     def test_symlink_rejected(self):
         (self.target / "extra").symlink_to(self.base)

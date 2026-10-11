@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare an explicitly selected reviewed portable preview; never start Docker."""
+"""Prepare an explicitly selected reviewed preview; never start Docker."""
 import argparse
 import hashlib
 import importlib.util
@@ -27,6 +27,8 @@ AUDIO_VERSION = "runtime-preview-38139481435"
 AUDIO_SHA256 = "42e967f6863b3f6a6ddd0cf7756f7ac840fb14f7326e928c0e9a73028a1c1b01"
 AUDIO_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:e1b2aa06fc1f69bd498c5394388636331ba646abf2f39ca66ddcb6c0ee2697a9"
 AUDIO_SOURCE_COMMIT = "0b7b56345177156a7da830cfc22c478b5f2b9c80"
+AUDIO_AVX2_SHA256 = "4fba38e4528d484238661a5c82150f1dd13594a9d40fa894203727edeb46192d"
+AUDIO_AVX2_IMAGE = "ghcr.io/transcendent-software-llc/openjibo-runtime@sha256:5e051559692710205532ec27866d4eb5810e9e69685bfa8c6d3676948f7afb7c"
 
 
 class ProvenancePrerequisiteError(ValueError):
@@ -45,7 +47,15 @@ def check_provenance_cli():
         raise ProvenancePrerequisiteError("GitHub CLI lacks required attestation verification support")
 
 
-def release_identity(version):
+def release_identity(version, cpu_profile="portable"):
+    if cpu_profile not in ("portable", "avx2"):
+        raise ValueError("Unreviewed CPU profile")
+    if cpu_profile == "avx2":
+        if version != AUDIO_VERSION:
+            raise ValueError("AVX2 preparation is pinned only for the audio preview")
+        return dict(version=version, archive_sha256=AUDIO_AVX2_SHA256, runtime_image=AUDIO_AVX2_IMAGE,
+                    source_commit=AUDIO_SOURCE_COMMIT, release_zip_attested=True,
+                    url=f"https://github.com/transcendentsoftware-jd/JiboExperiments/releases/download/{version}/starter-avx2-preview.zip")
     if version == AUDIO_VERSION:
         return dict(version=version, archive_sha256=AUDIO_SHA256, runtime_image=AUDIO_IMAGE,
                     source_commit=AUDIO_SOURCE_COMMIT, release_zip_attested=True,
@@ -82,16 +92,16 @@ def read_bounded(stream):
     return data
 
 
-def download(version=VERSION):
+def download(version=VERSION, cpu_profile="portable"):
     opener = urllib.request.build_opener(ReleaseRedirect())
-    request = urllib.request.Request(trusted_url(release_identity(version)["url"]), headers={"User-Agent": "OpenJibo-preview-preparer"})
+    request = urllib.request.Request(trusted_url(release_identity(version, cpu_profile)["url"]), headers={"User-Agent": "OpenJibo-preview-preparer"})
     with opener.open(request, timeout=20) as response:
         trusted_url(response.geturl())
         return read_bounded(response)
 
 
-def verify_provenance(data, attestation=None, version=VERSION):
-    identity = release_identity(version)
+def verify_provenance(data, attestation=None, version=VERSION, cpu_profile="portable"):
+    identity = release_identity(version, cpu_profile)
     spec = importlib.util.spec_from_file_location("published_provenance_verifier", Path(__file__).with_name("verify-starter-provenance.py"))
     verifier = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(verifier)
@@ -103,8 +113,8 @@ def verify_provenance(data, attestation=None, version=VERSION):
         raise ValueError("Signed release verification did not succeed")
 
 
-def prepare(data, destination, require_provenance=False, attestation=None, version=VERSION):
-    identity = release_identity(version)
+def prepare(data, destination, require_provenance=False, attestation=None, version=VERSION, cpu_profile="portable"):
+    identity = release_identity(version, cpu_profile)
     # A signed release can never opt down to the legacy checksum-only policy.
     require_provenance = require_provenance or identity["release_zip_attested"]
     if attestation is not None and not require_provenance:
@@ -128,10 +138,13 @@ def prepare(data, destination, require_provenance=False, attestation=None, versi
         snapshot = Path(temp) / "starter.zip"
         snapshot.write_bytes(data)
         report = verifier.verify_bundle(snapshot, identity["archive_sha256"])
-    if report["runtime_image"] != identity["runtime_image"] or report["declared_cpu_profile"] != "portable":
+    if report["runtime_image"] != identity["runtime_image"] or report["declared_cpu_profile"] != cpu_profile:
         raise ValueError("Verified package differs from the reviewed release identity")
     if require_provenance:
-        verify_provenance(data, attestation, version)
+        if cpu_profile == "portable":
+            verify_provenance(data, attestation, version)
+        else:
+            verify_provenance(data, attestation, version, cpu_profile)
     # The existing verifier rejects traversal, duplicate names, links and extra files.
     # Extract those same verified bytes; refuse overwrite even after validation.
     destination.mkdir(mode=0o700)
@@ -147,7 +160,7 @@ def prepare(data, destination, require_provenance=False, attestation=None, versi
             with target.open("xb") as output:
                 output.write(archive.read(info))
             target.chmod(0o755 if info.filename.endswith(".sh") else 0o600)
-    return {"prepared": True, "version": version, "cpu_profile": "portable",
+    return {"prepared": True, "version": version, "cpu_profile": cpu_profile,
             "archive_sha256": identity["archive_sha256"], "runtime_image": identity["runtime_image"],
             "destination": str(destination), "docker_started": False,
             "provenance_verified": require_provenance,
@@ -159,18 +172,23 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--channel", required=True, choices=["preview"])
     parser.add_argument("--version", required=True, choices=[VERSION, SIGNED_VERSION, AUDIO_VERSION])
+    parser.add_argument("--cpu-profile", choices=["portable", "avx2"], default="portable",
+                        help="Explicit profile; AVX2 daemon-host compatibility is checked separately at launch")
     parser.add_argument("--destination", required=True, type=Path)
     parser.add_argument("--bundle", type=Path, help="Optional local copy of this exact release ZIP")
     parser.add_argument("--plan", action="store_true", help="Print pinned identity without downloading or writing")
     parser.add_argument("--require-provenance", action="store_true", help="Require provenance for legacy preview too; the new signed preview always requires it")
     parser.add_argument("--attestation", type=Path, help="Optional local signature bundle; signed verification must be selected")
     args = parser.parse_args()
-    identity = release_identity(args.version)
+    try:
+        identity = release_identity(args.version, args.cpu_profile)
+    except ValueError as error:
+        parser.error(str(error))
     required = args.require_provenance or identity["release_zip_attested"]
     if args.attestation is not None and not required:
         parser.error("--attestation requires --require-provenance")
     if args.plan:
-        print(json.dumps(dict(identity, cpu_profile="portable", provenance_required=required), sort_keys=True))
+        print(json.dumps(dict(identity, cpu_profile=args.cpu_profile, provenance_required=required), sort_keys=True))
         return 0
     try:
         if args.destination.exists() or args.destination.is_symlink():
@@ -181,8 +199,8 @@ def main():
             with args.bundle.open("rb") as stream:
                 data = read_bounded(stream)
         else:
-            data = download(args.version)
-        print(json.dumps(prepare(data, args.destination, required, args.attestation, args.version), sort_keys=True))
+            data = download(args.version, args.cpu_profile)
+        print(json.dumps(prepare(data, args.destination, required, args.attestation, args.version, args.cpu_profile), sort_keys=True))
         return 0
     except ProvenancePrerequisiteError:
         print("Preview preparation stopped: GitHub CLI is missing, outdated or unavailable. Upgrade gh from its official repository and confirm gh attestation verify --help succeeds. No download or extraction was attempted.", file=sys.stderr)

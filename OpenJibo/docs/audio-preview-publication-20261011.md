@@ -2,7 +2,8 @@
 
 This is a new experimental prerelease, not a stable channel or an in-place
 upgrade. Existing releases, the site's tested-preview recommendation, and
-deployments remain unchanged. Ubuntu fresh-install acceptance is outstanding.
+deployments remain unchanged. Portable Ubuntu fresh-install acceptance passed
+over SSH on 2026-10-11; the evidence and limits are recorded below.
 Physical robot microphone/playback testing remains deferred. No legal clearance
 or capacity certification is implied by the signed inventory.
 
@@ -33,8 +34,12 @@ The previous fixed-policy SBOM reports remain tied to the old digests.
 
 The portable manifest SHA-256 is
 `e0b04a517ce103ad0615b21cbcc51cc8ac4602db81fb796976ad3f0069bd2381`.
-The guarded preparer/launcher support only this release's portable ZIP; AVX2
-publication is verified but is not silently selected by host CPU detection.
+The guarded preparer/launcher default to this release's portable ZIP. AVX2 is
+an explicit `--cpu-profile avx2` preparation choice. Launch additionally requires
+`--avx2-local-daemon`, a confirmed daemon on the same native Linux host, the local
+system Docker socket, and all required CPU flags. The flag never selects an image.
+Local socket/CPU checks are not remote-daemon certification; do not make that
+confirmation for a forwarded socket or a daemon running on another host.
 
 ## Ubuntu fresh-install acceptance
 
@@ -76,5 +81,39 @@ node OpenJibo/src/Jibo.Cloud/node/invoke-real-audio-probe.mjs \
 Expected: signed preparation, health pass, both synthetic robots connect to all
 three socket types, and all three acoustic turns match the phrase and return
 `LISTEN`, `EOS`, `SKILL_ACTION`. Portable timing is not expected to match AVX2.
-Next gates: Ubuntu acceptance, fresh AVX2 starter integration/acceptance, remaining
+Next gates: fresh AVX2 starter integration/acceptance, remaining
 distribution notice/source review, and then separately approved release promotion.
+
+## Native Ubuntu acceptance — passed over SSH
+
+On 2026-10-11 the portable published candidate was installed and tested on the
+owner's Ubuntu laptop (i5-8250U, 8 GiB RAM). Docker 29.8.2 and Compose 5.6.0 were
+observed. The tracked checkout fast-forwarded to `da6c6edc`; unrelated untracked
+files, existing projects on ports 8082–8086, and backups were preserved.
+
+Fresh directory:
+`/home/jake-dubin/Downloads/openjibo-audio-ssh-20261011T141159Z`.
+Project: `openjibo-audio-ssh-20261011141159`, bound to loopback port 8087.
+Signed public-release preparation and guarded launch/health checks passed.
+Azure Speech was confirmed disabled before probing.
+
+Two authenticated synthetic robots passed notification, listen and proactive
+socket checks in 600 ms. Three recorded `cloud-version.ogg` turns all matched
+the phrase/instruction and returned `LISTEN`, `EOS`, `SKILL_ACTION`, in 8388,
+6899 and 6588 ms. Logs confirmed three `whisper-server-buffered-audio`
+successes. The API remained running without OOM or automatic restart; a
+post-test sample showed 333.4 MiB RAM, not a peak-memory measurement.
+
+The new project's API was stopped, the two probe records were read directly
+from PostgreSQL, and only that project's PostgreSQL was restarted. Both records
+were present unchanged before API startup. Health recovered after one expected
+startup connection-reset retry; both authenticated robots then passed all socket
+checks again in 577 ms. The inspected image matched the pinned portable digest.
+
+Reports are retained on Ubuntu at
+`/home/jake-dubin/openjibo-audio-ssh-results.2R4OVc` and copied locally to
+`artifact-output/ubuntu-audio-preview-20261011/`. No secrets or databases were
+copied. The new project remains available for further inspection; no old stack
+was restarted or modified. This establishes portable fresh-install, recorded
+audio, restart and device-row persistence acceptance—not a new backup/restore,
+AVX2 published-starter, physical-robot or license-clearance result.

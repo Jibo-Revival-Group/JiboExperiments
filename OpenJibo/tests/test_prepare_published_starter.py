@@ -24,6 +24,30 @@ builder = load("published_builder", ROOT / "OpenJibo/scripts/cloud/prepare-openj
 
 
 class PublishedStarterTests(unittest.TestCase):
+    def test_avx2_is_explicit_signed_and_profile_bound(self):
+        identity = installer.release_identity(installer.AUDIO_VERSION, 'avx2')
+        self.assertTrue(identity['release_zip_attested'])
+        self.assertEqual(identity['runtime_image'], installer.AUDIO_AVX2_IMAGE)
+        self.assertIn('/starter-avx2-preview.zip', identity['url'])
+        for version, profile in ((installer.VERSION, 'avx2'), (installer.SIGNED_VERSION, 'avx2'), (installer.AUDIO_VERSION, 'auto')):
+            with self.assertRaises(ValueError):
+                installer.release_identity(version, profile)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            archive = root / 'avx2.zip'
+            builder.write_bundle(ROOT, installer.AUDIO_AVX2_IMAGE, archive, cpu_profile='avx2')
+            data = archive.read_bytes()
+            with patch.object(installer, 'AUDIO_AVX2_SHA256', hashlib.sha256(data).hexdigest()), patch.object(installer, 'verify_provenance') as verify:
+                result = installer.prepare(data, root / 'prepared', version=installer.AUDIO_VERSION, cpu_profile='avx2')
+                self.assertEqual(result['cpu_profile'], 'avx2')
+                self.assertTrue(result['provenance_verified'])
+                verify.assert_called_once_with(data, None, installer.AUDIO_VERSION, 'avx2')
+            builder.write_bundle(ROOT, installer.AUDIO_AVX2_IMAGE, root / 'wrong.zip')
+            wrong = (root / 'wrong.zip').read_bytes()
+            with patch.object(installer, 'AUDIO_AVX2_SHA256', hashlib.sha256(wrong).hexdigest()), self.assertRaises(ValueError):
+                installer.prepare(wrong, root / 'wrong', version=installer.AUDIO_VERSION, cpu_profile='avx2')
+            self.assertFalse((root / 'wrong').exists())
+
     def test_audio_candidate_is_explicit_and_always_signed(self):
         identity = installer.release_identity(installer.AUDIO_VERSION)
         self.assertTrue(identity['release_zip_attested'])

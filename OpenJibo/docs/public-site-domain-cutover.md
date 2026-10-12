@@ -101,7 +101,28 @@ must not become prerequisites for reading or downloading self-hosted packages.
 ## Owner input needed
 
 The apex/`www` target is approved and its DNS changes are complete. Preserve the
-verification TXT record. No further DNS input is needed while certificate issuance
-is pending. Managed-cloud production creation and its later domain/Entra activation
+verification TXT record. HTTPS is now enforced and no further web DNS input is
+needed. Managed-cloud production creation and its later domain/Entra activation
 remain separate approval steps. No domain credentials, verification token or private
 zone export should be pasted into Git.
+
+## Publication recovery — 2026-10-12
+
+Unpublishing and republishing changed Pages to legacy branch publication from
+`main` at `/`. That generated a Jekyll page from the repository README, not the
+intended `OpenJibo/src/OpenJibo.Site` artifact. `/site.css` and `/downloads.html`
+returned 404. The site source was already merged to `main`; this was not a
+development-branch or CSS-source issue.
+
+Restored **Settings → Pages → Build and deployment → Source → GitHub Actions**,
+preserving `openjibo.com` and HTTPS enforcement, then manually ran
+`openjibo-public-site.yml` on `main`. [Run 38251443557](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38251443557)
+passed all seven site contracts and deployed source
+`a042f0065682d7bc395b117b820222c6289b6376`. Live HTTPS checks confirmed the intended
+homepage, `/site.css` (`text/css`) and `/downloads.html` all returned 200.
+
+For future republishing, keep the source set to GitHub Actions and dispatch that
+workflow on `main`; do not select branch-root publication or relocate/duplicate
+the site into the repository root. A hard refresh can clear a previously cached
+README page. No robot/customer application, Azure resource or DNS record was
+changed by this recovery.

@@ -4,6 +4,16 @@ Prepared from read-only inventory on 2026-10-11. This is not a deployment
 manifest or authorization to create resources. The neutral Pages site and the
 managed customer service are separate deployment lanes.
 
+The owner subsequently approved the scoped bootstrap. The dedicated identity,
+empty customer database, 5 GiB SMB key share/environment mount and registry-pull
+grant have been provisioned. The customer app, SQL roles/migrations, production
+secret access and public cloud DNS have not been deployed. Two decisions block
+further execution: a separate customer-only vault is needed to avoid vault-wide
+robot-secret access, and GitHub rejected required reviewers for the private
+Team-plan repository. The empty environment created by that failed request was
+removed after verifying it held no credentials or variables. No existing robot
+resources were repurposed or reset.
+
 ## Confirmed baseline
 
 Scope: subscription `a29ded8e-51f7-4d01-9b80-2cd0be3f23cb`, resource group

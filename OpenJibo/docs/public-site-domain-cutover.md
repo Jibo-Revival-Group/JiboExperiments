@@ -1,8 +1,35 @@
-# Neutral public-site domain cutover — preparation only
+# Neutral public-site domain cutover
 
-No DNS, GitHub custom-domain or Azure binding was changed by this document.
-The approved experimental site update is published separately through the
-manual GitHub Pages workflow. A runtime deployment is not part of this lane.
+This runbook was prepared before the owner-approved domain cutover. A runtime
+deployment is not part of this lane; the later actions are recorded below.
+
+## Executed progress, 2026-10-11
+
+- The site update at `73dceb3a730209ecde5656801468dd9ce7d3ab33` passed CI and
+  [Pages publication 38182930424](https://github.com/transcendentsoftware-jd/JiboExperiments/actions/runs/38182930424).
+- The owner verified `openjibo.com`; the repository's Pages custom domain was
+  then set to that exact apex. The API reports `protected_domain_state: verified`.
+- The owner changed only the web-routing records. Both authoritative nameservers
+  and Google's public resolver returned all four proposed Pages IPv4 addresses;
+  `www` points directly to `transcendentsoftware-jd.github.io`.
+- HTTP homepage, downloads and stylesheet returned 200. The current experimental
+  version, both ZIP checksums and all four ZIP/signature links were verified on
+  the published site. API CNAME and Microsoft 365 MX answers remain unchanged.
+- HTTPS is **not complete**: Pages still reports no certificate and enforcement
+  disabled. Its domain health response still reports a non-Pages apex address,
+  contrary to the current authoritative/public DNS answers. Do not claim TLS
+  acceptance or toggle/delete DNS repeatedly to work around this cached check.
+
+Once the certificate becomes available, enable HTTPS enforcement and verify
+apex/`www` redirects, downloads and CSS without bypassing certificate validation.
+No source `CNAME` file, runtime deployment or Azure binding was added.
+
+Read-only managed-cloud inventory confirmed that `rg-openjibo-prod` contains the
+robot runtime `openjibo-cloud`, not a separate `openjibo-managed-api` customer app.
+The managed app remains in staging at revision `openjibo-managed-api--39e5cd41f081`;
+its GitHub repository has only the staging protected environment. Do not point
+`cloud.openjibo.com` to that staging app or the robot runtime. Production bootstrap
+needs a reviewed resource/configuration/cost plan and separate owner approval.
 
 ## Observed public configuration, 2026-10-11
 
@@ -73,7 +100,8 @@ must not become prerequisites for reading or downloading self-hosted packages.
 
 ## Owner input needed
 
-Confirm the apex/`www` cutover target and where DNS is administered. The generated
-verification TXT value must come from the publishing owner's GitHub Pages settings.
-An operator with DNS access must apply the narrowly scoped records; no domain
-credentials, verification token or private zone export should be pasted into Git.
+The apex/`www` target is approved and its DNS changes are complete. Preserve the
+verification TXT record. No further DNS input is needed while certificate issuance
+is pending. Managed-cloud production creation and its later domain/Entra activation
+remain separate approval steps. No domain credentials, verification token or private
+zone export should be pasted into Git.

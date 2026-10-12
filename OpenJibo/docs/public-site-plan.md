@@ -20,6 +20,12 @@ clearance of the remaining license/notice/physical-robot gates. Public-site
 workflow publication is separate from runtime deployment; no runtime deploy or
 custom-domain cutover is authorized by this update.
 
+The owner subsequently verified and approved the apex/`www` domain cutover;
+its DNS records now point to Pages and HTTP routing works. TLS issuance remains
+pending, not a completed HTTPS launch. The
+[domain runbook and execution record](public-site-domain-cutover.md) preserves
+the original routing snapshot, executed checks and separate managed-cloud gate.
+
 Status: neutral preview published at
 https://transcendentsoftware-jd.github.io/JiboExperiments/.
 First publication passed:

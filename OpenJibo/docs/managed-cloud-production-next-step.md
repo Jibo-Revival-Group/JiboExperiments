@@ -14,6 +14,12 @@ Team-plan repository. The empty environment created by that failed request was
 removed after verifying it held no credentials or variables. No existing robot
 resources were repurposed or reset.
 
+The owner approved the separate customer vault and temporary explicit manual
+release procedure. `kv-openjibo-cloud-prod` is now created with RBAC and remains
+empty. Exact federation and secret-material writes were blocked by automatic
+action review pending more specific authorization; those commands did not run.
+No deployment or old-vault permission change resulted.
+
 ## Confirmed baseline
 
 Scope: subscription `a29ded8e-51f7-4d01-9b80-2cd0be3f23cb`, resource group

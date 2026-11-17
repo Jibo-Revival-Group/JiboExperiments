@@ -171,7 +171,9 @@ public sealed class JiboWebSocketServiceTests
             .GetProperty("play")
             .GetProperty("esml")
             .GetString();
-        Assert.Contains("Cloud version", esml, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(
+            $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>My cloud version is {OpenJiboCloudBuildInfo.Version.Replace(".", " dot ")}.</es></speak>",
+            esml);
         Assert.DoesNotContain("Jibo", esml, StringComparison.OrdinalIgnoreCase);
 
         var session = _store.FindSessionByToken("hub-cloud-version-token");
@@ -7818,13 +7820,16 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(0, session.TurnState.BufferedAudioBytes);
     }
 
-    [Fact]
-    public async Task BufferedHotphraseOggAudio_RobotVersionSelfAudioEarlyProbeStaysOpenBeforeHardTimeout()
+    [Theory]
+    [InlineData("cloud version 1 dot 0 dot 20")]
+    [InlineData("my cloud version is 1 dot 0 dot 20")]
+    [InlineData("my cloud version is one dot zero dot twenty")]
+    public async Task BufferedHotphraseOggAudio_RobotVersionSelfAudioEarlyProbeStaysOpenBeforeHardTimeout(string transcript)
     {
         var stateStore = new InMemoryCloudStateStore();
         var service = CreateService(stateStore, sttStrategies:
         [
-            new QueuedBufferedAudioSttStrategy("cloud version 1 dot 0 dot 20")
+            new QueuedBufferedAudioSttStrategy(transcript)
         ]);
 
         await service.HandleMessageAsync(new WebSocketMessageEnvelope

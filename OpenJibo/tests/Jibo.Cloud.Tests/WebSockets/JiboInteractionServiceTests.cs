@@ -7136,6 +7136,9 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("cloud_version", decision.IntentName);
         Assert.Equal(OpenJiboCloudBuildInfo.SpokenVersion, decision.ReplyText);
+        Assert.Equal($"My cloud version is {OpenJiboCloudBuildInfo.Version.Replace(".", " dot ")}.",
+            decision.ReplyText);
+        Assert.False(decision.SkillPayload?.ContainsKey("esml") ?? false);
         Assert.DoesNotContain("Jibo", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 

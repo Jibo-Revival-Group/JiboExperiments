@@ -6,8 +6,7 @@ public sealed partial class JiboInteractionService
 {
     private static JiboInteractionDecision BuildCloudVersionDecision()
     {
-        return new JiboInteractionDecision("cloud_version", OpenJiboCloudBuildInfo.SpokenVersion,
-            SkillPayload: new Dictionary<string, object?> { ["esml"] = OpenJiboCloudBuildInfo.EsmlVersion });
+        return new JiboInteractionDecision("cloud_version", OpenJiboCloudBuildInfo.SpokenVersion);
     }
 
     private static JiboInteractionDecision BuildRobotFlavorDecision(TurnContext turn)

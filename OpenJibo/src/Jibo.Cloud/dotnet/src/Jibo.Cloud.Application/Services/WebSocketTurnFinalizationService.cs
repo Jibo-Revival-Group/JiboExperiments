@@ -3597,7 +3597,9 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static bool LooksLikeCloudVersionSelfAudioOnly(string normalized)
     {
-        return normalized.StartsWith("cloud version 1 ", StringComparison.Ordinal) ||
+        return normalized.StartsWith("my cloud version is 1 ", StringComparison.Ordinal) ||
+               normalized.StartsWith("my cloud version is one ", StringComparison.Ordinal) ||
+               normalized.StartsWith("cloud version 1 ", StringComparison.Ordinal) ||
                normalized.StartsWith("cloud version one ", StringComparison.Ordinal) ||
                normalized.StartsWith("version 1 ", StringComparison.Ordinal) ||
                normalized.StartsWith("version one ", StringComparison.Ordinal) ||

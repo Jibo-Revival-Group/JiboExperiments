@@ -5,6 +5,7 @@ namespace Jibo.Cloud.Application.Services;
 internal sealed class LegacyMimSelection
 {
     public required string ReplyText { get; init; }
+    public string? Esml { get; init; }
     public string? MimId { get; init; }
     public string? PromptId { get; init; }
     public string? Emotion { get; init; }
@@ -36,6 +37,7 @@ internal static class LegacyMimReplySelector
             return new LegacyMimSelection
             {
                 ReplyText = LegacyMimTemplateRenderer.Render(fallbackReply, displayName),
+                Esml = LegacyMimTemplateRenderer.RenderEsml(fallbackReply, displayName),
                 MimId = fallbackMimId
             };
         }
@@ -44,6 +46,7 @@ internal static class LegacyMimReplySelector
         return new LegacyMimSelection
         {
             ReplyText = LegacyMimTemplateRenderer.Render(chosen.Reply, displayName),
+            Esml = LegacyMimTemplateRenderer.RenderEsml(chosen.Reply, displayName),
             MimId = chosen.MimId,
             PromptId = chosen.PromptId,
             Emotion = chosen.Emotion

@@ -756,7 +756,7 @@ public sealed partial class JiboInteractionService
             StringComparer.OrdinalIgnoreCase)
         {
             ["esml"] =
-                $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{decision.ReplyText}</es><anim cat='various' filter='sneeze' /></speak>"
+                $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeForEsml(decision.ReplyText)}</es><anim cat='various' filter='sneeze' /></speak>"
         };
 
         return decision with { SkillPayload = payload };

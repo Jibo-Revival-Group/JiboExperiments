@@ -1,11 +1,105 @@
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Content;
+using System.Xml.Linq;
+using System.Text.Json;
+using Jibo.Cloud.Domain.Models;
+using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Tests.Application;
 
 public sealed class LegacyMimInfrastructureTests
 {
+    [Theory]
+    [InlineData("Hello <break size='.3'/> ${loopMember}.", "Hello A & <B>.", "break")]
+    [InlineData("<phoneme ph='test'>Life</phoneme> is good, ${loopMember}.", "Life is good, A & <B>.", "phoneme")]
+    public void LegacyMimReplySelector_KeepsSpeechMarkupOutOfPlainText(
+        string template, string expectedReply, string speechElement)
+    {
+        var selection = LegacyMimReplySelector.Select(
+            [new JiboConditionedReply { Reply = template }],
+            new FirstReplyRandomizer(),
+            new LegacyMimConditionEvaluator.Context(null, null, new DateOnly(2026, 11, 17)),
+            "A & <B>", "Fallback.");
+
+        Assert.Equal(expectedReply, selection.ReplyText);
+        var payload = LegacyMimDecisionMetadata.BuildSkillPayload(selection);
+        var esml = Assert.IsType<string>(payload["esml"]);
+        var root = XElement.Parse(esml);
+        Assert.Equal("speak", root.Name.LocalName);
+        Assert.Single(root.Descendants(speechElement));
+        Assert.Contains("A & <B>", root.Value, StringComparison.Ordinal);
+        Assert.Empty(root.Descendants("B"));
+        Assert.DoesNotContain("&lt;" + speechElement, esml, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LegacyMimReplySelector_MalformedMarkupFallsBackToPlainSpeech()
+    {
+        var selection = LegacyMimReplySelector.Select(
+            [new JiboConditionedReply { Reply = "Hello <phoneme ph='test'>friend." }],
+            new FirstReplyRandomizer(),
+            new LegacyMimConditionEvaluator.Context(null, null, new DateOnly(2026, 11, 17)),
+            null, "Fallback.");
+
+        Assert.Equal("Hello friend.", selection.ReplyText);
+        Assert.False(LegacyMimDecisionMetadata.BuildSkillPayload(selection).ContainsKey("esml"));
+    }
+
+    [Fact]
+    public async Task ImportedSpeechTemplates_KeepMarkupExecutableInSocketPayload()
+    {
+        var catalog = await new InMemoryJiboExperienceContentRepository().GetCatalogAsync();
+        var templates = catalog.ReactiveGreetingReplies.Concat(catalog.WhatsUpReplies)
+            .Concat(catalog.GoodbyeReplies).Concat(catalog.PartOfDayCorrectionReplies)
+            .Concat(catalog.HolidayResponseReplies).Concat(catalog.NotHolidayReplies)
+            .Where(reply => reply.Reply.Contains('<')).ToArray();
+        Assert.NotEmpty(templates);
+
+        foreach (var template in templates)
+        {
+            // Exercise every imported template independent of its date/speaker condition.
+            var selection = LegacyMimReplySelector.Select(
+                [new JiboConditionedReply { Reply = template.Reply, Emotion = template.Emotion }],
+                new FirstReplyRandomizer(),
+                new LegacyMimConditionEvaluator.Context(null, null, new DateOnly(2026, 11, 17)),
+                "Alex", "Fallback.");
+            Assert.DoesNotMatch("<[^>]+>", selection.ReplyText);
+            var payload = LegacyMimDecisionMetadata.BuildSkillPayload(selection);
+            Assert.True(payload.ContainsKey("esml"), $"Missing speech markup: {template.MimId}/{template.PromptId}");
+            var plan = new ResponsePlan
+            {
+                IntentName = "whats_up",
+                Actions =
+                {
+                    new SpeakAction { Text = selection.ReplyText },
+                    new InvokeNativeSkillAction { SkillName = "chitchat-skill", Payload = payload }
+                }
+            };
+            var messages = ResponsePlanToSocketMessagesMapper.Map(plan,
+                new TurnContext { NormalizedTranscript = "what's up" }, new CloudSession(), true);
+            var skillMessage = messages.Single(message =>
+                JsonSerializer.Deserialize<JsonElement>(message.Text!).GetProperty("type").GetString() == "SKILL_ACTION");
+            using var response = JsonDocument.Parse(skillMessage.Text!);
+            var esml = response.RootElement.GetProperty("data").GetProperty("action")
+                .GetProperty("config").GetProperty("jcp").GetProperty("config")
+                .GetProperty("play").GetProperty("esml").GetString()!;
+            Assert.Equal("speak", XElement.Parse(esml).Name.LocalName);
+            Assert.DoesNotContain("&lt;break", esml, StringComparison.Ordinal);
+            Assert.DoesNotContain("&lt;phoneme", esml, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void LegacyMimPromptNormalizer_SelfClosingAnimationDoesNotConsumeFollowingAnimationBlock()
+    {
+        var normalized = LegacyMimPromptNormalizer.Normalize(
+            "<anim name='Greetings_05' nonBlocking='true'/> Hey. <break size='.3'/> <anim name='Greetings_02'>Still here.</anim>",
+            preservePlaceholders: true, preserveTtsMarkup: true);
+
+        Assert.Equal("Hey. <break size='.3'/> Still here.", normalized.Text);
+    }
+
     [Fact]
     public void LegacyMimPromptNormalizer_PreservesBreakAndPhonemeAndExtractsEmotion()
     {

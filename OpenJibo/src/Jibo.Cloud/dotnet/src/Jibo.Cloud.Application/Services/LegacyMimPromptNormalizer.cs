@@ -63,8 +63,8 @@ public static class LegacyMimPromptNormalizer
 
         text = PitchBlockPattern.Replace(text, match => $" {match.Groups[1].Value} ");
         text = StyleBlockPattern.Replace(text, match => $" {match.Groups[1].Value} ");
-        text = AnimBlockPattern.Replace(text, match => $" {match.Groups[1].Value} ");
         text = AnimSelfClosingPattern.Replace(text, " ");
+        text = AnimBlockPattern.Replace(text, match => $" {match.Groups[1].Value} ");
         text = SsaStripPattern.Replace(text, " ");
 
         if (!preservePlaceholders) text = PlaceholderPattern.Replace(text, " ");

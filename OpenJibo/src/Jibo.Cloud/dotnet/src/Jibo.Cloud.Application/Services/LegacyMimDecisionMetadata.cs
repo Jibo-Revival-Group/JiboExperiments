@@ -8,11 +8,13 @@ internal static class LegacyMimDecisionMetadata
     {
         if (selection is null) return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
-        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["mim_id"] = selection.MimId ?? defaultMimId,
             ["prompt_id"] = selection.PromptId
         };
+        if (!string.IsNullOrWhiteSpace(selection.Esml)) payload["esml"] = selection.Esml;
+        return payload;
     }
 
     internal static IDictionary<string, object?> ApplyEmotion(

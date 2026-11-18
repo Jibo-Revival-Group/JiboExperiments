@@ -2176,6 +2176,30 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_Sneeze_EscapesSpokenTextInAnimationPayload()
+    {
+        var catalog = new JiboExperienceCatalog
+        {
+            MimReplies = new Dictionary<string, IReadOnlyList<JiboConditionedReply>>
+            {
+                ["RA_JBO_Sneeze"] = [new JiboConditionedReply { Reply = "Okay & here goes." }]
+            }
+        };
+        var service = CreateService(contentRepository: new StaticCatalogRepository(catalog));
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "sneeze",
+            NormalizedTranscript = "sneeze"
+        });
+
+        Assert.Equal("request_sneeze", decision.IntentName);
+        Assert.Equal("Okay & here goes.", decision.ReplyText);
+        var root = System.Xml.Linq.XElement.Parse(Assert.IsType<string>(decision.SkillPayload!["esml"]));
+        Assert.Equal(decision.ReplyText, root.Element("es")!.Value);
+        Assert.Equal("sneeze", root.Element("anim")!.Attribute("filter")!.Value);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_UnhandledChat_WithWolframConfigured_ReturnsKnowledgeAnswer()
     {
         var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
@@ -3454,6 +3478,7 @@ public sealed class JiboInteractionServiceTests
         {
             RawTranscript = "yes",
             NormalizedTranscript = "yes",
+            TimeZone = "UTC", // Match the UTC date used by this calendar fixture.
             Attributes = new Dictionary<string, object?>
             {
                 [PersonalReportStateKey] = "awaiting_identity_confirmation",

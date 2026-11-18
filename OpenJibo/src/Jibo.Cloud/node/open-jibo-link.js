@@ -108,7 +108,7 @@
       "Why was the math book sad? Because it had too many problems.",
       "Why did the scarecrow win an award? Because he was outstanding in his field.",
       "Why dont eggs tell jokes? Theyd crack each other up.",
-      "What do you call a can<break size=\"0.5\" /> opener that doesnt work? A cant opener.",
+      "What do you call a can opener that doesnt work? A cant opener.",
       "Why did the computer go to the doctor? It had a virus.",
       "Why did the kid bring a ladder to school? He wanted to reach his full potential.",
       "What do you call a dog that does magic tricks? A labracadabrador.",

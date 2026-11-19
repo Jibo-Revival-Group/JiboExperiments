@@ -1435,6 +1435,10 @@ public sealed partial class JiboInteractionService
                 catalog,
                 "robot_best_friends",
                 "best friends with anyone in my Loop"),
+            "robot_tell_poem" => BuildPerformanceDecision(catalog, semanticIntent, "I don't have a poem ready right now."),
+            "robot_tell_dream" => BuildPerformanceDecision(catalog, semanticIntent, "I don't have a dream to share right now."),
+            "robot_rap" => BuildPerformanceDecision(catalog, semanticIntent, "I don't have a rap ready right now."),
+            "robot_sing" => BuildSongPerformanceDecision(),
             "robot_can_sing" => BuildScriptedSingDecision(
                 catalog,
                 "robot_can_sing",

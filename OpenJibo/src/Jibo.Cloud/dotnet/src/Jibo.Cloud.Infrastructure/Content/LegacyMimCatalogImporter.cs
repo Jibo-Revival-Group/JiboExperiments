@@ -62,7 +62,9 @@ public static class LegacyMimCatalogImporter
             foreach (var prompt in definition.Prompts)
             {
                 var preservePlaceholders = IsSpeakerTemplateBucket(bucket.Value);
-                var preserveTtsMarkup = PreservesTtsMarkup(bucket.Value);
+                var mimId = prompt.MimId ?? definition.MimId ?? Path.GetFileNameWithoutExtension(filePath);
+                var isPerformance = mimId is "RA_JBO_TellPoem" or "RA_JBO_TellDream" or "RA_JBO_Rap" or "RA_JBO_Sing";
+                var preserveTtsMarkup = PreservesTtsMarkup(bucket.Value) || isPerformance;
                 var normalizedPrompt = LegacyMimPromptNormalizer.Normalize(
                     prompt.Prompt,
                     preservePlaceholders,
@@ -70,7 +72,6 @@ public static class LegacyMimCatalogImporter
                 if (string.IsNullOrWhiteSpace(normalizedPrompt.Text)) continue;
 
                 var condition = NormalizeImportedCondition(prompt.Condition, filePath, bucket.Value);
-                var mimId = prompt.MimId ?? definition.MimId ?? Path.GetFileNameWithoutExtension(filePath);
                 var emotion = normalizedPrompt.Emotion;
 
                 builder.RegisterMimPrompt(
@@ -81,10 +82,13 @@ public static class LegacyMimCatalogImporter
                     prompt.PromptId,
                     emotion);
 
+                // String-only buckets are also used by generic replies, so keep their text plain.
                 builder.Add(
                     bucket.Value,
                     condition,
-                    normalizedPrompt.Text,
+                    isPerformance
+                        ? LegacyMimPromptNormalizer.Normalize(prompt.Prompt, preservePlaceholders).Text
+                        : normalizedPrompt.Text,
                     prompt.Weight,
                     mimId,
                     prompt.PromptId,

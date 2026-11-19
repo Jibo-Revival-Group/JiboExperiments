@@ -796,15 +796,51 @@ public sealed partial class JiboInteractionService
             ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
     }
 
+    private static JiboInteractionDecision BuildSongPerformanceDecision()
+    {
+        return new JiboInteractionDecision(
+            "robot_sing",
+            "Here's a little tune. La la la, la la la.",
+            SkillPayload: new Dictionary<string, object?>
+            {
+                ["mim_id"] = "runtime-song",
+                ["prompt_id"] = "RUNTIME_SONG",
+                ["esml"] = "<speak>Here's a little tune.<break size='0.4'/> " +
+                           "<pitch mult='1.0'>La</pitch> <pitch mult='1.26'>la</pitch> " +
+                           "<duration stretch='1.5'><pitch mult='1.5'>la</pitch></duration>, " +
+                           "<pitch mult='1.33'>la</pitch> <pitch mult='1.12'>la</pitch> " +
+                           "<duration stretch='1.7'><pitch mult='1.0'>la</pitch></duration>.</speak>"
+            },
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+    }
+
+    private JiboInteractionDecision BuildPerformanceDecision(
+        JiboExperienceCatalog catalog,
+        string intentName,
+        string fallbackReply)
+    {
+        var contextUpdates = ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates();
+        if (LegacyMimScriptedReplyBuilder.TrySelectMimReply(
+                catalog, randomizer, intentName, LegacyMimScriptedReplyBuilder.BuildScriptedContext(),
+                displayName: null, explicitMimId: null, [], out var selection))
+        {
+            return new JiboInteractionDecision(
+                intentName, selection!.ReplyText,
+                SkillPayload: LegacyMimDecisionMetadata.BuildSkillPayload(selection),
+                ContextUpdates: LegacyMimDecisionMetadata.ApplyEmotion(contextUpdates, selection.Emotion));
+        }
+
+        return new JiboInteractionDecision(intentName, fallbackReply, ContextUpdates: contextUpdates);
+    }
+
     private JiboInteractionDecision BuildScriptedSingDecision(
         JiboExperienceCatalog catalog,
         string intentName,
         params string[] preferredSnippets)
     {
-        return new JiboInteractionDecision(
-            intentName,
-            SelectLegacyReply(catalog.SingReplies, preferredSnippets),
-            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+        var fallback = SelectLegacyReply(catalog.SingReplies, preferredSnippets);
+        return BuildPerformanceDecision(catalog, intentName,
+            string.IsNullOrWhiteSpace(fallback) ? "I don't have a song ready right now." : fallback);
     }
 
     private JiboInteractionDecision BuildScriptedHolidaySingDecision(

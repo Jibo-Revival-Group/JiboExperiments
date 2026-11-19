@@ -20,7 +20,8 @@ public sealed partial class JiboInteractionService
             preferredName);
         if (emotionDecision is not null) return emotionDecision;
 
-        var isQuestion = TranscriptHeuristics.IsLikelyQuestion(transcript);
+        var isQuestion = TranscriptHeuristics.IsLikelyQuestion(transcript) ||
+                         TranscriptHeuristics.IsLikelyQuestion(NormalizeCommandPhrase(transcript));
         if (!isQuestion)
             return ChitchatStateMachine.BuildNotUnderstoodDecision(transcript);
 

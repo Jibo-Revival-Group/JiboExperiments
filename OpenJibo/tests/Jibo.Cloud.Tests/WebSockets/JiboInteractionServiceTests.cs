@@ -1198,6 +1198,46 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
+    [InlineData("Tell me a poem.", null, null, "robot_tell_poem", "RA_JBO_TellPoem")]
+    [InlineData("Did you have a dream?", null, null, "robot_tell_dream", "RA_JBO_TellDream")]
+    [InlineData("Please sing for us.", null, null, "robot_sing", "runtime-song")]
+    [InlineData("Rap.", null, null, "robot_rap", "RA_JBO_Rap")]
+    [InlineData("", "requestTellJiboContent", "Poem", "robot_tell_poem", "RA_JBO_TellPoem")]
+    [InlineData("", "requestTellJiboContent", "Dream", "robot_tell_dream", "RA_JBO_TellDream")]
+    [InlineData("", "requestSingSong", null, "robot_sing", "runtime-song")]
+    [InlineData("", "requestRap", null, "robot_rap", "RA_JBO_Rap")]
+    public async Task BuildDecisionAsync_PegasusPerformanceRequests_SelectTheirOwnMim(
+        string transcript, string? clientIntent, string? content, string intent, string mimId)
+    {
+        var decision = await CreateService().BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = clientIntent,
+                ["clientEntities"] = content is null ? null : new Dictionary<string, string> { ["JiboContent"] = content }
+            }
+        });
+
+        Assert.Equal(intent, decision.IntentName);
+        Assert.Equal(mimId, decision.SkillPayload?["mim_id"]);
+        Assert.False(string.IsNullOrWhiteSpace(decision.ReplyText));
+        Assert.DoesNotContain("<break", decision.ReplyText, StringComparison.Ordinal);
+        if (intent == "robot_tell_poem")
+        {
+            var esml = Assert.IsType<string>(decision.SkillPayload!["esml"]);
+            Assert.NotEmpty(System.Xml.Linq.XElement.Parse(esml).Descendants("break"));
+        }
+        if (intent == "robot_sing")
+        {
+            var esml = Assert.IsType<string>(decision.SkillPayload!["esml"]);
+            var root = System.Xml.Linq.XElement.Parse(esml);
+            Assert.Equal(6, root.Descendants("pitch").Count());
+            Assert.NotEmpty(root.Descendants("duration"));
+        }
+    }
+
+    [Theory]
     [InlineData("sneeze", "request_sneeze", "Robots don't sneeze")]
     [InlineData("are you ready", "robot_is_ready", "ready for anything")]
     [InlineData("are you ready for today", "robot_is_ready_for_day", "ready")]

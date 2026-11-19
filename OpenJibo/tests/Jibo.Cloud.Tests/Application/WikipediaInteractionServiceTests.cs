@@ -8,6 +8,40 @@ namespace Jibo.Cloud.Tests.Application;
 
 public sealed class WikipediaInteractionServiceTests
 {
+    [Theory]
+    [InlineData("Who are the Kansas City Chiefs?", "who are the kansas city chiefs")]
+    [InlineData("Hey Jibo, who are the Kansas City Chiefs", "who are the kansas city chiefs")]
+    [InlineData("Where is China?", "where is china")]
+    [InlineData("What is hindsight?", "what is hindsight")]
+    public async Task BuildDecisionAsync_GreetingSubstringInQuestion_ReachesSearch(string transcript, string query)
+    {
+        var search = new CapturingKnowledgeSearchService(
+            new KnowledgeSearchResult("Here is the answer.", SearchBackendKind.ChatGPT));
+        var service = CreateService(
+            new StubWikipediaSummaryProvider(WikipediaSummaryResult.NotFound()), search);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext { RawTranscript = transcript });
+
+        Assert.Equal("knowledge_search", decision.IntentName);
+        Assert.Equal(query, search.LastQuery);
+        Assert.StartsWith("According to chat gee pee tee.", decision.ReplyText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_PluralWhoQuestion_CanUseWikipediaWithoutPaidBackend()
+    {
+        var service = CreateService(new StubWikipediaSummaryProvider(
+            "The Kansas City Chiefs are a professional football team."));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "Who are the Kansas City Chiefs?"
+        });
+
+        Assert.Equal("knowledge_search", decision.IntentName);
+        Assert.StartsWith("According to wikipedia dot org.", decision.ReplyText, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_WhoIsNamedEntity_UsesWikipediaWhenTitleMatches()
     {

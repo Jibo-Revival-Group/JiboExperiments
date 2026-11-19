@@ -153,6 +153,8 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static readonly HashSet<string> SingleTokenUsableTranscripts = new(StringComparer.Ordinal)
     {
+        "rap",
+        "sing",
         "joke",
         "funny",
         "dance",

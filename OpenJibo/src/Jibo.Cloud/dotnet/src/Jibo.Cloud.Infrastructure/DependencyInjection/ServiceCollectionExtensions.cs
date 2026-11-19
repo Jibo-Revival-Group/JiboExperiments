@@ -100,10 +100,14 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
         services.AddHttpClient<IFunFactProvider, UselessFactsFunFactProvider>();
         services.AddHttpClient<IWordDefinitionProvider, FreeDictionaryApiDefinitionProvider>();
-        services.AddHttpClient<IWikipediaSummaryProvider, WikipediaSummaryProvider>();
-        services.AddHttpClient<WolframAlphaSearchProvider>();
-        services.AddHttpClient<OllamaSearchProvider>();
-        services.AddHttpClient<ChatGptSearchProvider>();
+        services.AddHttpClient<IWikipediaSummaryProvider, WikipediaSummaryProvider>(
+            client => client.Timeout = TimeSpan.FromSeconds(3));
+        services.AddHttpClient<WolframAlphaSearchProvider>(
+            client => client.Timeout = TimeSpan.FromSeconds(5));
+        services.AddHttpClient<OllamaSearchProvider>(
+            client => client.Timeout = TimeSpan.FromSeconds(8));
+        services.AddHttpClient<ChatGptSearchProvider>(
+            client => client.Timeout = TimeSpan.FromSeconds(8));
         services.AddSingleton<IKnowledgeSearchProvider, WolframAlphaSearchProvider>();
         services.AddSingleton<IKnowledgeSearchProvider, OllamaSearchProvider>();
         services.AddSingleton<IKnowledgeSearchProvider, ChatGptSearchProvider>();

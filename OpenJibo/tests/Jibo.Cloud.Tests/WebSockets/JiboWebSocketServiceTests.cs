@@ -6163,6 +6163,33 @@ public sealed class JiboWebSocketServiceTests
         Assert.True(session.FollowUpOpen);
     }
 
+    [Theory]
+    [InlineData("rap", "robot_rap", "RA_JBO_Rap")]
+    [InlineData("sing", "robot_sing", "runtime-song")]
+    public async Task ClientAsr_ShortPerformanceCommand_ReachesPlayback(string text, string intent, string mimId)
+    {
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-performance-token",
+            Text = JsonSerializer.Serialize(new
+            {
+                type = "CLIENT_ASR",
+                transID = "performance-turn",
+                data = new { text, rules = new[] { "launch" } }
+            })
+        });
+
+        var skill = Assert.Single(replies, reply => ReadReplyType(reply) == "SKILL_ACTION");
+        using var payload = JsonDocument.Parse(skill.Text!);
+        var play = payload.RootElement.GetProperty("data").GetProperty("action")
+            .GetProperty("config").GetProperty("jcp").GetProperty("config").GetProperty("play");
+        Assert.Equal(mimId, play.GetProperty("meta").GetProperty("mim_id").GetString());
+        Assert.Equal(intent, _store.FindSessionByToken("hub-performance-token")?.LastIntent);
+    }
+
     [Fact]
     public async Task ClientAsr_LeadingFillerBeforeGreeting_IsStrippedAndRoutesToGreeting()
     {

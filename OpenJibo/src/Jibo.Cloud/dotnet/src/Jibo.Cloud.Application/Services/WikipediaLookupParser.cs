@@ -26,8 +26,12 @@ public static class WikipediaLookupParser
     [
         "who was",
         "who is",
+        "who are",
+        "who were",
         "what was",
-        "what is"
+        "what is",
+        "what are",
+        "what were"
     ];
 
     public static bool TryParse(string? transcript, out string? subject)

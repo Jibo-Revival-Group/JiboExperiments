@@ -52,7 +52,7 @@ public static class LegacyMimPromptNormalizer
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     public static Result Normalize(string? prompt, bool preservePlaceholders, bool preserveTtsMarkup = false,
-        bool preserveAnimation = false)
+        bool preserveAnimation = false, bool preservePitch = false)
     {
         if (string.IsNullOrWhiteSpace(prompt)) return new Result();
 
@@ -62,7 +62,8 @@ public static class LegacyMimPromptNormalizer
         foreach (Match match in SsaEmotionPattern.Matches(text))
             emotion = match.Groups["cat"].Value.Trim();
 
-        text = PitchBlockPattern.Replace(text, match => $" {match.Groups[1].Value} ");
+        if (!preserveTtsMarkup || !preservePitch)
+            text = PitchBlockPattern.Replace(text, match => $" {match.Groups[1].Value} ");
         text = StyleBlockPattern.Replace(text, match => $" {match.Groups[1].Value} ");
         if (!preserveTtsMarkup || !preserveAnimation)
         {

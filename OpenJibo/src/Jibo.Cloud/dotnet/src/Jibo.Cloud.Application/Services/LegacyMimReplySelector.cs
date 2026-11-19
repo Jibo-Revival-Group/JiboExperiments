@@ -47,7 +47,8 @@ internal static class LegacyMimReplySelector
         {
             ReplyText = LegacyMimTemplateRenderer.Render(chosen.Reply, displayName),
             Esml = LegacyMimTemplateRenderer.RenderEsml(chosen.Reply, displayName,
-                preserveAnimation: PegasusQuipRoutes.PreservesAnimation(chosen.MimId)),
+                preserveAnimation: PegasusQuipRoutes.PreservesAnimation(chosen.MimId),
+                preservePitch: PegasusQuipRoutes.PreservesPitch(chosen.MimId)),
             MimId = chosen.MimId,
             PromptId = chosen.PromptId,
             Emotion = chosen.Emotion

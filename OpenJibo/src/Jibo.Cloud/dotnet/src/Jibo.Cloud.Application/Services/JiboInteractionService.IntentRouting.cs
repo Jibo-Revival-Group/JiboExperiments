@@ -376,7 +376,11 @@ public sealed partial class JiboInteractionService
                 "what joke do you like best"))
             return "robot_favorite_joke";
 
-        if (MatchesAny(
+        if (spokenRequest == "tell me a fact" ||
+            (string.Equals(clientIntent, "requestTellJiboContent", StringComparison.OrdinalIgnoreCase) &&
+             clientEntities.TryGetValue("JiboContent", out var factContent) &&
+             string.Equals(factContent, "FunFact", StringComparison.OrdinalIgnoreCase)) ||
+            MatchesAny(
                 loweredTranscript,
                 "fun fact",
                 "tell me a fun fact",

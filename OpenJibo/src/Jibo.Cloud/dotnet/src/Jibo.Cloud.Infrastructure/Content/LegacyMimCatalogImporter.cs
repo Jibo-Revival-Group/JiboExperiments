@@ -70,7 +70,8 @@ public static class LegacyMimCatalogImporter
                     prompt.Prompt,
                     preservePlaceholders,
                     preserveTtsMarkup,
-                    preserveAnimation: PegasusQuipRoutes.PreservesAnimation(mimId));
+                    preserveAnimation: PegasusQuipRoutes.PreservesAnimation(mimId),
+                    preservePitch: PegasusQuipRoutes.PreservesPitch(mimId));
                 if (string.IsNullOrWhiteSpace(normalizedPrompt.Text)) continue;
 
                 var condition = NormalizeImportedCondition(prompt.Condition, filePath, bucket.Value);

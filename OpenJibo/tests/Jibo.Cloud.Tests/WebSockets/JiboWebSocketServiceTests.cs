@@ -6195,6 +6195,9 @@ public sealed class JiboWebSocketServiceTests
     [InlineData("Do a magic trick", "robot_magic_trick", "RA_JBO_MagicTrick", "emoji")]
     [InlineData("meow", "robot_make_cat_sound", "RA_JBO_MakeSoundCat", "emoji")]
     [InlineData("bark", "robot_make_dog_sound", "RA_JBO_MakeSoundDog", "emoji")]
+    [InlineData("wave", "robot_wave", "RA_JBO_ShowWaveEmoji", "emoji")]
+    [InlineData("count to ten", "robot_count_to_ten", "RA_JBO_CountTo10", "emoji")]
+    [InlineData("blow a bubble", "robot_blow_bubbles", "RA_JBO_BlowBubble", "jiboji")]
     public async Task ClientAsr_PegasusQuip_EmitsAnimationMarkup(
         string text, string intent, string mimId, string animationCategory)
     {
@@ -6219,6 +6222,13 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(mimId, play.GetProperty("meta").GetProperty("mim_id").GetString());
         var esml = System.Xml.Linq.XElement.Parse(play.GetProperty("esml").GetString()!);
         Assert.Contains(esml.Descendants("anim"), node => (string?)node.Attribute("cat") == animationCategory);
+        if (intent == "robot_count_to_ten")
+        {
+            var count = Assert.Single(esml.Descendants("anim")).Value;
+            var numbers = System.Text.RegularExpressions.Regex.Matches(count, @"\d+")
+                .Select(match => int.Parse(match.Value));
+            Assert.Equal(Enumerable.Range(1, 10), numbers);
+        }
         Assert.Equal(intent, _store.FindSessionByToken("hub-pegasus-quip-token")?.LastIntent);
     }
 

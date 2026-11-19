@@ -4,7 +4,7 @@ public static class PegasusQuipRoutes
 {
     private sealed record Route(
         string Intent, string MimId, string[] Phrases, string ClientIntent,
-        string? Entity = null, string? Value = null, bool PreserveAnimation = false);
+        string? Entity = null, string? Value = null, bool PreserveAnimation = false, bool PreservePitch = false);
 
     private static readonly Route[] Routes =
     [
@@ -55,7 +55,71 @@ public static class PegasusQuipRoutes
             "requestMakeSound", "Animal", "Dog", PreserveAnimation: true),
         new("robot_wink", "RA_JBO_Wink",
             ["wink", "wink for me", "can you wink for me", "give me a wink"],
-            "requestWink", PreserveAnimation: true)
+            "requestWink", PreserveAnimation: true),
+        new("robot_beam_me_up", "RA_JBO_BeamMeUp",
+            ["beam me up", "beam us up", "beam me up scotty", "beam me up scottie"], "referenceBeamMeUp"),
+        new("robot_ask_question", "RA_JBO_AskQuestion",
+            ["ask me a question", "ask us a question", "can you ask a question", "can you ask me a question"],
+            "requestAskQuestion"),
+        new("robot_do_impression", "RA_JBO_DoImpression",
+            ["do an impression", "can you do an impression", "can you do an impression of tom hanks"],
+            "requestDoImpression"),
+        new("robot_show_off", "RA_JBO_ShowOff",
+            ["show off", "showoff", "do something cool", "do something awesome", "do something epic"],
+            "requestShowOff", PreserveAnimation: true),
+        new("robot_count_to_ten", "RA_JBO_CountTo10",
+            ["count to ten", "count to 10", "count up to ten", "count up to 10", "can you count to ten",
+             "can you count to 10", "would you please count up to ten"],
+            "requestCountToNumber", "CountNumber", "10", PreserveAnimation: true, PreservePitch: true),
+        new("robot_tell_something", "RA_JBO_TellSomething",
+            ["tell me something", "tell us something"], "requestTellSomething", PreservePitch: true),
+        new("robot_tell_robot_fact", "RA_JBO_TellRobotFact",
+            ["give me a fact about robots", "tell me a fact about robots", "tell me a robot fact"],
+            "requestTellJiboContent", "JiboContent", "RobotFact"),
+        new("robot_tell_human_fact", "RA_JBO_TellHumanFact",
+            ["tell a human fact", "tell me a human fact", "give me a human fact",
+             "tell me a fact about people", "tell me a fact about humans"],
+            "requestTellJiboContent", "JiboContent", "HumanFact"),
+        new("robot_tell_scifi_quote", "RA_JBO_TellScifiQuote",
+            ["tell me a sci fi quote", "give me a sci fi quote", "tell me a science fiction quote"],
+            "requestTellJiboContent", "JiboContent", "ScifiQuote"),
+        new("robot_give_high_five", "RA_JBO_GiveHighfive",
+            ["give me five", "give me a high five", "high five", "can you give me a high five"],
+            "requestGiveHighfive", PreservePitch: true),
+        new("robot_wave", "RA_JBO_ShowWaveEmoji",
+            ["wave", "wave at me", "can you wave", "wave hello"],
+            "requestShowImage", "Emoji", "Wave", PreserveAnimation: true, PreservePitch: true),
+        new("robot_make_fox_sound", "RA_JBO_MakeSoundFox",
+            ["bark like a fox", "what did the fox say", "what does the fox say", "what sound does a fox make"],
+            "requestMakeSound", "Animal", "Fox"),
+        new("robot_tell_new_year_joke", "RA_JBO_TellANewYearsJoke",
+            ["give me a new year joke", "tell me a new years joke", "tell me a new year's joke",
+             "tell me jokes about new year"],
+            "requestTellJiboContent", "Joke", "NewYearsJoke"),
+        new("robot_tell_about_yourself", "RA_JBO_TellAboutYourself",
+            ["tell me about yourself", "tell us about yourself", "can you tell me about yourself"],
+            "requestTellAboutYourself", PreserveAnimation: true),
+        new("robot_blow_bubbles", "RA_JBO_BlowBubble",
+            ["blow a bubble", "blow bubbles", "can you blow bubbles", "can you blow some bubbles for us",
+             "do you have any bubbles", "show us your bubble blowing"],
+            "requestBlowBubble", PreserveAnimation: true, PreservePitch: true),
+        new("robot_show_mustache", "RA_JBO_ShowMustache",
+            ["grow mustache", "grow your mustache", "show me your mustache", "show mustache"],
+            "requestShowImage", "Emoji", "Mustache", PreserveAnimation: true),
+        new("robot_show_sunglasses", "RA_JBO_ShowSunglassesEmoji",
+            ["show me your sunglasses", "put on your sunglasses"],
+            "requestShowImage", "Emoji", "Sunglasses", PreserveAnimation: true),
+        new("robot_do_the_robot", "RA_JBO_DoTheRobot",
+            ["do the robot", "can you do the robot"], "requestDoTheRobot", PreservePitch: true),
+        new("robot_staring_contest", "RA_JBO_StaringContest",
+            ["let's have a staring contest", "lets have a staring contest", "staring contest"],
+            "requestStaringContest"),
+        new("robot_misses_user", "RI_JBO_IsMissingUser",
+            ["do you miss me", "did you miss me"],
+            "isJiboDoingAction", "Action", "MissUser", PreserveAnimation: true),
+        new("robot_believes_in_magic", "RI_JBO_BelievesInMagic",
+            ["do you think magic is real", "do you believe in magic"],
+            "doesJiboBelieveInThing", "GeneralLikes", "Magic", PreserveAnimation: true)
     ];
 
     private static readonly IReadOnlyDictionary<string, Route> ByIntent =
@@ -94,4 +158,7 @@ public static class PegasusQuipRoutes
 
     public static bool PreservesAnimation(string? mimId) =>
         mimId is not null && ByMimId.GetValueOrDefault(mimId)?.PreserveAnimation == true;
+
+    public static bool PreservesPitch(string? mimId) =>
+        mimId is not null && ByMimId.GetValueOrDefault(mimId)?.PreservePitch == true;
 }

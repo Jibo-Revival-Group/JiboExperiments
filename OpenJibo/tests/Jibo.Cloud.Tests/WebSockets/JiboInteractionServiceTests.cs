@@ -1251,6 +1251,27 @@ public sealed class JiboInteractionServiceTests
     [InlineData("Are you alive?", "robot_is_alive", "RI_JBO_IsAlive")]
     [InlineData("Do you get lonely?", "robot_can_get_lonely", "RI_JBO_CanGetLonely")]
     [InlineData("Can you beatbox?", "robot_beatbox", "RA_JBO_Beatbox")]
+    [InlineData("Beam me up, Scotty.", "robot_beam_me_up", "RA_JBO_BeamMeUp")]
+    [InlineData("Ask me a question.", "robot_ask_question", "RA_JBO_AskQuestion")]
+    [InlineData("Can you do an impression of Tom Hanks?", "robot_do_impression", "RA_JBO_DoImpression")]
+    [InlineData("Do something cool.", "robot_show_off", "RA_JBO_ShowOff")]
+    [InlineData("Would you please count up to ten?", "robot_count_to_ten", "RA_JBO_CountTo10")]
+    [InlineData("Tell me something.", "robot_tell_something", "RA_JBO_TellSomething")]
+    [InlineData("Give me a fact about robots.", "robot_tell_robot_fact", "RA_JBO_TellRobotFact")]
+    [InlineData("Tell me a fact about humans.", "robot_tell_human_fact", "RA_JBO_TellHumanFact")]
+    [InlineData("Tell me a sci-fi quote.", "robot_tell_scifi_quote", "RA_JBO_TellScifiQuote")]
+    [InlineData("Give me five.", "robot_give_high_five", "RA_JBO_GiveHighfive")]
+    [InlineData("Wave.", "robot_wave", "RA_JBO_ShowWaveEmoji")]
+    [InlineData("What does the fox say?", "robot_make_fox_sound", "RA_JBO_MakeSoundFox")]
+    [InlineData("Tell me a New Year's joke.", "robot_tell_new_year_joke", "RA_JBO_TellANewYearsJoke")]
+    [InlineData("Tell me about yourself.", "robot_tell_about_yourself", "RA_JBO_TellAboutYourself")]
+    [InlineData("Blow a bubble.", "robot_blow_bubbles", "RA_JBO_BlowBubble")]
+    [InlineData("Show me your mustache.", "robot_show_mustache", "RA_JBO_ShowMustache")]
+    [InlineData("Show me your sunglasses.", "robot_show_sunglasses", "RA_JBO_ShowSunglassesEmoji")]
+    [InlineData("Can you do the robot?", "robot_do_the_robot", "RA_JBO_DoTheRobot")]
+    [InlineData("Let's have a staring contest.", "robot_staring_contest", "RA_JBO_StaringContest")]
+    [InlineData("Do you miss me?", "robot_misses_user", "RI_JBO_IsMissingUser")]
+    [InlineData("Do you think magic is real?", "robot_believes_in_magic", "RI_JBO_BelievesInMagic")]
     public async Task BuildDecisionAsync_PegasusQuip_BypassesSearchAndUsesSpecificMim(
         string transcript, string intent, string mimId)
     {
@@ -1264,12 +1285,19 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(intent, decision.IntentName);
         Assert.Equal(mimId, decision.SkillPayload?["mim_id"]);
         Assert.False(string.IsNullOrWhiteSpace(decision.ReplyText));
-        Assert.DoesNotContain("<break", decision.ReplyText, StringComparison.Ordinal);
+        Assert.DoesNotMatch("<[^>]+>", decision.ReplyText);
         Assert.Equal(0, search.SearchCount);
         if (intent == "robot_tell_haiku")
         {
             var esml = Assert.IsType<string>(decision.SkillPayload!["esml"]);
             Assert.NotEmpty(System.Xml.Linq.XElement.Parse(esml).Descendants("break"));
+        }
+        if (intent == "robot_give_high_five")
+        {
+            var esml = Assert.IsType<string>(decision.SkillPayload!["esml"]);
+            var root = System.Xml.Linq.XElement.Parse(esml);
+            Assert.Single(root.Descendants("pitch"));
+            Assert.Single(root.Descendants("break"));
         }
     }
 
@@ -1281,6 +1309,12 @@ public sealed class JiboInteractionServiceTests
     [InlineData("requestTellJiboContent", "JiboContent", "DeepThought", "robot_tell_deep_thought")]
     [InlineData("requestMakeSound", "AnimalSound", "Dog", "robot_make_dog_sound")]
     [InlineData("requestStory", null, null, "robot_story")]
+    [InlineData("requestCountToNumber", "CountNumber", "10", "robot_count_to_ten")]
+    [InlineData("requestShowImage", "Emoji", "Wave", "robot_wave")]
+    [InlineData("requestTellJiboContent", "JiboContent", "HumanFact", "robot_tell_human_fact")]
+    [InlineData("requestMakeSound", "Animal", "Fox", "robot_make_fox_sound")]
+    [InlineData("requestTellJiboContent", "Joke", "NewYearsJoke", "robot_tell_new_year_joke")]
+    [InlineData("requestTellJiboContent", "JiboContent", "FunFact", "fun_fact")]
     public async Task BuildDecisionAsync_PegasusQuip_AcceptsNativeIntentWithoutTranscript(
         string clientIntent, string? entity, string? value, string expectedIntent)
     {
@@ -1301,6 +1335,7 @@ public sealed class JiboInteractionServiceTests
     [InlineData("peek at my kitchen lights", "not_understood")]
     [InlineData("Can you turn off my bedroom light?", "ha_lights_off")]
     [InlineData("Do you know any stories?", "robot_story")]
+    [InlineData("Tell me a fact.", "fun_fact")]
     public async Task BuildDecisionAsync_PegasusQuip_PreservesDistinctRoutes(string transcript, string intent)
     {
         var decision = await CreateService().BuildDecisionAsync(new TurnContext { RawTranscript = transcript });

@@ -64,11 +64,13 @@ public static class LegacyMimCatalogImporter
                 var preservePlaceholders = IsSpeakerTemplateBucket(bucket.Value);
                 var mimId = prompt.MimId ?? definition.MimId ?? Path.GetFileNameWithoutExtension(filePath);
                 var isPerformance = mimId is "RA_JBO_TellPoem" or "RA_JBO_TellDream" or "RA_JBO_Rap" or "RA_JBO_Sing";
-                var preserveTtsMarkup = PreservesTtsMarkup(bucket.Value) || isPerformance;
+                var preserveIndexedMarkup = isPerformance || PegasusQuipRoutes.PreservesSpeechMarkup(mimId);
+                var preserveTtsMarkup = PreservesTtsMarkup(bucket.Value) || preserveIndexedMarkup;
                 var normalizedPrompt = LegacyMimPromptNormalizer.Normalize(
                     prompt.Prompt,
                     preservePlaceholders,
-                    preserveTtsMarkup);
+                    preserveTtsMarkup,
+                    preserveAnimation: PegasusQuipRoutes.PreservesAnimation(mimId));
                 if (string.IsNullOrWhiteSpace(normalizedPrompt.Text)) continue;
 
                 var condition = NormalizeImportedCondition(prompt.Condition, filePath, bucket.Value);
@@ -86,7 +88,7 @@ public static class LegacyMimCatalogImporter
                 builder.Add(
                     bucket.Value,
                     condition,
-                    isPerformance
+                    preserveIndexedMarkup
                         ? LegacyMimPromptNormalizer.Normalize(prompt.Prompt, preservePlaceholders).Text
                         : normalizedPrompt.Text,
                     prompt.Weight,

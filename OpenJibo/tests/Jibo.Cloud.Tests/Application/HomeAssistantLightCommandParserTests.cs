@@ -61,6 +61,16 @@ public sealed class HomeAssistantLightCommandParserTests
         Assert.Equal(expectedTarget, command.TargetName);
     }
 
+    [Theory]
+    [InlineData("Can you turn off your eyes?")]
+    [InlineData("Hey Jibo, turn off your eye please")]
+    [InlineData("switch off Jibo's eye")]
+    [InlineData("turn on your eyes")]
+    public void TryParse_RobotEyeIsNotAHomeAssistantLight(string transcript)
+    {
+        Assert.False(HomeAssistantLightCommandParser.TryParse(transcript, out _));
+    }
+
     [Fact]
     public void FormatTargetForSpeech_AppendsLightWhenMissing()
     {

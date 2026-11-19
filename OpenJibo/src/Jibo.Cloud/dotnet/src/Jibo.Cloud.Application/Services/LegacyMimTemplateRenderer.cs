@@ -15,10 +15,11 @@ internal static class LegacyMimTemplateRenderer
             displayName, referent);
     }
 
-    internal static string? RenderEsml(string template, string? displayName, string? referent = null)
+    internal static string? RenderEsml(string template, string? displayName, string? referent = null,
+        bool preserveAnimation = false)
     {
         var markup = LegacyMimPromptNormalizer.Normalize(template, preservePlaceholders: true,
-            preserveTtsMarkup: true).Text;
+            preserveTtsMarkup: true, preserveAnimation: preserveAnimation).Text;
         if (!markup.Contains('<')) return null;
 
         // Only catalog template markup is executable. Escape both literal template
@@ -31,7 +32,8 @@ internal static class LegacyMimTemplateRenderer
             var root = XElement.Parse(esml);
             if (root.Descendants().Any(element =>
                     element.Name.Namespace != XNamespace.None ||
-                    element.Name.LocalName is not ("es" or "break" or "phoneme" or "duration")))
+                    (element.Name.LocalName is not ("es" or "break" or "phoneme" or "duration") &&
+                     !(preserveAnimation && element.Name.LocalName == "anim"))))
                 return null;
         }
         catch (XmlException)

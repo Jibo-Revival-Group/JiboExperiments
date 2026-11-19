@@ -116,6 +116,11 @@ public sealed partial class JiboInteractionService
                 cancellationToken);
         }
 
+        if (PegasusQuipRoutes.GetMimId(semanticIntent) is { } quipMimId)
+            return BuildPerformanceDecision(catalog, semanticIntent,
+                semanticIntent == "robot_turn_off_eye" ? "I need my eye to see." : "I don't have that one ready right now.",
+                quipMimId);
+
         var chitchatDecision = ChitchatStateMachine.TryBuildDecision(
             semanticIntent,
             lowered,

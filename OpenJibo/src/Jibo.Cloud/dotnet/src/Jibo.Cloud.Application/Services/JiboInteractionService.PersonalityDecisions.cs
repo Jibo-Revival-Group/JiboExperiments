@@ -817,12 +817,13 @@ public sealed partial class JiboInteractionService
     private JiboInteractionDecision BuildPerformanceDecision(
         JiboExperienceCatalog catalog,
         string intentName,
-        string fallbackReply)
+        string fallbackReply,
+        string? mimId = null)
     {
         var contextUpdates = ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates();
         if (LegacyMimScriptedReplyBuilder.TrySelectMimReply(
                 catalog, randomizer, intentName, LegacyMimScriptedReplyBuilder.BuildScriptedContext(),
-                displayName: null, explicitMimId: null, [], out var selection))
+                displayName: null, explicitMimId: mimId, [], out var selection))
         {
             return new JiboInteractionDecision(
                 intentName, selection!.ReplyText,

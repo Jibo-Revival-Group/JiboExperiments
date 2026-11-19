@@ -6190,6 +6190,38 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(intent, _store.FindSessionByToken("hub-performance-token")?.LastIntent);
     }
 
+    [Theory]
+    [InlineData("wink", "robot_wink", "RA_JBO_Wink", "blinks")]
+    [InlineData("Do a magic trick", "robot_magic_trick", "RA_JBO_MagicTrick", "emoji")]
+    [InlineData("meow", "robot_make_cat_sound", "RA_JBO_MakeSoundCat", "emoji")]
+    [InlineData("bark", "robot_make_dog_sound", "RA_JBO_MakeSoundDog", "emoji")]
+    public async Task ClientAsr_PegasusQuip_EmitsAnimationMarkup(
+        string text, string intent, string mimId, string animationCategory)
+    {
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-pegasus-quip-token",
+            Text = JsonSerializer.Serialize(new
+            {
+                type = "CLIENT_ASR",
+                transID = "pegasus-quip-turn",
+                data = new { text, rules = new[] { "launch" } }
+            })
+        });
+
+        var skill = Assert.Single(replies, reply => ReadReplyType(reply) == "SKILL_ACTION");
+        using var payload = JsonDocument.Parse(skill.Text!);
+        var play = payload.RootElement.GetProperty("data").GetProperty("action")
+            .GetProperty("config").GetProperty("jcp").GetProperty("config").GetProperty("play");
+        Assert.Equal(mimId, play.GetProperty("meta").GetProperty("mim_id").GetString());
+        var esml = System.Xml.Linq.XElement.Parse(play.GetProperty("esml").GetString()!);
+        Assert.Contains(esml.Descendants("anim"), node => (string?)node.Attribute("cat") == animationCategory);
+        Assert.Equal(intent, _store.FindSessionByToken("hub-pegasus-quip-token")?.LastIntent);
+    }
+
     [Fact]
     public async Task ClientAsr_LeadingFillerBeforeGreeting_IsStrippedAndRoutesToGreeting()
     {

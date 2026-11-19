@@ -81,6 +81,11 @@ public sealed partial class JiboInteractionService
 
         if (IsVerifyMeRequest(loweredTranscript)) return "verify_me";
 
+        var spokenRequest = NormalizeCommandPhrase(loweredTranscript);
+        var quip = PegasusQuipRoutes.Resolve(
+            TranscriptTextNormalizer.StripTrailingCourtesyWords(spokenRequest), clientIntent, clientEntities);
+        if (quip is not null) return quip;
+
         if (HomeAssistantLightCommandParser.TryParse(loweredTranscript, out var lightCommand))
             return lightCommand.Action == HomeAssistantLightCommandParser.LightAction.On
                 ? "ha_lights_on"
@@ -627,7 +632,6 @@ public sealed partial class JiboInteractionService
                 "sing holiday song"))
             return "robot_sing_christmas_song";
 
-        var spokenRequest = NormalizeCommandPhrase(loweredTranscript);
         if (string.Equals(clientIntent, "requestTellJiboContent", StringComparison.OrdinalIgnoreCase) &&
             clientEntities.TryGetValue("JiboContent", out var jiboContent))
         {
@@ -685,9 +689,7 @@ public sealed partial class JiboInteractionService
                 "can you watch television"))
             return "robot_can_watch_tv";
 
-        if (MatchesAny(
-                loweredTranscript,
-                "can you dream"))
+        if (spokenRequest is "can you dream" or "do you dream")
             return "robot_can_dream";
 
         if (MatchesAny(
@@ -1776,7 +1778,9 @@ public sealed partial class JiboInteractionService
                 "who developed you"))
             return "robot_origin_created";
 
-        if (MatchesAny(
+        if (string.Equals(clientIntent, "requestStory", StringComparison.OrdinalIgnoreCase) ||
+            spokenRequest is "do you know any stories" or "do you know a story" ||
+            MatchesAny(
                 loweredTranscript,
                 "tell me a story",
                 "can you tell me a story",

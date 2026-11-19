@@ -155,6 +155,10 @@ public sealed class WebSocketTurnFinalizationService(
     {
         "rap",
         "sing",
+        "beatbox",
+        "wink",
+        "meow",
+        "bark",
         "joke",
         "funny",
         "dance",

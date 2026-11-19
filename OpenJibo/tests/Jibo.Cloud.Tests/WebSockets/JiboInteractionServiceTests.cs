@@ -1238,6 +1238,76 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
+    [InlineData("Can you turn off your eyes?", "robot_turn_off_eye", "RA_JBO_TurnOffEye")]
+    [InlineData("Hey Jibo, turn off your eye please.", "robot_turn_off_eye", "RA_JBO_TurnOffEye")]
+    [InlineData("Tell me a fortune.", "robot_tell_fortune", "RA_JBO_TellFortune")]
+    [InlineData("Give me a riddle.", "robot_tell_riddle", "RA_JBO_TellRiddle")]
+    [InlineData("Tell me a haiku.", "robot_tell_haiku", "RA_JBO_TellHaiku")]
+    [InlineData("Give me a deep thought.", "robot_tell_deep_thought", "RA_JBO_TellDeepThought")]
+    [InlineData("Give me a palindrome.", "robot_tell_palindrome", "RA_JBO_TellPalindrome")]
+    [InlineData("Give me a weird word.", "robot_tell_weird_word", "RA_JBO_TellWeirdWord")]
+    [InlineData("Tell me your secrets.", "robot_tell_secrets", "RA_JBO_TellSecrets")]
+    [InlineData("Do you have any words of wisdom?", "robot_words_of_wisdom", "RA_JBO_TellWordsOfWisdom")]
+    [InlineData("Are you alive?", "robot_is_alive", "RI_JBO_IsAlive")]
+    [InlineData("Do you get lonely?", "robot_can_get_lonely", "RI_JBO_CanGetLonely")]
+    [InlineData("Can you beatbox?", "robot_beatbox", "RA_JBO_Beatbox")]
+    public async Task BuildDecisionAsync_PegasusQuip_BypassesSearchAndUsesSpecificMim(
+        string transcript, string intent, string mimId)
+    {
+        var search = new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("Unexpected search result.", SearchBackendKind.Wolfram));
+        var decision = await CreateService(knowledgeSearchService: search).BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript
+        });
+
+        Assert.Equal(intent, decision.IntentName);
+        Assert.Equal(mimId, decision.SkillPayload?["mim_id"]);
+        Assert.False(string.IsNullOrWhiteSpace(decision.ReplyText));
+        Assert.DoesNotContain("<break", decision.ReplyText, StringComparison.Ordinal);
+        Assert.Equal(0, search.SearchCount);
+        if (intent == "robot_tell_haiku")
+        {
+            var esml = Assert.IsType<string>(decision.SkillPayload!["esml"]);
+            Assert.NotEmpty(System.Xml.Linq.XElement.Parse(esml).Descendants("break"));
+        }
+    }
+
+    [Theory]
+    [InlineData("requestTurnOffEye", null, null, "robot_turn_off_eye")]
+    [InlineData("requestTellJiboContent", "JiboContent", "Fortune", "robot_tell_fortune")]
+    [InlineData("requestTellJiboContent", "JiboContent", "Riddle", "robot_tell_riddle")]
+    [InlineData("requestTellJiboContent", "JiboContent", "Haiku", "robot_tell_haiku")]
+    [InlineData("requestTellJiboContent", "JiboContent", "DeepThought", "robot_tell_deep_thought")]
+    [InlineData("requestMakeSound", "AnimalSound", "Dog", "robot_make_dog_sound")]
+    [InlineData("requestStory", null, null, "robot_story")]
+    public async Task BuildDecisionAsync_PegasusQuip_AcceptsNativeIntentWithoutTranscript(
+        string clientIntent, string? entity, string? value, string expectedIntent)
+    {
+        var decision = await CreateService().BuildDecisionAsync(new TurnContext
+        {
+            Attributes = new Dictionary<string, object?>
+            {
+                ["messageType"] = "CLIENT_NLU",
+                ["clientIntent"] = clientIntent,
+                ["clientEntities"] = entity is null ? null : new Dictionary<string, string> { [entity] = value! }
+            }
+        });
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.False(string.IsNullOrWhiteSpace(decision.ReplyText));
+    }
+
+    [Theory]
+    [InlineData("peek at my kitchen lights", "not_understood")]
+    [InlineData("Can you turn off my bedroom light?", "ha_lights_off")]
+    [InlineData("Do you know any stories?", "robot_story")]
+    public async Task BuildDecisionAsync_PegasusQuip_PreservesDistinctRoutes(string transcript, string intent)
+    {
+        var decision = await CreateService().BuildDecisionAsync(new TurnContext { RawTranscript = transcript });
+        Assert.Equal(intent, decision.IntentName);
+    }
+
+    [Theory]
     [InlineData("sneeze", "request_sneeze", "Robots don't sneeze")]
     [InlineData("are you ready", "robot_is_ready", "ready for anything")]
     [InlineData("are you ready for today", "robot_is_ready_for_day", "ready")]
@@ -5844,15 +5914,18 @@ public sealed class JiboInteractionServiceTests
             StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
-    public async Task BuildDecisionAsync_CanYouDream_UsesSourceBackedCanDreamReply()
+    [Theory]
+    [InlineData("can you dream")]
+    [InlineData("do you dream")]
+    [InlineData("Hey Jibo, do you dream?")]
+    public async Task BuildDecisionAsync_DreamAbilityQuestion_UsesSourceBackedCanDreamReply(string transcript)
     {
         var service = CreateService();
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "can you dream",
-            NormalizedTranscript = "can you dream"
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
         });
 
         Assert.Equal("robot_can_dream", decision.IntentName);

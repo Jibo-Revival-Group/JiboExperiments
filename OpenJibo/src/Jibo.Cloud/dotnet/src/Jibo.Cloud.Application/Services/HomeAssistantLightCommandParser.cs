@@ -150,7 +150,8 @@ public static class HomeAssistantLightCommandParser
 
             var targetName = TranscriptTextNormalizer.StripTrailingCourtesyWords(
                 match.Groups["target"].Value.Trim());
-            if (string.IsNullOrWhiteSpace(targetName) || IsGenericLightsTarget(targetName))
+            if (string.IsNullOrWhiteSpace(targetName) || IsGenericLightsTarget(targetName) ||
+                targetName is "your eye" or "your eyes" or "jibo's eye" or "jibo's eyes")
                 continue;
 
             var actionToken = match.Groups["action"].Value;

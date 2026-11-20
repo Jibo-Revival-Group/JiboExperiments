@@ -43,12 +43,16 @@ internal static class LegacyMimReplySelector
         }
 
         var chosen = ChooseWeighted(randomizer, pool);
+        var isSantaTracker = string.Equals(chosen.MimId, "RA_JBO_ShowSantaTracker", StringComparison.OrdinalIgnoreCase);
+        var useTopLevelAnimation = isSantaTracker ||
+                                  string.Equals(chosen.MimId, "RA_JBO_ShowMittens", StringComparison.OrdinalIgnoreCase);
         return new LegacyMimSelection
         {
             ReplyText = LegacyMimTemplateRenderer.Render(chosen.Reply, displayName),
             Esml = LegacyMimTemplateRenderer.RenderEsml(chosen.Reply, displayName,
-                preserveAnimation: PegasusQuipRoutes.PreservesAnimation(chosen.MimId),
-                preservePitch: PegasusQuipRoutes.PreservesPitch(chosen.MimId)),
+                preserveAnimation: useTopLevelAnimation || PegasusQuipRoutes.PreservesAnimation(chosen.MimId),
+                preservePitch: isSantaTracker || PegasusQuipRoutes.PreservesPitch(chosen.MimId),
+                wrapInExpressiveSpeech: !useTopLevelAnimation),
             MimId = chosen.MimId,
             PromptId = chosen.PromptId,
             Emotion = chosen.Emotion

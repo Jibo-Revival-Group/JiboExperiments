@@ -213,7 +213,25 @@ public static class PegasusQuipRoutes
             PreserveAnimation: true),
         new("robot_has_pets", "RI_JBO_HasPets",
             ["do you have pets", "do you have any pets", "do you have a pet"],
-            "doesJiboHaveThing", "Pet", "*", PreserveAnimation: true)
+            "doesJiboHaveThing", "Pet", "*", PreserveAnimation: true),
+        new("robot_draw_picture", "RA_JBO_DrawPicture",
+            ["draw a picture", "draw me a picture", "can you draw a picture", "can you draw me a picture"],
+            "requestDrawPicture", PreserveAnimation: true),
+        new("robot_do_spring_cleaning", "RA_JBO_DoSpringCleaning",
+            ["do spring cleaning", "can you do spring cleaning", "do some spring cleaning"],
+            "requestDoSpringCleaning"),
+        new("robot_shovel_snow", "RA_JBO_ShovelSnow",
+            ["shovel snow", "shovel the snow", "can you shovel snow", "can you shovel the snow"],
+            "requestShovelSnow", PreserveAnimation: true),
+        new("robot_show_baseball", "RA_JBO_ShowBaseball",
+            ["show me a baseball", "show me the baseball", "show us a baseball"],
+            "requestShowImage", "Emoji", "Baseball", PreserveAnimation: true),
+        new("robot_show_basketball", "RA_JBO_ShowBasketball",
+            ["show me a basketball", "show me the basketball", "show us a basketball"],
+            "requestShowImage", "Emoji", "Basketball", PreserveAnimation: true),
+        new("robot_show_butterfly", "RA_JBO_ShowButterfly",
+            ["show me a butterfly", "show me the butterfly", "show us a butterfly"],
+            "requestShowImage", "Emoji", "Butterfly", PreserveAnimation: true)
     ];
 
     private static readonly IReadOnlyDictionary<string, Route> ByIntent =

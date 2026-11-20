@@ -1292,6 +1292,7 @@ public sealed class JiboInteractionServiceTests
     [InlineData("Do you need to eat?", "robot_can_get_hungry", "RI_JBO_CanGetHungry")]
     [InlineData("Do you have a soul?", "robot_has_soul", "RI_JBO_HasSoul")]
     [InlineData("Do you have pets?", "robot_has_pets", "RI_JBO_HasPets")]
+    [InlineData("Do some spring cleaning.", "robot_do_spring_cleaning", "RA_JBO_DoSpringCleaning")]
     public async Task BuildDecisionAsync_PegasusQuip_BypassesSearchAndUsesSpecificMim(
         string transcript, string intent, string mimId)
     {
@@ -2082,9 +2083,11 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("AN", decision.SkillPayload["prompt_sub_category"]);
         var esml = Assert.IsType<string>(decision.SkillPayload["esml"]);
         Assert.Contains("'", decision.ReplyText, StringComparison.Ordinal);
-        Assert.Contains(decision.ReplyText, esml, StringComparison.Ordinal);
         Assert.DoesNotContain("&apos;", esml, StringComparison.Ordinal);
-        var animation = Assert.Single(System.Xml.Linq.XElement.Parse(esml).Descendants("anim"));
+        var speak = System.Xml.Linq.XElement.Parse(esml);
+        Assert.Contains("'", speak.Value, StringComparison.Ordinal);
+        var animation = Assert.Single(speak.Elements("anim"));
+        Assert.Null(animation.Attribute("nonBlocking"));
         Assert.StartsWith("santa-scanner,", (string?)animation.Attribute("filter"), StringComparison.Ordinal);
     }
 
@@ -2105,7 +2108,7 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("robot_show_mittens", decision.IntentName);
         Assert.Equal(prompt, decision.SkillPayload?["prompt_id"]);
         var esml = Assert.IsType<string>(decision.SkillPayload?["esml"]);
-        var animation = Assert.Single(System.Xml.Linq.XElement.Parse(esml).Descendants("anim"));
+        var animation = Assert.Single(System.Xml.Linq.XElement.Parse(esml).Elements("anim"));
         Assert.Equal("emoji", (string?)animation.Attribute("cat"));
         Assert.Equal("mittens, !hf", (string?)animation.Attribute("filter"));
     }

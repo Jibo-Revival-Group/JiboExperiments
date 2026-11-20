@@ -15,6 +15,15 @@ public sealed partial class JiboInteractionService
         "snack"
     ];
 
+    private static readonly string[] RobotTriggeredSurpriseKinds = ["fact", "joke"];
+
+    private JiboInteractionDecision BuildRobotTriggeredSurpriseDecision(JiboExperienceCatalog catalog)
+    {
+        return catalog.Jokes.Count > 0 && randomizer.Choose(RobotTriggeredSurpriseKinds) == "joke"
+            ? BuildProactiveJokeDecision(catalog) with { SkillName = "chitchat-skill" }
+            : BuildProactiveFunFactDecision(catalog);
+    }
+
     private JiboInteractionDecision BuildSurpriseDecision(
         JiboExperienceCatalog catalog,
         TurnContext turn,

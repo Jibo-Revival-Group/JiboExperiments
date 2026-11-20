@@ -16,7 +16,7 @@ internal static class LegacyMimTemplateRenderer
     }
 
     internal static string? RenderEsml(string template, string? displayName, string? referent = null,
-        bool preserveAnimation = false, bool preservePitch = false)
+        bool preserveAnimation = false, bool preservePitch = false, bool wrapInExpressiveSpeech = true)
     {
         var markup = LegacyMimPromptNormalizer.Normalize(template, preservePlaceholders: true,
             preserveTtsMarkup: true, preserveAnimation: preserveAnimation, preservePitch: preservePitch).Text;
@@ -26,7 +26,9 @@ internal static class LegacyMimTemplateRenderer
         // ampersands and substituted values exactly once.
         markup = RenderTemplate(markup.Replace("&", "&amp;", StringComparison.Ordinal),
             SecurityElement.Escape(displayName), SecurityElement.Escape(referent), preserveMarkup: true);
-        var esml = $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{markup}</es></speak>";
+        var esml = wrapInExpressiveSpeech
+            ? $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{markup}</es></speak>"
+            : $"<speak>{markup}</speak>";
         try
         {
             var root = XElement.Parse(esml);

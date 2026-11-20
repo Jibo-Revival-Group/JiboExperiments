@@ -6205,8 +6205,13 @@ public sealed class JiboWebSocketServiceTests
     [InlineData("can i have a rose", "robot_give_rose", "RA_JBO_GiveRose", "jiboji")]
     [InlineData("show me a snowman", "robot_show_snowman", "RA_JBO_ShowSnowman", "emoji")]
     [InlineData("show me mittens", "robot_show_mittens", "RA_JBO_ShowMittens", "emoji")]
+    [InlineData("draw a picture", "robot_draw_picture", "RA_JBO_DrawPicture", "ib")]
+    [InlineData("shovel snow", "robot_shovel_snow", "RA_JBO_ShovelSnow", "jiboji")]
+    [InlineData("show me a baseball", "robot_show_baseball", "RA_JBO_ShowBaseball", null)]
+    [InlineData("show me a basketball", "robot_show_basketball", "RA_JBO_ShowBasketball", "jiboji")]
+    [InlineData("show me a butterfly", "robot_show_butterfly", "RA_JBO_ShowButterfly", "jiboji")]
     public async Task ClientAsr_PegasusQuip_EmitsAnimationMarkup(
-        string text, string intent, string mimId, string animationCategory)
+        string text, string intent, string mimId, string? animationCategory)
     {
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -6228,7 +6233,9 @@ public sealed class JiboWebSocketServiceTests
             .GetProperty("config").GetProperty("jcp").GetProperty("config").GetProperty("play");
         Assert.Equal(mimId, play.GetProperty("meta").GetProperty("mim_id").GetString());
         var esml = System.Xml.Linq.XElement.Parse(play.GetProperty("esml").GetString()!);
-        Assert.Contains(esml.Descendants("anim"), node => (string?)node.Attribute("cat") == animationCategory);
+        Assert.Contains(esml.Descendants("anim"), node => animationCategory is null
+            ? (string?)node.Attribute("name") == "jiboji_baseball_hit_01"
+            : (string?)node.Attribute("cat") == animationCategory);
         if (intent == "robot_count_to_ten")
         {
             var count = Assert.Single(esml.Descendants("anim")).Value;
@@ -9452,7 +9459,7 @@ public sealed class JiboWebSocketServiceTests
             Kind = "neo-hub-proactive",
             Token = token,
             Text =
-                """{"type":"CONTEXT","transID":"trans-proactive-contract-a","data":{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}}"""
+                """{"type":"CONTEXT","transID":"trans-proactive-contract-a","data":{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-2","firstName":"jake"}]}}}}"""
         });
 
         var reply = Assert.Single(contextReplies);
@@ -9507,8 +9514,12 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(target.DeviceId, reconnect.Metadata["registeredDeviceId"]?.ToString());
     }
 
-    [Fact]
-    public async Task ProactivePresence_EmitsMatchThenSkillActionWithoutListenFrames()
+    [Theory]
+    [InlineData("PRESENCE", false)]
+    [InlineData("NEW_ARRIVAL", false)]
+    [InlineData("SURPRISE", true)]
+    public async Task ProactiveKnownPerson_EmitsMatchThenSkillActionWithoutListenFrames(
+        string triggerSource, bool skipSurprises)
     {
         var token = _store.IssueHubToken("proactive-contract-device-b");
         const string connectionId = "proactive-contract-connection-b";
@@ -9520,8 +9531,12 @@ public sealed class JiboWebSocketServiceTests
             Path = "/v1/proactive",
             Kind = "neo-hub-proactive",
             Token = token,
-            Text =
-                """{"type":"TRIGGER","transID":"trans-proactive-contract-b","data":{"triggerSource":"PRESENCE","triggerData":{"looperID":"person-1"}}}"""
+            Text = JsonSerializer.Serialize(new
+            {
+                type = "TRIGGER",
+                transID = "trans-proactive-contract-b",
+                data = new { triggerSource, triggerData = new { looperID = "person-1" } }
+            })
         });
         Assert.Empty(triggerReplies);
 
@@ -9543,7 +9558,13 @@ public sealed class JiboWebSocketServiceTests
         using var payload = JsonDocument.Parse(contextReplies[0].Text!);
         Assert.False(payload.RootElement.GetProperty("final").GetBoolean());
         Assert.True(payload.RootElement.GetProperty("data").TryGetProperty("match", out var match));
-        Assert.False(match.GetProperty("skipSurprises").GetBoolean());
+        Assert.Equal(skipSurprises, match.GetProperty("skipSurprises").GetBoolean());
+        if (skipSurprises)
+        {
+            var session = Assert.IsType<CloudSession>(_store.FindActiveSessionByToken(token));
+            Assert.Contains(session.LastIntent, new[] { "proactive_fun_fact", "proactive_joke" });
+            Assert.False(session.FollowUpOpen);
+        }
     }
 
     [Fact]

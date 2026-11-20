@@ -17,6 +17,9 @@ public sealed class ProtocolToTurnContextMapper
         };
         var text = ExtractTranscript(envelope.Text, attributes);
 
+        if (string.Equals(envelope.Kind, "neo-hub-proactive", StringComparison.OrdinalIgnoreCase))
+            attributes["isProactiveSocket"] = true;
+
         if (!string.IsNullOrWhiteSpace(turnState.TransId)) attributes["transID"] = turnState.TransId;
 
         if (!string.IsNullOrWhiteSpace(session.AccountId)) attributes["accountId"] = session.AccountId;

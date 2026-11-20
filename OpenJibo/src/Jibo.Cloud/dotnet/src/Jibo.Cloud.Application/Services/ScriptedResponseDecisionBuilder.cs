@@ -97,7 +97,8 @@ internal static class ScriptedResponseDecisionBuilder
             var trackerPayload = BuildSantaTrackerSkillPayload(
                 selection!.ReplyText,
                 selection.PromptId,
-                referenceLocalTime);
+                referenceLocalTime,
+                selection.Esml);
             return new JiboInteractionDecision(
                 intentName,
                 selection.ReplyText,
@@ -238,7 +239,8 @@ internal static class ScriptedResponseDecisionBuilder
     private static IDictionary<string, object?> BuildSantaTrackerSkillPayload(
         string selectedReply,
         string? promptId,
-        DateTimeOffset? referenceLocalTime)
+        DateTimeOffset? referenceLocalTime,
+        string? esml = null)
     {
         var resolvedPromptId = promptId ?? ResolveSantaTrackerPromptId(selectedReply);
         var trackerAnim = ResolveSantaTrackerAnimation(selectedReply, referenceLocalTime);
@@ -248,8 +250,8 @@ internal static class ScriptedResponseDecisionBuilder
 
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
-            ["esml"] =
-                $"<speak>{EscapeXmlText(spokenLine)} <anim cat='jiboji' filter='{trackerAnim}' nonBlocking='true'/></speak>",
+            ["esml"] = esml ??
+                $"<speak><anim cat='jiboji' filter='{trackerAnim}'/> {EscapeXmlText(spokenLine)}</speak>",
             ["mim_id"] = "RA_JBO_ShowSantaTracker",
             ["mim_type"] = "announcement",
             ["prompt_id"] = resolvedPromptId,

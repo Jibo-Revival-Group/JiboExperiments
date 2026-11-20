@@ -189,7 +189,7 @@ async function runProactiveNoActionContract(config, socketClient, socket, transa
     transID: transactionId,
     data: {
       triggerSource: "SURPRISE",
-      triggerData: { looperID: "jetstream-probe-person" },
+      triggerData: {},
     },
   }));
   socketClient.send(socket, JSON.stringify({
@@ -197,8 +197,8 @@ async function runProactiveNoActionContract(config, socketClient, socket, transa
     transID: transactionId,
     data: {
       runtime: {
-        perception: { speaker: "jetstream-probe-person" },
-        loop: { users: [{ id: "jetstream-probe-person", firstName: "probe" }] },
+        perception: { peoplePresent: [] },
+        loop: { users: [] },
       },
     },
   }));

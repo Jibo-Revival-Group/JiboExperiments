@@ -46,7 +46,15 @@ public sealed partial class JiboInteractionService
             if (RequiresLinkedUser(turn))
                 return BuildAccountRequiredDecision();
 
-            return ShouldHandleProactiveGreetingTrigger(turn, triggerSource, greetingPresence)
+            if (string.Equals(triggerSource, "SURPRISE", StringComparison.OrdinalIgnoreCase))
+                return turn.Attributes.TryGetValue("isProactiveSocket", out var proactiveSocket) &&
+                       proactiveSocket is true &&
+                       greetingPresence.PrimaryPersonId is { } focusedPerson &&
+                       greetingPresence.LoopUserFirstNames.ContainsKey(focusedPerson)
+                    ? BuildRobotTriggeredSurpriseDecision(catalog)
+                    : BuildTriggerIgnoredDecision();
+
+            return ShouldHandleProactiveGreetingTrigger(turn, greetingPresence)
                 ? BuildProactiveGreetingDecision(turn, greetingPresence, referenceLocalTime)
                 : BuildTriggerIgnoredDecision();
         }

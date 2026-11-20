@@ -304,11 +304,8 @@ public sealed partial class JiboInteractionService
 
     private bool ShouldHandleProactiveGreetingTrigger(
         TurnContext turn,
-        string? triggerSource,
         GreetingPresenceProfile presence)
     {
-        if (string.Equals(triggerSource, "SURPRISE", StringComparison.OrdinalIgnoreCase)) return false;
-
         if (!presence.HasKnownIdentity) return false;
 
         var lastGreetingUtc = ReadGreetingHistoryLastGreetedUtc(turn, presence);

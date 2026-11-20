@@ -704,6 +704,9 @@ public sealed class WebSocketTurnFinalizationService(
                     DelayMs = map.DelayMs
                 })
                 .ToArray();
+            turn.Attributes.TryGetValue("triggerSource", out var triggerSource);
+            logger.LogDebug("Proactive replies emitted trigger={TriggerSource} intent={Intent} replyCount={ReplyCount}",
+                triggerSource, plan.IntentName, replies.Length);
             ResetBufferedAudio(session);
             ClearListenTracking(turnState);
             return replies;

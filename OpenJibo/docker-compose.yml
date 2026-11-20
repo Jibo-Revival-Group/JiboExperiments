@@ -78,6 +78,20 @@ services:
       OpenJibo__ReleaseSmoke__Secret: ${OPENJIBO_RELEASE_SMOKE_SECRET:-}
       OpenJibo__ReleaseSmoke__MaxConcurrentDevices: ${OPENJIBO_RELEASE_SMOKE_MAX_CONCURRENT:-6}
       OpenJibo__SelfHosted__AllowTokenlessSingleRobotHub: ${OPENJIBO_ALLOW_TOKENLESS_SINGLE_ROBOT_HUB:-false}
+      # Protocol captures and log level. Home servers can set OPENJIBO_CAPTURES=false so the
+      # recordings do not fill the disk, and OPENJIBO_LOG_LEVEL=Information for quieter logs.
+      # Docker logs are capped by "logging" below.
+      OpenJibo__Logging__MinimumLevel: ${OPENJIBO_LOG_LEVEL:-Debug}
+      OpenJibo__Telemetry__Enabled: ${OPENJIBO_CAPTURES:-true}
+      OpenJibo__Telemetry__ExportFixtures: ${OPENJIBO_CAPTURES:-true}
+      OpenJibo__ProtocolTelemetry__Enabled: ${OPENJIBO_CAPTURES:-true}
+      OpenJibo__TurnTelemetry__Enabled: ${OPENJIBO_CAPTURES:-true}
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
     ports:
       - "8080:8080"
     depends_on:
@@ -92,6 +106,12 @@ services:
 
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
     environment:
       POSTGRES_USER: openjibo
       POSTGRES_PASSWORD: ${OPENJIBO_POSTGRES_PASSWORD}

@@ -80,9 +80,10 @@ public sealed partial class JiboInteractionService
             }
 
             if (weeklySnapshots.Count == 0)
-                return new JiboInteractionDecision(
-                    "weather",
-                    "I couldn't fetch the weather right now. Please try again.");
+                return await TryBuildAiWeatherFallbackAsync(transcript, locationQuery, cancellationToken) ??
+                       new JiboInteractionDecision(
+                           "weather",
+                           "I couldn't fetch the weather right now. Please try again.");
 
             var weeklySegments = BuildWeeklyForecastCardSegments(weeklySnapshots, referenceLocalTime);
             var weeklySpokenReply = BuildWeeklyForecastSpokenReply(
@@ -135,9 +136,10 @@ public sealed partial class JiboInteractionService
         }
 
         if (snapshot is null)
-            return new JiboInteractionDecision(
-                "weather",
-                ChooseWeatherServiceDownReply(catalog));
+            return await TryBuildAiWeatherFallbackAsync(transcript, locationQuery, cancellationToken) ??
+                   new JiboInteractionDecision(
+                       "weather",
+                       ChooseWeatherServiceDownReply(catalog));
 
         snapshot = ApplyPreferredWeatherLocationName(snapshot, preferredLocationName, locationQuery);
         var spokenReply = BuildWeatherSpokenReply(snapshot, weatherDate, catalog);
@@ -156,6 +158,26 @@ public sealed partial class JiboInteractionService
             spokenReply,
             "chitchat-skill",
             weatherPayload);
+    }
+
+    // When OpenWeather has nothing for a named place (unknown spelling, a country, a region),
+    // let the AI answer with a live web search instead of "the weather service is offline".
+    private async Task<JiboInteractionDecision?> TryBuildAiWeatherFallbackAsync(
+        string transcript,
+        string? locationQuery,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(locationQuery) || knowledgeSearchService?.IsConfigured != true)
+            return null;
+
+        await EnsureSearchThinkingPreludeAsync(cancellationToken);
+        var decision = await TryBuildKnowledgeSearchDecisionAsync(
+            $"What is the weather like in {locationQuery} right now? ({transcript})",
+            cancellationToken);
+        return decision is not null &&
+               string.Equals(decision.IntentName, "knowledge_search", StringComparison.OrdinalIgnoreCase)
+            ? decision
+            : null;
     }
 
     private static WeatherReportSnapshot ApplyPreferredWeatherLocationName(

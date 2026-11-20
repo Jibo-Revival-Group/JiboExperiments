@@ -89,6 +89,41 @@ public sealed class OpenWeatherReportProvider(
 
         if (string.IsNullOrWhiteSpace(query)) return null;
 
+        // Spoken places come as "Athens Greece"; OpenWeather's geocoder wants "Athens,Greece"
+        // and finds nothing for the plain form, which used to end in "weather service offline".
+        foreach (var candidate in BuildGeocodeCandidates(query))
+        {
+            var point = await GeocodeAsync(candidate, cancellationToken);
+            if (point is not null) return point;
+        }
+
+        logger.LogInformation("OpenWeather could not find the place {Location}.", query);
+        return null;
+    }
+
+    /// <summary>
+    /// Ways to ask the geocoder for a spoken place name: as said, then "City,Country"
+    /// (split before the last one or two words), then the city words alone.
+    /// </summary>
+    internal static IReadOnlyList<string> BuildGeocodeCandidates(string query)
+    {
+        var trimmed = query.Trim();
+        var candidates = new List<string> { trimmed };
+        if (trimmed.Contains(',')) return candidates;
+
+        var words = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length >= 2)
+            candidates.Add(string.Join(' ', words[..^1]) + "," + words[^1]);
+        if (words.Length >= 3)
+            candidates.Add(string.Join(' ', words[..^2]) + "," + string.Join(' ', words[^2..]));
+        if (words.Length >= 2)
+            candidates.Add(string.Join(' ', words[..^1]));
+
+        return candidates.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private async Task<LocationPoint?> GeocodeAsync(string query, CancellationToken cancellationToken)
+    {
         var geocodeCacheKey = NormalizeLocationQueryForCache(query);
         if (TryGetCachedValue(_geocodeCache, geocodeCacheKey, out var cachedLocation)) return cachedLocation;
 

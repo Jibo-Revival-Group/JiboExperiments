@@ -138,7 +138,7 @@ public static class PegasusQuipRoutes
             ["do you have snowmen", "show me snow men", "show me snowman", "show me a snowman"],
             "requestShowImage", "Emoji", "Snowman", PreserveAnimation: true),
         new("robot_be_snowman", "RA_JBO_BeSnowman",
-            ["be a snowman", "can i see the snowman face", "show me the snowman face"],
+            ["be a snowman", "bs snowman", "bs snow man", "can i see the snowman face", "show me the snowman face"],
             "requestBeSnowman", PreserveAnimation: true),
         new("robot_do_prank", "RA_JBO_DoPrank",
             ["do a prank", "do you have any pranks", "show us one of your pranks", "show me a prank"],
@@ -185,7 +185,8 @@ public static class PegasusQuipRoutes
             ["rock the boat", "show me a picture of a boat", "show me the boat"],
             "requestShowImage", "Emoji", "RockingBoat", PreserveAnimation: true),
         new("robot_show_snowplow", "RA_JBO_ShowSnowPlow",
-            ["be a snow plow", "be a snowplow", "can we see you snow plow", "do you have snow plow"],
+            ["be a snow plow", "be a snowplow", "bs snow plow", "bs snowplow", "can we see you snow plow",
+             "do you have snow plow"],
             "requestShowImage", "Emoji", "SnowPlow", PreserveAnimation: true),
         new("robot_show_mittens", "RA_JBO_ShowMittens",
             ["do you have gloves", "show me mittens", "show us the mittens", "show us the snow gloves"],
@@ -230,6 +231,11 @@ public static class PegasusQuipRoutes
             if (string.Equals(animalSound, "Cat", StringComparison.OrdinalIgnoreCase)) return "robot_make_cat_sound";
             if (string.Equals(animalSound, "Dog", StringComparison.OrdinalIgnoreCase)) return "robot_make_dog_sound";
         }
+
+        phrase = phrase.Replace("april fool's ", "april fools ", StringComparison.Ordinal)
+            .Replace("april fool s ", "april fools ", StringComparison.Ordinal);
+        const string trailingReaction = " oh wow";
+        if (phrase.EndsWith(trailingReaction, StringComparison.Ordinal)) phrase = phrase[..^trailingReaction.Length];
 
         var spokenRoute = Routes.FirstOrDefault(route => route.Phrases.Contains(phrase, StringComparer.Ordinal));
         if (spokenRoute is not null) return spokenRoute.Intent;

@@ -6204,6 +6204,7 @@ public sealed class JiboWebSocketServiceTests
     [InlineData("show me a snowglobe", "robot_show_snowglobe", "RA_JBO_ShowSnowglobe", "jiboji")]
     [InlineData("can i have a rose", "robot_give_rose", "RA_JBO_GiveRose", "jiboji")]
     [InlineData("show me a snowman", "robot_show_snowman", "RA_JBO_ShowSnowman", "emoji")]
+    [InlineData("show me mittens", "robot_show_mittens", "RA_JBO_ShowMittens", "emoji")]
     public async Task ClientAsr_PegasusQuip_EmitsAnimationMarkup(
         string text, string intent, string mimId, string animationCategory)
     {

@@ -249,7 +249,7 @@ internal static class ScriptedResponseDecisionBuilder
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["esml"] =
-                $"<speak>{EscapeXml(spokenLine)} <anim cat='jiboji' filter='{trackerAnim}' nonBlocking='true'/></speak>",
+                $"<speak>{EscapeXmlText(spokenLine)} <anim cat='jiboji' filter='{trackerAnim}' nonBlocking='true'/></speak>",
             ["mim_id"] = "RA_JBO_ShowSantaTracker",
             ["mim_type"] = "announcement",
             ["prompt_id"] = resolvedPromptId,
@@ -305,13 +305,11 @@ internal static class ScriptedResponseDecisionBuilder
         return "santa-scanner, with-santa";
     }
 
-    private static string EscapeXml(string value)
+    private static string EscapeXmlText(string value)
     {
         return value
             .Replace("&", "&amp;", StringComparison.Ordinal)
             .Replace("<", "&lt;", StringComparison.Ordinal)
-            .Replace(">", "&gt;", StringComparison.Ordinal)
-            .Replace("\"", "&quot;", StringComparison.Ordinal)
-            .Replace("'", "&apos;", StringComparison.Ordinal);
+            .Replace(">", "&gt;", StringComparison.Ordinal);
     }
 }

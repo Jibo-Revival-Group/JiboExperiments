@@ -1274,6 +1274,7 @@ public sealed class JiboInteractionServiceTests
     [InlineData("Do you think magic is real?", "robot_believes_in_magic", "RI_JBO_BelievesInMagic")]
     [InlineData("Do you have a bobsled?", "robot_bobsled", "RA_JBO_Bobsled")]
     [InlineData("Be a snowman.", "robot_be_snowman", "RA_JBO_BeSnowman")]
+    [InlineData("Bs snowman.", "robot_be_snowman", "RA_JBO_BeSnowman")]
     [InlineData("Do you have any pranks?", "robot_do_prank", "RA_JBO_DoPrank")]
     [InlineData("Whistle.", "robot_whistle", "RA_JBO_Whistle")]
     [InlineData("Can you burp?", "robot_burp", "RA_JBO_Burp")]
@@ -1283,7 +1284,10 @@ public sealed class JiboInteractionServiceTests
     [InlineData("Show me an emoji.", "robot_show_emoji", "RA_JBO_ShowEmoji")]
     [InlineData("Look up.", "robot_look_up", "RA_JBO_LookUp")]
     [InlineData("Show me an April Fools prank.", "robot_april_fools_prank", "RA_JBO_DoAprilFoolsPrank")]
+    [InlineData("Show me an April Fool's prank.", "robot_april_fools_prank", "RA_JBO_DoAprilFoolsPrank")]
+    [InlineData("Show me an April Fool’s prank.", "robot_april_fools_prank", "RA_JBO_DoAprilFoolsPrank")]
     [InlineData("Be a snowplow.", "robot_show_snowplow", "RA_JBO_ShowSnowPlow")]
+    [InlineData("Bs snow plow.", "robot_show_snowplow", "RA_JBO_ShowSnowPlow")]
     [InlineData("Snowball fight.", "robot_throw_snowball", "RA_JBO_ThrowSnowball")]
     [InlineData("Do you need to eat?", "robot_can_get_hungry", "RI_JBO_CanGetHungry")]
     [InlineData("Do you have a soul?", "robot_has_soul", "RI_JBO_HasSoul")]
@@ -2076,7 +2080,12 @@ public sealed class JiboInteractionServiceTests
             decision.SkillPayload["prompt_id"]?.ToString(),
             StringComparison.Ordinal);
         Assert.Equal("AN", decision.SkillPayload["prompt_sub_category"]);
-        Assert.Contains("santa-scanner", decision.SkillPayload["esml"]?.ToString(), StringComparison.OrdinalIgnoreCase);
+        var esml = Assert.IsType<string>(decision.SkillPayload["esml"]);
+        Assert.Contains("'", decision.ReplyText, StringComparison.Ordinal);
+        Assert.Contains(decision.ReplyText, esml, StringComparison.Ordinal);
+        Assert.DoesNotContain("&apos;", esml, StringComparison.Ordinal);
+        var animation = Assert.Single(System.Xml.Linq.XElement.Parse(esml).Descendants("anim"));
+        Assert.StartsWith("santa-scanner,", (string?)animation.Attribute("filter"), StringComparison.Ordinal);
     }
 
     [Theory]
@@ -2095,6 +2104,24 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("robot_show_mittens", decision.IntentName);
         Assert.Equal(prompt, decision.SkillPayload?["prompt_id"]);
+        var esml = Assert.IsType<string>(decision.SkillPayload?["esml"]);
+        var animation = Assert.Single(System.Xml.Linq.XElement.Parse(esml).Descendants("anim"));
+        Assert.Equal("emoji", (string?)animation.Attribute("cat"));
+        Assert.Equal("mittens, !hf", (string?)animation.Attribute("filter"));
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_PegasusQuip_RoseWithTrailingReactionKeepsAnimation()
+    {
+        var decision = await CreateService().BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "Give me a rose, oh wow."
+        });
+
+        Assert.Equal("robot_give_rose", decision.IntentName);
+        Assert.Equal("RA_JBO_GiveRose", decision.SkillPayload?["mim_id"]);
+        var esml = Assert.IsType<string>(decision.SkillPayload?["esml"]);
+        Assert.Single(System.Xml.Linq.XElement.Parse(esml).Descendants("anim"));
     }
 
     [Theory]

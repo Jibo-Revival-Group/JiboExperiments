@@ -6204,14 +6204,14 @@ public sealed class JiboWebSocketServiceTests
     [InlineData("show me a snowglobe", "robot_show_snowglobe", "RA_JBO_ShowSnowglobe", "jiboji")]
     [InlineData("can i have a rose", "robot_give_rose", "RA_JBO_GiveRose", "jiboji")]
     [InlineData("show me a snowman", "robot_show_snowman", "RA_JBO_ShowSnowman", "emoji")]
-    [InlineData("show me mittens", "robot_show_mittens", "RA_JBO_ShowMittens", "emoji")]
+    [InlineData("show me mittens", "robot_show_mittens", "RA_JBO_ShowMittens", null, "emoji_mittens_01")]
     [InlineData("draw a picture", "robot_draw_picture", "RA_JBO_DrawPicture", "ib")]
     [InlineData("shovel snow", "robot_shovel_snow", "RA_JBO_ShovelSnow", "jiboji")]
-    [InlineData("show me a baseball", "robot_show_baseball", "RA_JBO_ShowBaseball", null)]
+    [InlineData("show me a baseball", "robot_show_baseball", "RA_JBO_ShowBaseball", null, "jiboji_baseball_hit_01")]
     [InlineData("show me a basketball", "robot_show_basketball", "RA_JBO_ShowBasketball", "jiboji")]
     [InlineData("show me a butterfly", "robot_show_butterfly", "RA_JBO_ShowButterfly", "jiboji")]
     public async Task ClientAsr_PegasusQuip_EmitsAnimationMarkup(
-        string text, string intent, string mimId, string? animationCategory)
+        string text, string intent, string mimId, string? animationCategory, string? animationName = null)
     {
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -6233,8 +6233,8 @@ public sealed class JiboWebSocketServiceTests
             .GetProperty("config").GetProperty("jcp").GetProperty("config").GetProperty("play");
         Assert.Equal(mimId, play.GetProperty("meta").GetProperty("mim_id").GetString());
         var esml = System.Xml.Linq.XElement.Parse(play.GetProperty("esml").GetString()!);
-        Assert.Contains(esml.Descendants("anim"), node => animationCategory is null
-            ? (string?)node.Attribute("name") == "jiboji_baseball_hit_01"
+        Assert.Contains(esml.Descendants("anim"), node => animationName is not null
+            ? (string?)node.Attribute("name") == animationName
             : (string?)node.Attribute("cat") == animationCategory);
         if (intent == "robot_count_to_ten")
         {

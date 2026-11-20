@@ -2108,9 +2108,14 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("robot_show_mittens", decision.IntentName);
         Assert.Equal(prompt, decision.SkillPayload?["prompt_id"]);
         var esml = Assert.IsType<string>(decision.SkillPayload?["esml"]);
-        var animation = Assert.Single(System.Xml.Linq.XElement.Parse(esml).Elements("anim"));
-        Assert.Equal("emoji", (string?)animation.Attribute("cat"));
-        Assert.Equal("mittens, !hf", (string?)animation.Attribute("filter"));
+        var speak = System.Xml.Linq.XElement.Parse(esml);
+        Assert.Equal(decision.ReplyText, speak.Value.Trim());
+        var animation = Assert.Single(speak.Elements());
+        Assert.Equal("anim", animation.Name.LocalName);
+        Assert.Equal("emoji_mittens_01", (string?)animation.Attribute("name"));
+        Assert.Equal("!audio", (string?)animation.Attribute("layers"));
+        Assert.Null(animation.Attribute("nonBlocking"));
+        Assert.Empty(animation.Nodes());
     }
 
     [Fact]

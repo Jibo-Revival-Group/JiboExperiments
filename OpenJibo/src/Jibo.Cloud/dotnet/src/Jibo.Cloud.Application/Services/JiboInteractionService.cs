@@ -78,7 +78,7 @@ public sealed partial class JiboInteractionService(
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly Regex WeatherLocationPattern = new(
-        @"\b(?:in|for|at)\s+(?<location>[a-z][a-z\s'\-]+)$",
+        @"\b(?:in|for|at|around|near)\s+(?<location>[a-z][a-z\s'\-]+)$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly Regex WeatherLocationSuffixPattern = new(

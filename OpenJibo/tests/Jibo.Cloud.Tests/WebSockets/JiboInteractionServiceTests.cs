@@ -4603,6 +4603,64 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_WeatherAroundPlace_PassesLocation()
+    {
+        var provider = new CapturingWeatherReportProvider
+        {
+            Snapshot = new WeatherReportSnapshot("Athens, GR", "clear sky", 64, 66, 52, "sunny", false)
+        };
+        var service = CreateService(weatherReportProvider: provider);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "check the weather around athens greece",
+            NormalizedTranscript = "check the weather around athens greece"
+        });
+
+        Assert.Equal("weather", decision.IntentName);
+        Assert.Equal("Athens Greece", provider.LastRequest?.LocationQuery);
+    }
+
+    [Theory]
+    [InlineData("what's the weather in crete")]
+    [InlineData("what's the weather tomorrow in crete")]
+    [InlineData("what's the weather next week in crete")]
+    public async Task BuildDecisionAsync_WeatherForUnknownPlace_PreservesPeriodInSearch(string transcript)
+    {
+        var provider = new CapturingWeatherReportProvider { Snapshot = null };
+        var search = new StubKnowledgeSearchService(new KnowledgeSearchResult(
+            "It's sunny and about eighteen degrees in Crete right now.",
+            SearchBackendKind.ChatGPT));
+        var service = CreateService(weatherReportProvider: provider, knowledgeSearchService: search);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal("knowledge_search", decision.IntentName);
+        Assert.Contains("Crete", decision.ReplyText, StringComparison.Ordinal);
+        Assert.Equal(1, search.SearchCount);
+        Assert.Equal(transcript, search.LastQuery);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_WeatherForUnknownPlace_WithoutAi_KeepsWeatherReply()
+    {
+        var provider = new CapturingWeatherReportProvider { Snapshot = null };
+        var service = CreateService(weatherReportProvider: provider);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "what's the weather in crete",
+            NormalizedTranscript = "what's the weather in crete"
+        });
+
+        Assert.Equal("weather", decision.IntentName);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_WeatherLocationTomorrow_WithProvider_PassesLocationAndTomorrowRequest()
     {
         var provider = new CapturingWeatherReportProvider
@@ -7839,10 +7897,12 @@ public sealed class JiboInteractionServiceTests
     {
         public bool IsConfigured => true;
         public int SearchCount { get; private set; }
+        public string? LastQuery { get; private set; }
 
         public Task<KnowledgeSearchResult?> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
             SearchCount += 1;
+            LastQuery = query;
             return Task.FromResult(result);
         }
     }

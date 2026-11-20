@@ -49,21 +49,25 @@ class WhisperDockerBuildContractTests(unittest.TestCase):
         configure = re.search(r"cmake -S /usr/bin/whisper\.cpp .*?&& cmake --build", self.whisper_stage, re.S)
         self.assertIsNotNone(configure)
         self.assertIn("ARG WHISPER_CPU_PROFILE=portable", self.whisper_stage)
-        self.assertIn("portable) whisper_simd=OFF ;;", self.whisper_stage)
+        self.assertIn("portable) w_sse42=OFF; w_avx=OFF; w_avx2=OFF ;;", self.whisper_stage)
         self.assertIn("-DGGML_NATIVE=OFF", configure.group())
-        for option in (
-            "GGML_SSE42", "GGML_AVX", "GGML_AVX2",
-            "GGML_FMA", "GGML_F16C", "GGML_BMI2",
-        ):
+        for option, variable in {
+            "GGML_SSE42": "w_sse42",
+            "GGML_AVX": "w_avx",
+            "GGML_AVX2": "w_avx2",
+            "GGML_FMA": "w_avx2",
+            "GGML_F16C": "w_avx2",
+            "GGML_BMI2": "w_avx2",
+        }.items():
             with self.subTest(option=option):
-                self.assertIn(f'-D{option}="$whisper_simd"', configure.group())
+                self.assertIn(f'-D{option}="${variable}"', configure.group())
 
     def test_optimized_profile_is_explicit_and_rejects_unknown_profiles(self):
         stage = self.whisper_stage
         self.assertIn('case "${WHISPER_CPU_PROFILE}" in', stage)
-        self.assertIn('avx2) test "$(uname -m)" = x86_64', stage)
-        self.assertIn('whisper_simd=ON ;;', stage)
-        self.assertIn("*) echo 'WHISPER_CPU_PROFILE must be portable or avx2' >&2; exit 1 ;;", stage)
+        self.assertRegex(stage, r'avx\) test "\$\(uname -m\)" = x86_64[^\n]+w_sse42=ON; w_avx=ON; w_avx2=OFF ;;')
+        self.assertRegex(stage, r'avx2\) test "\$\(uname -m\)" = x86_64[^\n]+w_sse42=ON; w_avx=ON; w_avx2=ON ;;')
+        self.assertIn("*) echo 'WHISPER_CPU_PROFILE must be portable, avx or avx2' >&2; exit 1 ;;", stage)
         self.assertNotIn("-DGGML_NATIVE=ON", stage)
 
     def test_preview_workflows_preserve_and_check_source_evidence(self):

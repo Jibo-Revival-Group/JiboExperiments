@@ -42,13 +42,15 @@ ARG WHISPER_MODEL
 # Keep the default safe for memory-limited builders; override only with sufficient RAM.
 ARG WHISPER_BUILD_JOBS=2
 ARG WHISPER_CPU_PROFILE=portable
-# Conservative x86 baseline avoids AVX-era requirements on older CPUs, at a speed cost.
+# portable: any x86-64 CPU (slowest). avx: SSE4.2 + AVX, for Sandy/Ivy Bridge era CPUs
+# (e.g. Xeon E5-2600 v1/v2). avx2: adds AVX2/FMA/F16C/BMI2 (Haswell and newer, fastest).
 RUN case "${WHISPER_BUILD_JOBS}" in ''|*[!0-9]*) echo 'WHISPER_BUILD_JOBS must be an integer from 1 to 32' >&2; exit 1;; esac \
     && if ! [ "${WHISPER_BUILD_JOBS}" -ge 1 ] || ! [ "${WHISPER_BUILD_JOBS}" -le 32 ]; then echo 'WHISPER_BUILD_JOBS must be an integer from 1 to 32' >&2; exit 1; fi \
     && case "${WHISPER_CPU_PROFILE}" in \
-        portable) whisper_simd=OFF ;; \
-        avx2) test "$(uname -m)" = x86_64 || { echo 'avx2 profile requires an x86_64 build target' >&2; exit 1; }; whisper_simd=ON ;; \
-        *) echo 'WHISPER_CPU_PROFILE must be portable or avx2' >&2; exit 1 ;; \
+        portable) w_sse42=OFF; w_avx=OFF; w_avx2=OFF ;; \
+        avx) test "$(uname -m)" = x86_64 || { echo 'avx profile requires an x86_64 build target' >&2; exit 1; }; w_sse42=ON; w_avx=ON; w_avx2=OFF ;; \
+        avx2) test "$(uname -m)" = x86_64 || { echo 'avx2 profile requires an x86_64 build target' >&2; exit 1; }; w_sse42=ON; w_avx=ON; w_avx2=ON ;; \
+        *) echo 'WHISPER_CPU_PROFILE must be portable, avx or avx2' >&2; exit 1 ;; \
        esac \
     && apt-get update \
     && apt-get install -y --no-install-recommends build-essential cmake git curl gzip \
@@ -63,8 +65,8 @@ RUN case "${WHISPER_BUILD_JOBS}" in ''|*[!0-9]*) echo 'WHISPER_BUILD_JOBS must b
     && gzip -n /usr/bin/whisper.cpp/openjibo-source.tar \
     && sha256sum /usr/bin/whisper.cpp/openjibo-source.tar.gz > /usr/bin/whisper.cpp/openjibo-source-sha256.txt \
     && cmake -S /usr/bin/whisper.cpp -B /usr/bin/whisper.cpp/build -DCMAKE_BUILD_TYPE=Release \
-        -DGGML_NATIVE=OFF -DGGML_SSE42="$whisper_simd" -DGGML_AVX="$whisper_simd" -DGGML_AVX2="$whisper_simd" \
-        -DGGML_FMA="$whisper_simd" -DGGML_F16C="$whisper_simd" -DGGML_BMI2="$whisper_simd" \
+        -DGGML_NATIVE=OFF -DGGML_SSE42="$w_sse42" -DGGML_AVX="$w_avx" -DGGML_AVX2="$w_avx2" \
+        -DGGML_FMA="$w_avx2" -DGGML_F16C="$w_avx2" -DGGML_BMI2="$w_avx2" \
     && cmake --build /usr/bin/whisper.cpp/build --config Release -j"${WHISPER_BUILD_JOBS}" \
     && bash /usr/bin/whisper.cpp/models/download-ggml-model.sh "${WHISPER_MODEL}" /usr/bin/whisper.cpp/models
 

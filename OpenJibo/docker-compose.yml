@@ -6,8 +6,8 @@ services:
       args:
         ENABLE_LOCAL_WHISPER: ${OPENJIBO_ENABLE_LOCAL_WHISPER:-true}
         WHISPER_MODEL: ${OPENJIBO_WHISPER_MODEL:-base.en}
-        # portable = works on any x86 CPU (slow); avx2 = several times faster speech
-        # recognition, needs a CPU with AVX2 (in Proxmox set the VM CPU type to "host").
+        # portable = any x86 CPU (slowest); avx = SSE4.2+AVX (e.g. Xeon E5-2600 v1/v2);
+        # avx2 = fastest, needs AVX2/FMA. In Proxmox set the VM CPU type to "host".
         WHISPER_CPU_PROFILE: ${OPENJIBO_WHISPER_CPU_PROFILE:-portable}
         WHISPER_BUILD_JOBS: ${OPENJIBO_WHISPER_BUILD_JOBS:-2}
     image: ${OPENJIBO_RUNTIME_IMAGE:-openjibo-cloud:self-hosted}
@@ -39,8 +39,8 @@ services:
       args:
         ENABLE_LOCAL_WHISPER: ${OPENJIBO_ENABLE_LOCAL_WHISPER:-true}
         WHISPER_MODEL: ${OPENJIBO_WHISPER_MODEL:-base.en}
-        # portable = works on any x86 CPU (slow); avx2 = several times faster speech
-        # recognition, needs a CPU with AVX2 (in Proxmox set the VM CPU type to "host").
+        # portable = any x86 CPU (slowest); avx = SSE4.2+AVX (e.g. Xeon E5-2600 v1/v2);
+        # avx2 = fastest, needs AVX2/FMA. In Proxmox set the VM CPU type to "host".
         WHISPER_CPU_PROFILE: ${OPENJIBO_WHISPER_CPU_PROFILE:-portable}
         WHISPER_BUILD_JOBS: ${OPENJIBO_WHISPER_BUILD_JOBS:-2}
     image: ${OPENJIBO_RUNTIME_IMAGE:-openjibo-cloud:self-hosted}

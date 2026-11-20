@@ -36,12 +36,16 @@ BUILD_BLOCK = (
     "      args:\n"
     "        ENABLE_LOCAL_WHISPER: ${OPENJIBO_ENABLE_LOCAL_WHISPER:-true}\n"
     "        WHISPER_MODEL: ${OPENJIBO_WHISPER_MODEL:-base.en}\n"
+    "        # portable = any x86 CPU (slowest); avx = SSE4.2+AVX (e.g. Xeon E5-2600 v1/v2);\n"
+    "        # avx2 = fastest, needs AVX2/FMA. In Proxmox set the VM CPU type to \"host\".\n"
+    "        WHISPER_CPU_PROFILE: ${OPENJIBO_WHISPER_CPU_PROFILE:-portable}\n"
+    "        WHISPER_BUILD_JOBS: ${OPENJIBO_WHISPER_BUILD_JOBS:-2}\n"
 )
 IMAGE_LINE = "    image: ${OPENJIBO_RUNTIME_IMAGE:-openjibo-cloud:self-hosted}\n"
 POSTGRES_PORTS = '    ports:\n      - "5432:5432"\n'
 API_PORTS = '    ports:\n      - "8080:8080"\n'
 # Reviewed source Compose contract. Any change needs a packaging review.
-COMPOSE_SHA256 = "b5e4e4767549ddc025db4ebbd2b348011271f06c505f1913f75e1665ac525445"
+COMPOSE_SHA256 = "cbadc3c1b6aabb0f49d4a49551512cea0e85ad2f9a9b16a04e705e4e4818a212"
 
 
 def _source_bytes(root: Path, relative: str) -> bytes:

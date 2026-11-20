@@ -1272,6 +1272,22 @@ public sealed class JiboInteractionServiceTests
     [InlineData("Let's have a staring contest.", "robot_staring_contest", "RA_JBO_StaringContest")]
     [InlineData("Do you miss me?", "robot_misses_user", "RI_JBO_IsMissingUser")]
     [InlineData("Do you think magic is real?", "robot_believes_in_magic", "RI_JBO_BelievesInMagic")]
+    [InlineData("Do you have a bobsled?", "robot_bobsled", "RA_JBO_Bobsled")]
+    [InlineData("Be a snowman.", "robot_be_snowman", "RA_JBO_BeSnowman")]
+    [InlineData("Do you have any pranks?", "robot_do_prank", "RA_JBO_DoPrank")]
+    [InlineData("Whistle.", "robot_whistle", "RA_JBO_Whistle")]
+    [InlineData("Can you burp?", "robot_burp", "RA_JBO_Burp")]
+    [InlineData("Just hang out.", "robot_hang_out", "RA_JBO_HangOut")]
+    [InlineData("Wash your face.", "robot_wash_face", "RA_JBO_WashYourFace")]
+    [InlineData("Tell me about the future.", "robot_tell_about_future", "RA_JBO_TellAboutFuture")]
+    [InlineData("Show me an emoji.", "robot_show_emoji", "RA_JBO_ShowEmoji")]
+    [InlineData("Look up.", "robot_look_up", "RA_JBO_LookUp")]
+    [InlineData("Show me an April Fools prank.", "robot_april_fools_prank", "RA_JBO_DoAprilFoolsPrank")]
+    [InlineData("Be a snowplow.", "robot_show_snowplow", "RA_JBO_ShowSnowPlow")]
+    [InlineData("Snowball fight.", "robot_throw_snowball", "RA_JBO_ThrowSnowball")]
+    [InlineData("Do you need to eat?", "robot_can_get_hungry", "RI_JBO_CanGetHungry")]
+    [InlineData("Do you have a soul?", "robot_has_soul", "RI_JBO_HasSoul")]
+    [InlineData("Do you have pets?", "robot_has_pets", "RI_JBO_HasPets")]
     public async Task BuildDecisionAsync_PegasusQuip_BypassesSearchAndUsesSpecificMim(
         string transcript, string intent, string mimId)
     {
@@ -1315,6 +1331,12 @@ public sealed class JiboInteractionServiceTests
     [InlineData("requestMakeSound", "Animal", "Fox", "robot_make_fox_sound")]
     [InlineData("requestTellJiboContent", "Joke", "NewYearsJoke", "robot_tell_new_year_joke")]
     [InlineData("requestTellJiboContent", "JiboContent", "FunFact", "fun_fact")]
+    [InlineData("requestShowImage", "Emoji", "Moon", "robot_show_moon")]
+    [InlineData("requestShowImage", null, null, "robot_show_emoji")]
+    [InlineData("requestShowImage", "Emoji", "RockingBoat", "robot_rock_boat")]
+    [InlineData("requestShowImage", "Emoji", "OldMacintosh", "robot_show_macintosh")]
+    [InlineData("requestFigureSkate", null, null, "robot_figure_skate")]
+    [InlineData("requestSkiJump", null, null, "robot_ski_jump")]
     public async Task BuildDecisionAsync_PegasusQuip_AcceptsNativeIntentWithoutTranscript(
         string clientIntent, string? entity, string? value, string expectedIntent)
     {
@@ -1328,7 +1350,25 @@ public sealed class JiboInteractionServiceTests
             }
         });
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.False(string.IsNullOrWhiteSpace(decision.ReplyText));
+        Assert.True(!string.IsNullOrWhiteSpace(decision.ReplyText) ||
+                    decision.SkillPayload?.TryGetValue("esml", out var markup) == true && markup is string);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_PegasusQuip_UnknownNamedEmojiDoesNotPlayGenericEmoji()
+    {
+        var decision = await CreateService().BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "show me an octopus emoji",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["messageType"] = "CLIENT_NLU",
+                ["clientIntent"] = "requestShowImage",
+                ["clientEntities"] = new Dictionary<string, string> { ["Emoji"] = "Octopus" }
+            }
+        });
+
+        Assert.Equal("not_understood", decision.IntentName);
     }
 
     [Theory]
@@ -1336,6 +1376,10 @@ public sealed class JiboInteractionServiceTests
     [InlineData("Can you turn off my bedroom light?", "ha_lights_off")]
     [InlineData("Do you know any stories?", "robot_story")]
     [InlineData("Tell me a fact.", "fun_fact")]
+    [InlineData("Can you whistle?", "robot_can_whistle")]
+    [InlineData("Can you laugh?", "robot_can_laugh")]
+    [InlineData("How well did you sleep?", "robot_how_was_sleep")]
+    [InlineData("Do you love to take naps?", "robot_likes_sleep")]
     public async Task BuildDecisionAsync_PegasusQuip_PreservesDistinctRoutes(string transcript, string intent)
     {
         var decision = await CreateService().BuildDecisionAsync(new TurnContext { RawTranscript = transcript });
@@ -2009,15 +2053,18 @@ public sealed class JiboInteractionServiceTests
         Assert.NotEqual("robot_favorite_flower", decision.IntentName);
     }
 
-    [Fact]
-    public async Task BuildDecisionAsync_SeasonalSantaTracker_UsesAnimatedSkillPayload()
+    [Theory]
+    [InlineData("show santa tracker")]
+    [InlineData("track santa")]
+    [InlineData("search for santa")]
+    public async Task BuildDecisionAsync_SeasonalSantaTracker_UsesAnimatedSkillPayload(string transcript)
     {
         var service = CreateService();
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "show santa tracker",
-            NormalizedTranscript = "show santa tracker"
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
         });
 
         Assert.Equal("seasonal_santa_tracker", decision.IntentName);
@@ -2030,6 +2077,24 @@ public sealed class JiboInteractionServiceTests
             StringComparison.Ordinal);
         Assert.Equal("AN", decision.SkillPayload["prompt_sub_category"]);
         Assert.Contains("santa-scanner", decision.SkillPayload["esml"]?.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("2026-01-31T23:55:00-08:00", "RA_JBO_ShowMittens_AN_01_FnL")]
+    [InlineData("2026-02-01T00:05:00-08:00", "RA_JBO_ShowMittens_AN_02_FnL")]
+    public async Task BuildDecisionAsync_PegasusQuip_MittensUsesRobotsLocalDate(string iso, string prompt)
+    {
+        var decision = await CreateService().BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "show me mittens",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = JsonSerializer.Serialize(new { runtime = new { location = new { iso } } })
+            }
+        });
+
+        Assert.Equal("robot_show_mittens", decision.IntentName);
+        Assert.Equal(prompt, decision.SkillPayload?["prompt_id"]);
     }
 
     [Theory]

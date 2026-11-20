@@ -86,12 +86,14 @@ public static class LegacyMimCatalogImporter
                     emotion);
 
                 // String-only buckets are also used by generic replies, so keep their text plain.
+                var bucketText = preserveIndexedMarkup
+                    ? LegacyMimPromptNormalizer.Normalize(prompt.Prompt, preservePlaceholders).Text
+                    : normalizedPrompt.Text;
+                if (string.IsNullOrWhiteSpace(bucketText)) continue;
                 builder.Add(
                     bucket.Value,
                     condition,
-                    preserveIndexedMarkup
-                        ? LegacyMimPromptNormalizer.Normalize(prompt.Prompt, preservePlaceholders).Text
-                        : normalizedPrompt.Text,
+                    bucketText,
                     prompt.Weight,
                     mimId,
                     prompt.PromptId,

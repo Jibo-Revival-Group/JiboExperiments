@@ -818,15 +818,18 @@ public sealed partial class JiboInteractionService
         JiboExperienceCatalog catalog,
         string intentName,
         string fallbackReply,
-        string? mimId = null)
+        string? mimId = null,
+        DateTimeOffset? referenceLocalTime = null)
     {
         var contextUpdates = ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates();
         if (LegacyMimScriptedReplyBuilder.TrySelectMimReply(
-                catalog, randomizer, intentName, LegacyMimScriptedReplyBuilder.BuildScriptedContext(),
-                displayName: null, explicitMimId: mimId, [], out var selection))
+                catalog, randomizer, intentName, LegacyMimScriptedReplyBuilder.BuildScriptedContext(referenceLocalTime),
+                displayName: null, explicitMimId: mimId, [], out var selection) &&
+            selection is not null &&
+            (!string.IsNullOrWhiteSpace(selection.ReplyText) || !string.IsNullOrWhiteSpace(selection.Esml)))
         {
             return new JiboInteractionDecision(
-                intentName, selection!.ReplyText,
+                intentName, selection.ReplyText,
                 SkillPayload: LegacyMimDecisionMetadata.BuildSkillPayload(selection),
                 ContextUpdates: LegacyMimDecisionMetadata.ApplyEmotion(contextUpdates, selection.Emotion));
         }

@@ -6198,6 +6198,12 @@ public sealed class JiboWebSocketServiceTests
     [InlineData("wave", "robot_wave", "RA_JBO_ShowWaveEmoji", "emoji")]
     [InlineData("count to ten", "robot_count_to_ten", "RA_JBO_CountTo10", "emoji")]
     [InlineData("blow a bubble", "robot_blow_bubbles", "RA_JBO_BlowBubble", "jiboji")]
+    [InlineData("dab", "robot_dab", "RA_JBO_DanceDab", "dance")]
+    [InlineData("laugh", "robot_laugh", "RA_JBO_Laugh", "happy")]
+    [InlineData("show me the moon", "robot_show_moon", "RA_JBO_ShowMoon", "emoji")]
+    [InlineData("show me a snowglobe", "robot_show_snowglobe", "RA_JBO_ShowSnowglobe", "jiboji")]
+    [InlineData("can i have a rose", "robot_give_rose", "RA_JBO_GiveRose", "jiboji")]
+    [InlineData("show me a snowman", "robot_show_snowman", "RA_JBO_ShowSnowman", "emoji")]
     public async Task ClientAsr_PegasusQuip_EmitsAnimationMarkup(
         string text, string intent, string mimId, string animationCategory)
     {
@@ -6230,6 +6236,41 @@ public sealed class JiboWebSocketServiceTests
             Assert.Equal(Enumerable.Range(1, 10), numbers);
         }
         Assert.Equal(intent, _store.FindSessionByToken("hub-pegasus-quip-token")?.LastIntent);
+    }
+
+    [Theory]
+    [InlineData("play the guitar", "RA_JBO_PlayGuitar", "dance", "?(flamenco-guitar,rockabilly)")]
+    [InlineData("show me a turtle", "RA_JBO_ShowTurtle", "emoji", "turtle, !hf")]
+    [InlineData("blink", "RA_JBO_Blink", "blinks", null)]
+    [InlineData("bow", "RA_JBO_Bow", null, "bow")]
+    [InlineData("fly a kite", "RA_JBO_ShowKite", "jiboji", "kite")]
+    public async Task ClientAsr_PegasusQuip_AnimationOnlyMimReachesPlayback(
+        string text, string mimId, string? category, string? filter)
+    {
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-animation-only-token",
+            Text = JsonSerializer.Serialize(new
+            {
+                type = "CLIENT_ASR",
+                transID = "animation-only-turn",
+                data = new { text, rules = new[] { "launch" } }
+            })
+        });
+
+        var skill = Assert.Single(replies, reply => ReadReplyType(reply) == "SKILL_ACTION");
+        using var payload = JsonDocument.Parse(skill.Text!);
+        var play = payload.RootElement.GetProperty("data").GetProperty("action")
+            .GetProperty("config").GetProperty("jcp").GetProperty("config").GetProperty("play");
+        Assert.Equal(mimId, play.GetProperty("meta").GetProperty("mim_id").GetString());
+        var esml = System.Xml.Linq.XElement.Parse(play.GetProperty("esml").GetString()!);
+        var animation = Assert.Single(esml.Descendants("anim"));
+        Assert.Equal(category, (string?)animation.Attribute("cat"));
+        Assert.Equal(filter, (string?)animation.Attribute("filter"));
+        Assert.Empty(esml.Value.Trim().Trim('.'));
     }
 
     [Fact]

@@ -556,6 +556,8 @@ public sealed partial class JiboInteractionService
                 "do you like sleep",
                 "do you like sleeping",
                 "do you enjoy sleep",
+                "do you love to take naps",
+                "do you enjoy being asleep",
                 "do you enjoy sleeping"))
             return "robot_likes_sleep";
 
@@ -3650,6 +3652,7 @@ public sealed partial class JiboInteractionService
                 loweredTranscript,
                 "how did you sleep",
                 "how was your sleep",
+                "how well did you sleep",
                 "did you sleep well"))
         {
             semanticIntent = "robot_how_was_sleep";

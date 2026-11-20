@@ -51,6 +51,13 @@ public static class LegacyMimPromptNormalizer
         @"<[^>]+>",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
+    private static readonly Regex MarkupOrTextPattern = new(
+        @"<[^>]+>|[^<]+",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    internal static string FormatTextOutsideMarkup(string markup, Func<string, string> format) =>
+        MarkupOrTextPattern.Replace(markup, match => match.Value[0] == '<' ? match.Value : format(match.Value));
+
     public static Result Normalize(string? prompt, bool preservePlaceholders, bool preserveTtsMarkup = false,
         bool preserveAnimation = false, bool preservePitch = false)
     {
@@ -75,9 +82,7 @@ public static class LegacyMimPromptNormalizer
         if (!preservePlaceholders) text = PlaceholderPattern.Replace(text, " ");
         if (!preserveTtsMarkup) text = ResidualMarkupPattern.Replace(text, " ");
 
-        text = WhitespacePattern.Replace(text, " ").Trim();
-        text = SpaceBeforePunctuationPattern.Replace(text, "$1");
-        text = WhitespacePattern.Replace(text, " ").Trim();
+        text = (preserveTtsMarkup ? FormatTextOutsideMarkup(text, NormalizeSpacing) : NormalizeSpacing(text)).Trim();
         text = text.TrimStart('.', ',', ';', ':', '!', '?', ' ');
 
         return new Result
@@ -86,4 +91,7 @@ public static class LegacyMimPromptNormalizer
             Emotion = string.IsNullOrWhiteSpace(emotion) ? null : emotion
         };
     }
+
+    private static string NormalizeSpacing(string text) =>
+        SpaceBeforePunctuationPattern.Replace(WhitespacePattern.Replace(text, " "), "$1");
 }

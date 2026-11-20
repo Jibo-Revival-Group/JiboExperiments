@@ -116,6 +116,6 @@ internal static class LegacyMimScriptedReplyBuilder
         return new LegacyMimConditionEvaluator.Context(
             HolidayClaim: null,
             Holiday: null,
-            CurrentDate: DateOnly.FromDateTime(localTime.LocalDateTime));
+            CurrentDate: DateOnly.FromDateTime(localTime.DateTime));
     }
 }

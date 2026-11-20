@@ -119,7 +119,100 @@ public static class PegasusQuipRoutes
             "isJiboDoingAction", "Action", "MissUser", PreserveAnimation: true),
         new("robot_believes_in_magic", "RI_JBO_BelievesInMagic",
             ["do you think magic is real", "do you believe in magic"],
-            "doesJiboBelieveInThing", "GeneralLikes", "Magic", PreserveAnimation: true)
+            "doesJiboBelieveInThing", "GeneralLikes", "Magic", PreserveAnimation: true),
+        new("robot_play_guitar", "RA_JBO_PlayGuitar",
+            ["play guitar", "play a guitar", "play the guitar", "can you play the guitar"],
+            "requestPlayInstrument", "MusicalInstrument", "Guitar", PreserveAnimation: true),
+        new("robot_bobsled", "RA_JBO_Bobsled",
+            ["bobsled", "do you have a bobsled", "go bobsledding"], "requestBobsled", PreserveAnimation: true),
+        new("robot_give_rose", "RA_JBO_GiveRose",
+            ["can i have a rose", "give me a rose", "show a rose", "show me a rose"],
+            "requestGiveRose", PreserveAnimation: true),
+        new("robot_show_moon", "RA_JBO_ShowMoon",
+            ["show a moon", "show the moon", "show me the moon", "show me a moon"],
+            "requestShowImage", "Emoji", "Moon", PreserveAnimation: true),
+        new("robot_show_snowglobe", "RA_JBO_ShowSnowglobe",
+            ["be a snowglobe", "show me snow globe", "show me snowglobe", "show me a snow globe", "show me a snowglobe"],
+            "requestShowImage", "Emoji", "Snowglobe", PreserveAnimation: true),
+        new("robot_show_snowman", "RA_JBO_ShowSnowman",
+            ["do you have snowmen", "show me snow men", "show me snowman", "show me a snowman"],
+            "requestShowImage", "Emoji", "Snowman", PreserveAnimation: true),
+        new("robot_be_snowman", "RA_JBO_BeSnowman",
+            ["be a snowman", "can i see the snowman face", "show me the snowman face"],
+            "requestBeSnowman", PreserveAnimation: true),
+        new("robot_do_prank", "RA_JBO_DoPrank",
+            ["do a prank", "do you have any pranks", "show us one of your pranks", "show me a prank"],
+            "requestDoPrank", PreserveAnimation: true),
+        new("robot_laugh", "RA_JBO_Laugh",
+            ["laugh", "laugh for me", "laugh for us"], "requestLaugh", PreserveAnimation: true),
+        new("robot_whistle", "RA_JBO_Whistle",
+            ["whistle", "whistle for me", "whistle for us"], "requestWhistle"),
+        new("robot_burp", "RA_JBO_Burp",
+            ["burp", "can you burp", "burp for me"], "requestBurp"),
+        new("robot_hang_out", "RA_JBO_HangOut",
+            ["just hang out", "let's hang out", "lets hang out", "can we hang out"], "requestHangOut"),
+        new("robot_wash_face", "RA_JBO_WashYourFace",
+            ["wash your face", "can you wash your face"], "requestWashYourFace"),
+        new("robot_tell_about_future", "RA_JBO_TellAboutFuture",
+            ["tell me about the future", "tell us about the future"], "requestTellAboutFuture"),
+        new("robot_show_emoji", "RA_JBO_ShowEmoji",
+            ["show me an emoji", "show us an emoji", "show me a random emoji"],
+            "requestShowImage", "Emoji", PreserveAnimation: true, PreservePitch: true),
+        new("robot_dab", "RA_JBO_DanceDab",
+            ["dab", "can you dab", "do the dab"], "requestDanceDab", PreserveAnimation: true),
+        new("robot_show_turtle", "RA_JBO_ShowTurtle",
+            ["can i see a turtle", "show me a turtle", "show us a turtle"],
+            "requestShowImage", "Emoji", "Turtle", PreserveAnimation: true),
+        new("robot_blink", "RA_JBO_Blink",
+            ["blink", "blink for me", "blink for us"], "requestBlink", PreserveAnimation: true),
+        new("robot_bow", "RA_JBO_Bow",
+            ["bow", "take a bow", "bow for me"], "requestBow", PreserveAnimation: true),
+        new("robot_show_kite", "RA_JBO_ShowKite",
+            ["fly a kite", "show me a kite", "show us a kite"], "requestShowImage", "Emoji", "Kite",
+            PreserveAnimation: true),
+        new("robot_show_telescope", "RA_JBO_ShowTelescope",
+            ["do you have telescope", "do you have a telescope", "show us the telescope", "show me your telescope",
+             "use your telescope"], "requestShowImage", "Emoji", "Telescope", PreserveAnimation: true),
+        new("robot_look_up", "RA_JBO_LookUp",
+            ["look up", "look up at the ceiling"], "requestLookUp", PreserveAnimation: true),
+        new("robot_april_fools_prank", "RA_JBO_DoAprilFoolsPrank",
+            ["do an april fools day prank", "do you have any april fools day tricks", "show me an april fools prank",
+             "will you do an april fools joke"], "requestDoAprilFoolsPrank", PreserveAnimation: true),
+        new("robot_show_macintosh", "RA_JBO_ShowOldMacintosh",
+            ["show me the mac", "show us old computer", "show me the macintosh", "show us the macintosh"],
+            "requestShowImage", "Emoji", "OldMacintosh", PreserveAnimation: true),
+        new("robot_rock_boat", "RA_JBO_ShowRockingBoat",
+            ["rock the boat", "show me a picture of a boat", "show me the boat"],
+            "requestShowImage", "Emoji", "RockingBoat", PreserveAnimation: true),
+        new("robot_show_snowplow", "RA_JBO_ShowSnowPlow",
+            ["be a snow plow", "be a snowplow", "can we see you snow plow", "do you have snow plow"],
+            "requestShowImage", "Emoji", "SnowPlow", PreserveAnimation: true),
+        new("robot_show_mittens", "RA_JBO_ShowMittens",
+            ["do you have gloves", "show me mittens", "show us the mittens", "show us the snow gloves"],
+            "requestShowImage", "Emoji", "Mittens", PreserveAnimation: true),
+        new("robot_throw_snowball", "RA_JBO_ThrowSnowball",
+            ["do you have a snowball", "have a snowball fight", "show me snowball fight", "snowball fight"],
+            "requestThrowSnowball", PreserveAnimation: true),
+        new("robot_figure_skate", "RA_JBO_FigureSkate",
+            ["can we see ice skating", "can you ice skate", "do you have ice skates", "figure skate",
+             "go figure skating"], "requestFigureSkate", PreserveAnimation: true),
+        new("robot_ski_jump", "RA_JBO_SkiJump",
+            ["do a ski jump", "ski jump"], "requestSkiJump", PreserveAnimation: true),
+        new("robot_ski", "RA_JBO_Ski",
+            ["can we see you skiing", "can you ski", "do you have skis", "go skiing", "ski"],
+            "requestSki", PreserveAnimation: true),
+        new("robot_snowboard", "RA_JBO_Snowboard",
+            ["can i see you snowboarding", "can you snowboard", "do you have snowboard", "go snowboarding", "snowboard"],
+            "requestSnowboard", PreserveAnimation: true),
+        new("robot_can_get_hungry", "RI_JBO_CanGetHungry",
+            ["do you get hungry", "can you get hungry", "do you need to eat", "are you hungry"],
+            "canJiboBeDescriptor", "GeneralDescriptor", "Hungry", PreserveAnimation: true),
+        new("robot_has_soul", "RI_JBO_HasSoul",
+            ["do you have a soul", "have you got a soul"], "doesJiboHaveThing", "Other", "Soul",
+            PreserveAnimation: true),
+        new("robot_has_pets", "RI_JBO_HasPets",
+            ["do you have pets", "do you have any pets", "do you have a pet"],
+            "doesJiboHaveThing", "Pet", "*", PreserveAnimation: true)
     ];
 
     private static readonly IReadOnlyDictionary<string, Route> ByIntent =
@@ -138,18 +231,16 @@ public static class PegasusQuipRoutes
             if (string.Equals(animalSound, "Dog", StringComparison.OrdinalIgnoreCase)) return "robot_make_dog_sound";
         }
 
-        foreach (var route in Routes)
-        {
-            if (route.Phrases.Contains(phrase, StringComparer.Ordinal))
-                return route.Intent;
+        var spokenRoute = Routes.FirstOrDefault(route => route.Phrases.Contains(phrase, StringComparer.Ordinal));
+        if (spokenRoute is not null) return spokenRoute.Intent;
 
-            if (string.Equals(route.ClientIntent, clientIntent, StringComparison.OrdinalIgnoreCase) &&
-                (route.Entity is null || (entities.TryGetValue(route.Entity, out var value) &&
-                                          string.Equals(value, route.Value, StringComparison.OrdinalIgnoreCase))))
-                return route.Intent;
-        }
-
-        return null;
+        // The generic emoji route has an entity key but no value, so it only matches
+        // a request that did not name a particular emoji.
+        return Routes.FirstOrDefault(route =>
+            string.Equals(route.ClientIntent, clientIntent, StringComparison.OrdinalIgnoreCase) &&
+            (route.Entity is null ||
+             string.Equals(entities.GetValueOrDefault(route.Entity), route.Value, StringComparison.OrdinalIgnoreCase)))
+            ?.Intent;
     }
 
     internal static string? GetMimId(string intent) => ByIntent.GetValueOrDefault(intent)?.MimId;

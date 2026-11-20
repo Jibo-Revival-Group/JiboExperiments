@@ -352,6 +352,8 @@ internal static class SeasonalHolidayRouteBuilder
                 "show santa tracker",
                 "can you show santa tracker",
                 "santa tracker",
+                "track santa",
+                "search for santa",
                 "where is santa",
                 "where is santa right now",
                 "can you show me santa tracker"))

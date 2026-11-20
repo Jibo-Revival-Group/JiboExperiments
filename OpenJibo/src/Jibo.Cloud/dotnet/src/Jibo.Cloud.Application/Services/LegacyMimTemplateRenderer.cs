@@ -25,7 +25,7 @@ internal static class LegacyMimTemplateRenderer
         // Only catalog template markup is executable. Escape both literal template
         // ampersands and substituted values exactly once.
         markup = RenderTemplate(markup.Replace("&", "&amp;", StringComparison.Ordinal),
-            SecurityElement.Escape(displayName), SecurityElement.Escape(referent));
+            SecurityElement.Escape(displayName), SecurityElement.Escape(referent), preserveMarkup: true);
         var esml = $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{markup}</es></speak>";
         try
         {
@@ -46,7 +46,8 @@ internal static class LegacyMimTemplateRenderer
         return esml;
     }
 
-    private static string RenderTemplate(string template, string? displayName, string? referent)
+    private static string RenderTemplate(string template, string? displayName, string? referent,
+        bool preserveMarkup = false)
     {
         if (string.IsNullOrWhiteSpace(template)) return string.Empty;
 
@@ -59,14 +60,17 @@ internal static class LegacyMimTemplateRenderer
             .Replace("${speaker}", speaker, StringComparison.OrdinalIgnoreCase)
             .Replace("${referent}", resolvedReferent, StringComparison.OrdinalIgnoreCase);
 
-        rendered = rendered
+        return (preserveMarkup
+            ? LegacyMimPromptNormalizer.FormatTextOutsideMarkup(rendered, NormalizeSpacing)
+            : NormalizeSpacing(rendered)).Trim();
+    }
+
+    private static string NormalizeSpacing(string text) =>
+        text
             .Replace(" ,", ",", StringComparison.Ordinal)
             .Replace(",,", ",", StringComparison.Ordinal)
             .Replace("  ", " ", StringComparison.Ordinal)
             .Replace(" .", ".", StringComparison.Ordinal)
             .Replace(" !", "!", StringComparison.Ordinal)
             .Replace(" ?", "?", StringComparison.Ordinal);
-
-        return rendered.Trim();
-    }
 }

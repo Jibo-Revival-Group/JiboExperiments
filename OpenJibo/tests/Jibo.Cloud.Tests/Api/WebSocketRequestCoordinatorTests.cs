@@ -16,6 +16,35 @@ namespace Jibo.Cloud.Tests.Api;
 
 public sealed partial class WebSocketRequestCoordinatorTests
 {
+    [Fact]
+    public async Task NotificationSocket_SendsGoingAwayOnApplicationShutdown()
+    {
+        var service = CreateWebSocketService(out var store);
+        var token = store.IssueRobotToken("Ghost-Instance-Onion-Silk");
+        using var shutdown = new CancellationTokenSource();
+        var telemetry = new RecordingWebSocketTelemetrySink();
+        var socket = new FakeWebSocket(new FakeWebSocketFrame(WebSocketMessageType.Close, []))
+        {
+            PauseBeforeReceiveNumber = 1,
+            ReceiveGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously),
+            FirstFrameReceived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously)
+        };
+        var coordinator = new WebSocketRequestCoordinator(service,
+            new HomeAssistantWebSocketHandler(new HomeAssistantConnectionRegistry()), telemetry, store)
+            { ApplicationStopping = shutdown.Token };
+        var context = LeaseContext(socket, token, $"/{token}");
+        context.Request.Host = new HostString("api-socket.jibo.com");
+
+        var handling = coordinator.HandleAsync(context);
+        await socket.FirstFrameReceived.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        shutdown.Cancel();
+        Assert.Equal(WebSocketCloseStatus.EndpointUnavailable,
+            await socket.CloseOutputSent.Task.WaitAsync(TimeSpan.FromSeconds(3)));
+        socket.ReceiveGate.SetResult(true);
+        await handling.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.True(socket.CloseFrameReceived.Task.IsCompletedSuccessfully);
+    }
+
     [Theory]
     [InlineData("eligible")]
     [InlineData("client-disabled")]
@@ -819,6 +848,9 @@ public sealed partial class WebSocketRequestCoordinatorTests
         public TaskCompletionSource<bool> CloseFrameReceived { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        public TaskCompletionSource<WebSocketCloseStatus> CloseOutputSent { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         public override WebSocketCloseStatus? CloseStatus { get; } = null;
 
         public override string? CloseStatusDescription { get; } = null;
@@ -844,6 +876,7 @@ public sealed partial class WebSocketRequestCoordinatorTests
             CancellationToken cancellationToken)
         {
             _state = WebSocketState.CloseSent;
+            CloseOutputSent.TrySetResult(closeStatus);
             return Task.CompletedTask;
         }
 

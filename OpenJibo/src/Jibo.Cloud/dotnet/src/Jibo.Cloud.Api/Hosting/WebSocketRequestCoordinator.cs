@@ -22,7 +22,8 @@ internal sealed class WebSocketRequestCoordinator(
     HubChannelLeasePolicy? channelLeases = null,
     IRuntimePairingInitiationClient? pairingClient = null,
     RuntimePairingCredentialEvidenceKey? pairingCredentialKey = null,
-    IRuntimeAccessClient? runtimeAccess = null)
+    IRuntimeAccessClient? runtimeAccess = null,
+    IHostApplicationLifetime? applicationLifetime = null)
 {
     private static readonly TimeSpan TurnWatchdogInterval = TimeSpan.FromMilliseconds(50);
     private const string ActiveConnectionIdMetadataKey = "openjibo.activeWebSocketConnectionId";
@@ -34,6 +35,7 @@ internal sealed class WebSocketRequestCoordinator(
     internal RuntimePairingCredentialEvidenceKey? PairingCredentialKey { get; init; } = pairingCredentialKey;
     internal TimeSpan LeaseRenewalInterval { get; init; } = TimeSpan.FromSeconds(5);
     internal TimeSpan CredentialRevalidationInterval { get; init; } = HubTokenContinuityMonitor.DefaultInterval;
+    internal CancellationToken ApplicationStopping { get; init; } = applicationLifetime?.ApplicationStopping ?? default;
 
     /// <summary>
     /// Test helper constructor. Production DI injects the full primary constructor.
@@ -386,6 +388,12 @@ internal sealed class WebSocketRequestCoordinator(
                     drained);
             }
 
+            var notificationShutdown = registeredApiSocket && ApplicationStopping.CanBeCanceled
+                ? new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
+                : null;
+            using var stoppingRegistration = notificationShutdown is null
+                ? default
+                : ApplicationStopping.Register(() => notificationShutdown.TrySetResult());
             Task<ReceivedSocketMessage>? pendingReceive = null;
             var watchdogDelay = Task.Delay(TurnWatchdogInterval, connectionLifetime.Token);
             while (socket.State == WebSocketState.Open)
@@ -395,7 +403,15 @@ internal sealed class WebSocketRequestCoordinator(
                 try
                 {
                     pendingReceive ??= ReceiveAsync(socket, connectionLifetime.Token);
-                    var completedTask = await Task.WhenAny(pendingReceive, watchdogDelay);
+                    var completedTask = notificationShutdown is null
+                        ? await Task.WhenAny(pendingReceive, watchdogDelay)
+                        : await Task.WhenAny(pendingReceive, watchdogDelay, notificationShutdown.Task);
+                    if (notificationShutdown?.Task.IsCompleted == true)
+                    {
+                        await CloseNotificationForShutdownAsync(socket, pendingReceive, connectionId);
+                        break;
+                    }
+
                     if (completedTask != pendingReceive)
                     {
                         watchdogDelay = Task.Delay(TurnWatchdogInterval, connectionLifetime.Token);
@@ -559,6 +575,25 @@ internal sealed class WebSocketRequestCoordinator(
             tokenFingerprint,
             isPrematureClose,
             continuityFailure ?? "not-failed");
+    }
+
+    private async Task CloseNotificationForShutdownAsync(WebSocket socket, Task<ReceivedSocketMessage> pendingReceive,
+        string connectionId)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        try
+        {
+            if (!await robotNotificationRegistry.CloseForShutdownAsync(socket, timeout.Token)) return;
+
+            logger.LogInformation("Notification socket sent shutdown close connectionId={ConnectionId}", connectionId);
+            var peerReply = await pendingReceive.WaitAsync(timeout.Token);
+            if (peerReply.MessageType == WebSocketMessageType.Close)
+                logger.LogInformation("Notification socket acknowledged shutdown close connectionId={ConnectionId}", connectionId);
+        }
+        catch (Exception exception) when (exception is OperationCanceledException or WebSocketException or ObjectDisposedException)
+        {
+            logger.LogDebug("Notification socket shutdown close did not finish connectionId={ConnectionId}", connectionId);
+        }
     }
 
     private HashSet<string> ResolveRobotKeys(string? token, CloudSession session)

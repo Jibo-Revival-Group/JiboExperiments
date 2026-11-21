@@ -42,8 +42,11 @@ public sealed class JiboCloudProtocolService(
     private readonly string? _configuredRobotId = ReadConfiguredRobotId(configuration);
     private readonly string? _canonicalApiBaseUrl = ReadCanonicalApiBaseUrl(configuration);
     private readonly bool _protocolAuthDiagnosticsEnabled = ReadProtocolAuthDiagnosticsEnabled(configuration);
+    private readonly bool _managedDeployment = string.Equals(configuration?["OpenJibo:Deployment:Mode"],
+        "managed", StringComparison.OrdinalIgnoreCase);
     private readonly ILogger _logger = logger ?? NullLogger<JiboCloudProtocolService>.Instance;
     private readonly ProtocolRobotIdentityResolver _identityResolver = new(stateStore);
+    private readonly StockLoopCredential? _stockLoopCredential = StockLoopCredential.Read(stateStore, configuration);
 
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
     private readonly RobotNotificationRegistry? _robotNotificationRegistry = robotNotificationRegistry;
@@ -1157,6 +1160,24 @@ public sealed class JiboCloudProtocolService(
 
         if (operation is not ("List" or "ListLoops")) return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
+        if (_stockLoopCredential is { } stock && stock.IsPresented(envelope))
+        {
+            var device = stateStore.FindDeviceByFriendlyId(stock.DeviceId);
+            if (!stock.Authenticate(envelope) || device is null || device.IsHidden || !device.IsActive ||
+                !device.DeviceId.Equals(stock.DeviceId, StringComparison.OrdinalIgnoreCase) ||
+                envelope.DeviceId is { Length: > 0 } assertedId &&
+                !assertedId.Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase) &&
+                !assertedId.Equals(device.RobotId, StringComparison.OrdinalIgnoreCase))
+                return ProtocolDispatchResult.Raw(401, "{\"message\":\"Request authentication required\"}",
+                    "application/x-amz-json-1.1");
+
+            var loop = stateStore.AddLoop(null, null, device.RobotId, device.RobotId);
+            return ProtocolDispatchResult.Ok(new[]
+            {
+                MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId), includeRobotMember: true)
+            });
+        }
+
         // Stock Neo Hub requires exactly one loop. A partially onboarded robot
         // may arrive with an empty persisted loop collection, so materialize a
         // loop from the strongest currently resolved request identity before
@@ -1165,6 +1186,21 @@ public sealed class JiboCloudProtocolService(
         var loops = stateStore.GetLoops();
         var identity = _identityResolver.Resolve(envelope);
         var requestedRobotId = identity.DeviceId ?? envelope.DeviceId;
+        if (_stockLoopCredential is { } protectedCredential &&
+            stateStore.FindDeviceByFriendlyId(protectedCredential.DeviceId) is { } protectedDevice &&
+            protectedDevice.DeviceId.Equals(protectedCredential.DeviceId, StringComparison.OrdinalIgnoreCase))
+        {
+            bool IsProtected(string? id) =>
+                string.Equals(id, protectedDevice.DeviceId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(id, protectedDevice.RobotId, StringComparison.OrdinalIgnoreCase);
+            if (IsProtected(requestedRobotId))
+                return ProtocolDispatchResult.Raw(401, "{\"message\":\"Request authentication required\"}",
+                    "application/x-amz-json-1.1");
+
+            loops = loops.Where(loop => !IsProtected(loop.RobotId) && !IsProtected(loop.RobotFriendlyId)).ToArray();
+            if (loops.Count == 0 && string.IsNullOrWhiteSpace(requestedRobotId))
+                return ProtocolDispatchResult.Ok(Array.Empty<object>());
+        }
         // The customer portal keys the Loop by the registered robot ID. Stock HTTP requests
         // can use the physical device ID even when an older Loop also matches that identifier.
         var registeredDevice = string.IsNullOrWhiteSpace(requestedRobotId)
@@ -1224,8 +1260,11 @@ public sealed class JiboCloudProtocolService(
             loops = [loop];
         }
 
+        // A stock client can apply a Loop once the robot entry exists. Keep the old wire
+        // shape for a managed request that fell back to the bootstrap Loop.
+        var includeRobotMember = !_managedDeployment || registeredLoop is not null;
         return ProtocolDispatchResult.Ok(loops
-            .Select(loop => MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId)))
+            .Select(loop => MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId), includeRobotMember))
             .ToArray());
     }
 
@@ -1273,8 +1312,29 @@ public sealed class JiboCloudProtocolService(
         };
     }
 
-    public static object MapLoopRecord(LoopRecord loop, IEnumerable<LoopMemberRecord> members)
+    public static object MapLoopRecord(LoopRecord loop, IEnumerable<LoopMemberRecord> members,
+        bool includeRobotMember = false)
     {
+        var visibleMembers = members
+            .Where(member => !member.Type.Equals("robot", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (includeRobotMember && !string.IsNullOrWhiteSpace(loop.RobotId))
+        {
+            // Stock SSM builds its local robot edge by looking up loop.robot in members[].accountId.
+            var robotMember = members.FirstOrDefault(member =>
+                member.Type.Equals("robot", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(member.AccountId, loop.RobotId, StringComparison.Ordinal));
+            visibleMembers.Add(robotMember ?? new LoopMemberRecord
+            {
+                Id = $"{loop.LoopId}-robot",
+                LoopId = loop.LoopId,
+                AccountId = loop.RobotId,
+                FirstName = loop.RobotFriendlyId,
+                CreatedUtc = loop.CreatedUtc,
+                Type = "robot"
+            });
+        }
+
         return new
         {
             id = loop.LoopId,
@@ -1282,10 +1342,7 @@ public sealed class JiboCloudProtocolService(
             owner = loop.OwnerAccountId,
             robot = loop.RobotId,
             robotFriendlyId = loop.RobotFriendlyId,
-            members = members
-                .Where(static m => !string.Equals(m.Type, "robot", StringComparison.OrdinalIgnoreCase))
-                .Select(MapLoopMember)
-                .ToArray(),
+            members = visibleMembers.Select(MapLoopMember).ToArray(),
             isSuspended = loop.IsSuspended,
             created = loop.CreatedUtc.ToUnixTimeMilliseconds(),
             updated = loop.UpdatedUtc.ToUnixTimeMilliseconds(),

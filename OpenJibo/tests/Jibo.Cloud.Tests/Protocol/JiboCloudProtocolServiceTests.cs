@@ -90,6 +90,61 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Contains(loop.GetProperty("members").EnumerateArray(), member =>
             member.GetProperty("id").GetString() == added.Id);
         Assert.DoesNotContain("Former", result.BodyText);
+        var robot = Assert.Single(loop.GetProperty("members").EnumerateArray(), member =>
+            member.GetProperty("type").GetString() == "robot");
+        Assert.Equal(loop.GetProperty("robot").GetString(), robot.GetProperty("accountId").GetString());
+    }
+
+    [Fact]
+    public async Task StockLoopRequest_RequiresTheSignedOperationAndReturnsTheEnrolledRobotLoop()
+    {
+        var store = new InMemoryCloudStateStore();
+        var device = new DeviceRegistration { DeviceId = "verified-stock-device", RobotId = "verified-stock-robot" };
+        store.UpsertDevice(device);
+        var enrolledLoop = store.AddLoop(null, null, device.RobotId, device.RobotId);
+        store.AddLoopMember(enrolledLoop.LoopId, null, null, "Enrolled household", null, null, null, false, "member");
+        var stock = new AccountProfile { AccessKeyId = "test-stock-access-key", SecretAccessKey = "synthetic-stock-secret-value" };
+        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["OpenJibo:Deployment:Mode"] = "managed",
+            ["OpenJibo:CanonicalApiHostname"] = "api.jibo.com",
+            ["OpenJibo:Security:StockLoopCredential"] = JsonSerializer.Serialize(new
+            {
+                device.DeviceId, region = "open-jibo", stock.AccessKeyId, stock.SecretAccessKey
+            })
+        }).Build();
+        var service = new JiboCloudProtocolService(store, configuration: config);
+        var signed = AwsSigV4RequestVerifierTests.Sign(stock, "{}", DateTimeOffset.UtcNow,
+            ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"], region: "open-jibo",
+            service: "Loop", target: "Loop_20160324.ListLoops");
+        var request = new ProtocolEnvelope
+        {
+            Method = "POST", Path = "/", HostName = "api.jibo.com",
+            ServicePrefix = "Loop_20160324", Operation = "ListLoops",
+            Headers = signed.Headers, BodyText = signed.BodyText, BodyBytes = signed.BodyBytes
+        };
+
+        var result = await service.DispatchAsync(request);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var loop = Assert.Single(payload.RootElement.EnumerateArray());
+        Assert.Equal(enrolledLoop.LoopId, loop.GetProperty("id").GetString());
+        Assert.Contains("Enrolled household", result.BodyText);
+        Assert.Contains(loop.GetProperty("members").EnumerateArray(), member =>
+            member.GetProperty("accountId").GetString() == device.RobotId &&
+            member.GetProperty("type").GetString() == "robot");
+
+        // The credential is scoped to the signed operation, even if dispatch was routed to ListLoops.
+        request.Headers["X-Amz-Target"] = "Loop_20160324.List";
+        Assert.Equal(401, (await service.DispatchAsync(request)).StatusCode);
+        var unscoped = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            Method = "POST", Path = "/", HostName = "api.jibo.com",
+            ServicePrefix = "Loop_20160324", Operation = "ListLoops"
+        });
+        Assert.DoesNotContain("Enrolled household", unscoped.BodyText);
+        using var fallback = JsonDocument.Parse(unscoped.BodyText);
+        Assert.DoesNotContain(fallback.RootElement[0].GetProperty("members").EnumerateArray(), member =>
+            member.GetProperty("type").GetString() == "robot");
     }
 
     [Fact]
@@ -2312,7 +2367,9 @@ public sealed class JiboCloudProtocolServiceTests
         var members = loops[0].GetProperty("members").EnumerateArray().ToArray();
         Assert.NotEmpty(members);
         Assert.Contains(members, member => member.GetProperty("type").GetString() == "owner");
-        Assert.DoesNotContain(members, member => member.GetProperty("type").GetString() == "robot");
+        var robot = Assert.Single(members, member => member.GetProperty("type").GetString() == "robot");
+        Assert.Equal(loops[0].GetProperty("robot").GetString(), robot.GetProperty("accountId").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(robot.GetProperty("id").GetString()));
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -19,6 +20,7 @@ public sealed class RobotNotificationRegistry(
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly ConcurrentDictionary<Guid, RobotConnection> _connections = new();
+    private readonly ConditionalWeakTable<WebSocket, SemaphoreSlim> _sendGates = new();
     private readonly RobotPendingNotificationStore _pendingStore = pendingStore ?? new RobotPendingNotificationStore();
     private readonly ILogger _logger = logger ?? NullLogger<RobotNotificationRegistry>.Instance;
     private readonly ITransportMetrics _transportMetrics = transportMetrics ?? NullTransportMetrics.Instance;
@@ -107,10 +109,8 @@ public sealed class RobotNotificationRegistry(
         {
             try
             {
-                await socket.SendAsync(payload, WebSocketMessageType.Text, true, cancellationToken);
-                _transportMetrics.WebSocketMessage("out", "api-socket", "text-json", "loop_updated",
-                    payload.Length);
-                sent++;
+                if (await SendAsync(socket, payload, cancellationToken))
+                    sent++;
             }
             catch (WebSocketException)
             {
@@ -126,6 +126,43 @@ public sealed class RobotNotificationRegistry(
     }
 
     public int PendingCount => _pendingStore.Count;
+
+    public async Task<bool> CloseForShutdownAsync(WebSocket socket, CancellationToken cancellationToken)
+    {
+        Remove(socket);
+        var gate = GetSendGate(socket);
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (socket.State != WebSocketState.Open) return false;
+            await socket.CloseOutputAsync(WebSocketCloseStatus.EndpointUnavailable, "server stopping", cancellationToken);
+            return true;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    private SemaphoreSlim GetSendGate(WebSocket socket) =>
+        _sendGates.GetValue(socket, _ => new SemaphoreSlim(1, 1));
+
+    private async Task<bool> SendAsync(WebSocket socket, byte[] payload, CancellationToken cancellationToken)
+    {
+        var gate = GetSendGate(socket);
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (socket.State != WebSocketState.Open) return false;
+            await socket.SendAsync(payload, WebSocketMessageType.Text, true, cancellationToken);
+            _transportMetrics.WebSocketMessage("out", "api-socket", "text-json", "loop_updated", payload.Length);
+            return true;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
 
     private async Task<int> PushBytesToLiveSocketsAsync(
         IReadOnlySet<string> targetKeys,
@@ -157,14 +194,8 @@ public sealed class RobotNotificationRegistry(
 
             try
             {
-                await connection.Socket.SendAsync(
-                    bytes,
-                    WebSocketMessageType.Text,
-                    true,
-                    cancellationToken);
-                _transportMetrics.WebSocketMessage("out", "api-socket", "text-json", "loop_updated",
-                    bytes.Length);
-                pushed++;
+                if (await SendAsync(connection.Socket, bytes, cancellationToken))
+                    pushed++;
             }
             catch (WebSocketException)
             {

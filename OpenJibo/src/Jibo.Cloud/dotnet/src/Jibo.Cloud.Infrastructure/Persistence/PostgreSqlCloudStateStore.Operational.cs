@@ -112,11 +112,25 @@ public sealed partial class PostgreSqlCloudStateStore
             Sync(Required(_trustedServers, nameof(RevokeIdentityGraphAnchor)).RevokeAnchorAsync(anchor.Trim(), null));
     }
 
-    public IdentityGraphSnapshot GetIdentityGraph(string? loopId = null)
+    public IdentityGraphSnapshot GetIdentityGraph(string? loopId = null, DeviceRegistration? scopedRobot = null)
     {
-        var account = GetAccount(); var robot = GetRobot(); var loop = OperationalLoop(loopId);
+        var account = GetAccount();
+        var robot = scopedRobot ?? GetRobot();
+        var loop = OperationalLoop(loopId);
         var people = _people is null ? [] : Sync(_people.ListAsync(account.AccountId, loop, 1000));
         var members = _members is null ? [] : Sync(_members.ListAsync(account.AccountId, loop, 1000));
+        if (scopedRobot is not null)
+        {
+            bool MatchesRobot(string? identity) =>
+                string.Equals(identity, robot.RobotId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(identity, robot.DeviceId, StringComparison.OrdinalIgnoreCase);
+
+            people = people.Where(person => string.IsNullOrWhiteSpace(person.RobotId) ||
+                                           MatchesRobot(person.RobotId)).ToArray();
+            members = members.Where(member => !member.Type.Equals("robot", StringComparison.OrdinalIgnoreCase) ||
+                                              MatchesRobot(member.AccountId)).ToArray();
+        }
+
         var relationship = new IdentityGraphRelationship
         {
             SubjectId = account.AccountId, SubjectKind = "account", Relationship = "owns",
@@ -127,8 +141,8 @@ public sealed partial class PostgreSqlCloudStateStore
         return new IdentityGraphSnapshot
         {
             AccountId = account.AccountId, LoopId = loop, RobotId = robot.RobotId, DeviceId = robot.DeviceId,
-            ContentHash = hash, SignatureAlgorithm = "SHA256", SignatureKeyId = "openjibo-relational-identity-v1",
-            SignaturePayload = canonical, Signature = hash, People = people, Members = members,
+            // This backend returns a snapshot checksum without issuing a peer-admission signature.
+            ContentHash = hash, People = people, Members = members,
             Relationships = [relationship]
         };
     }

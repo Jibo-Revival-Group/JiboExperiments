@@ -46,7 +46,7 @@ function clearSessionToken() {
   localStorage.removeItem(SESSION_KEY);
 }
 
-async function apiFetch(path, options = {}) {
+async function apiFetch(path, options = {}, downloadName = null) {
   const token = getSessionToken();
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
@@ -61,6 +61,8 @@ async function apiFetch(path, options = {}) {
     ...options,
     headers,
   });
+
+  if (response.ok && downloadName) return downloadPortalFile(response, downloadName);
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -139,6 +141,9 @@ function renderDeploymentStatus(deployment = {}) {
       <span class="value mono">${escapeHtml(deployment.revision || "-")}</span>
       <span class="detail">${escapeHtml(deployment.mode || "unspecified")} · ${escapeHtml(deployment.canonicalApiHostname || "-")}</span>
       <span class="detail">Replica ${escapeHtml(deployment.replica || "-")} · config ${compatibility}</span>
+      ${deployment.requiredLegacyHostMappings?.length
+        ? `<span class="detail">Required legacy DNS proof: ${escapeHtml(deployment.requiredLegacyHostMappings.join(", "))}</span>`
+        : ""}
     </div>
   `;
 }
@@ -304,6 +309,9 @@ function renderRobotRows(robots = [], changedRobotIds = new Set()) {
       <td>
         <div class="muted-row">${escapeHtml(robot.firmwareVersion || "-")}</div>
         <div class="muted-row">${escapeHtml(robot.applicationVersion || "-")}</div>
+        ${robot.missingLegacyHostMappings?.length
+          ? `<div class="muted-row">Missing legacy DNS proof: ${escapeHtml(robot.missingLegacyHostMappings.join(", "))}</div>`
+          : ""}
       </td>
       <td>
         <div class="row-actions">
@@ -1072,11 +1080,23 @@ function renderStatusView(summary, previous = previousSummary) {
 
       ${renderLogViewer()}
 
+      <section class="card panel">
+        <h2>Peer admissions</h2>
+        <button class="button secondary" id="exportAdmissionsButton" type="button">Export signed admissions</button>
+        <form id="revokeIdentityAnchorForm" class="inline-form">
+          <label for="revocationAnchor">Peer identity revocation anchor</label>
+          <input id="revocationAnchor" type="text" placeholder="device-id:...=..." required>
+          <button class="button danger" type="submit">Record revocation</button>
+        </form>
+        <p id="peerAdmissionsStatus" class="status hidden" role="status"></p>
+      </section>
       ${errorBanner}
       ${bannerMessage && !lastRefreshError ? `<p class="status ${bannerTone}" style="margin-top: 1rem;">${escapeHtml(bannerMessage)}${identityScanDeviceId ? ` <span id="identityScanProgress">(${Math.max(0, Math.floor((Date.now() - identityScanStartedAt) / 1000))}s elapsed)</span>` : ""}</p>` : ""}
     </div>
   `;
 
+  document.getElementById("exportAdmissionsButton").addEventListener("click", exportSignedAdmissions);
+  document.getElementById("revokeIdentityAnchorForm").addEventListener("submit", recordIdentityRevocation);
   document.getElementById("refreshButton").addEventListener("click", () => refreshStatus("Status refreshed."));
   document.getElementById("logoutButton").addEventListener("click", logout);
   document.getElementById("includeHiddenToggle").addEventListener("change", (event) => {
@@ -1252,6 +1272,40 @@ async function refreshStatus(message = "", tone = "success", options = {}) {
   } finally {
     refreshInFlight = false;
     syncAutoRefreshTimer();
+  }
+}
+
+async function exportSignedAdmissions() {
+  try {
+    await apiFetch("/api/portal/trusted-servers/admissions/export", {}, "openjibo-trusted-server-admissions.json");
+  } catch (error) {
+    showPeerAdmissionsStatus(error.message, "error");
+  }
+}
+
+async function recordIdentityRevocation(event) {
+  event.preventDefault();
+  const input = document.getElementById("revocationAnchor");
+  const anchor = input.value.trim();
+  if (!anchor || !window.confirm("Record this anchor in the server's peer identity revocation list?")) return;
+
+  try {
+    await apiFetch("/api/portal/identity-graph/revocations", {
+      method: "POST",
+      body: JSON.stringify({ anchor }),
+    });
+    input.value = "";
+    showPeerAdmissionsStatus("Revocation recorded.", "success");
+  } catch (error) {
+    showPeerAdmissionsStatus(error.message, "error");
+  }
+}
+
+function showPeerAdmissionsStatus(message, tone) {
+  const status = document.getElementById("peerAdmissionsStatus");
+  if (status) {
+    status.textContent = message;
+    status.className = `status ${tone}`;
   }
 }
 

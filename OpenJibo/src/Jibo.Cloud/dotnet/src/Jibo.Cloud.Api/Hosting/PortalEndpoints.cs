@@ -731,7 +731,10 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var graph = cloudStateStore.GetIdentityGraph(ResolvePortalLoopId(cloudStateStore, session));
+            var graph = ResolvePortalIdentityGraph(cloudStateStore, session);
+            if (graph is null)
+                return Results.NotFound(new { error = "The selected Jibo's identity is unavailable." });
+
             return Results.Json(new
             {
                 graph.AccountId,
@@ -761,22 +764,15 @@ internal static class PortalEndpoints
             ICloudStateStore cloudStateStore) =>
         {
             var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
-            if (session is null)
+            if (session is null || !IsAdminSession(session))
                 return Results.Unauthorized();
 
             if (string.IsNullOrWhiteSpace(request.Anchor))
                 return Results.BadRequest(new { error = "anchor is required." });
 
-            cloudStateStore.RevokeIdentityGraphAnchor(request.Anchor);
-            var graph = cloudStateStore.GetIdentityGraph(ResolvePortalLoopId(cloudStateStore, session));
-
-            return Results.Json(new
-            {
-                revoked = true,
-                anchor = request.Anchor.Trim(),
-                graph.AdmissionAssessment,
-                graph.EvidenceBundle
-            });
+            var anchor = request.Anchor.Trim();
+            cloudStateStore.RevokeIdentityGraphAnchor(anchor);
+            return Results.Json(new { revoked = true, anchor });
         });
 
         app.MapGet("/api/portal/identity-graph/evidence-bundle", (
@@ -788,7 +784,13 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var graph = cloudStateStore.GetIdentityGraph(ResolvePortalLoopId(cloudStateStore, session));
+            var graph = ResolvePortalIdentityGraph(cloudStateStore, session);
+            if (graph is null)
+                return Results.NotFound(new { error = "The selected Jibo's identity is unavailable." });
+
+            if (string.IsNullOrWhiteSpace(graph.EvidenceBundle.Envelope))
+                return Results.NotFound(new { error = "No signed evidence bundle is available for this Jibo." });
+
             var fileName = $"openjibo-identity-evidence-{graph.DeviceId}-{graph.EvidenceBundle.BundleHash}.txt";
             return Results.File(
                 Encoding.UTF8.GetBytes(graph.EvidenceBundle.Envelope),
@@ -957,109 +959,6 @@ internal static class PortalEndpoints
             });
         });
 
-
-        app.MapGet("/api/portal/admin/summary", (
-            HttpRequest request,
-            PortalSessionService portalSessionService,
-            ICloudStateStore cloudStateStore,
-            IUserIntegrationStore integrationStore,
-            HomeAssistantConnectionRegistry registry) =>
-        {
-            var session = ResolvePortalSession(request, null, portalSessionService);
-            if (session is null)
-                return Results.Unauthorized();
-
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
-            var robot = ResolvePortalRobot(cloudStateStore, session);
-            var persistence = cloudStateStore.GetPersistenceStateInfo();
-            var graph = cloudStateStore.GetIdentityGraph(loopId);
-            var backups = cloudStateStore.GetBackups()
-                .Where(backup => string.Equals(backup.LoopId, loopId, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-            var updates = cloudStateStore.ListUpdates();
-            var media = cloudStateStore.ListMedia([loopId]);
-            var people = graph.People;
-            var haLink = integrationStore.FindLinkForJibo(session.FriendlyId, session.FriendlyId, session.OwnershipEpoch ?? "unowned");
-            var robotKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { session.DeviceId, session.FriendlyId };
-            var trustedServerAdmissions = cloudStateStore.GetTrustedServerAdmissions()
-                .Where(admission =>
-                    robotKeys.Contains(admission.ActorDeviceId) ||
-                    robotKeys.Contains(admission.ActorFriendlyId))
-                .ToArray();
-
-            return Results.Json(new
-            {
-                cloudVersion = OpenJiboCloudBuildInfo.Version,
-                persistence,
-                robot = new
-                {
-                    robot.DeviceId,
-                    robot.RobotId,
-                    robot.FriendlyName,
-                    robot.FirmwareVersion,
-                    robot.ApplicationVersion,
-                    robot.IsActive,
-                    robot.HostMappings
-                },
-                counts = new
-                {
-                    loops = 1,
-                    people = people.Count,
-                    updates = updates.Count,
-                    backups = backups.Length,
-                    media = media.Count,
-                    homeAssistantLinks = haLink is null ? 0 : 1,
-                    homeAssistantConnected = haLink is not null && registry.IsInstanceConnected(haLink.HaInstanceId)
-                        ? 1
-                        : 0,
-                    identityRelationships = graph.Relationships.Count,
-                    identityEvidenceSignals = graph.EvidenceSignals.Count,
-                    trustedServerAdmissions = trustedServerAdmissions.Length
-                },
-                conversion = new
-                {
-                    targetMode = robot.HostMappings.TryGetValue("api.jibo.com", out var apiHost) &&
-                                 apiHost.Contains("openjibo", StringComparison.OrdinalIgnoreCase)
-                        ? "open-jibo"
-                        : "unconfirmed",
-                    hostMappings = robot.HostMappings,
-                    requiredHostMappings = RequiredLegacyHostMappings,
-                    missingHostMappings = GetMissingRequiredHostMappings(robot),
-                    trustedServerAdmissions = trustedServerAdmissions.Take(5).Select(admission => new
-                    {
-                        admission.CanonicalHost,
-                        admission.ServerKind,
-                        admission.Action,
-                        admission.ActorFriendlyId,
-                        admission.CreatedUtc,
-                        admission.SignatureKeyId,
-                        admission.Signature
-                    }),
-                    blockers = BuildAdminConversionBlockers(robot, graph),
-                    operatorQuestions = new[]
-                    {
-                        "Which physical robot variant should be the first conversion target?",
-                        "Has the latest non-destructive backup/rollback snapshot been filmed and approved?",
-                        "Which safe awakening assets are approved for first-boot reuse?",
-                        "Do live websocket captures expose stable face/person identifiers, or should the demo stay smoke-seeded?"
-                    }
-                },
-                harness = new
-                {
-                    url = "/harness",
-                    suggestedOperations = new[]
-                    {
-                        "OOBE_20161026.AuditConversion",
-                        "OOBE_20161026.PrepareRobot",
-                        "OOBE_20161026.GetStatus",
-                        "OOBE_20161026.VerifyConnection",
-                        "Robot_20160225.GetRobot",
-                        "Update_20160225.ListUpdates"
-                    }
-                }
-            });
-        });
 
         app.MapPost("/api/portal/status/login", (
             [FromBody] AdminStatusLoginRequest request,
@@ -2006,6 +1905,9 @@ internal static class PortalEndpoints
         var processStartUtc = process.StartTime.ToUniversalTime();
         var persistence = cloudStateStore.GetPersistenceStateInfo();
         var deploymentMode = configuration["OpenJibo:Deployment:Mode"] ?? "unspecified";
+        var requiresLegacyDnsProof = deploymentMode.Equals("self-hosted-isolated", StringComparison.OrdinalIgnoreCase) ||
+                                     deploymentMode.Equals("self-hosted-hybrid", StringComparison.OrdinalIgnoreCase) ||
+                                     deploymentMode.Equals("self-hosted", StringComparison.OrdinalIgnoreCase);
         var revision = Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? "local";
         var hasLocalWhisperSetting = bool.TryParse(
             configuration["OpenJibo:Stt:EnableLocalWhisperCpp"], out var localWhisperEnabled);
@@ -2023,7 +1925,8 @@ internal static class PortalEndpoints
             .Where(session => now - session.LastSeenUtc <= StatusHeartbeatWindow)
             .ToArray();
         var liveConnections = robotPresenceRegistry.GetLiveConnections();
-        var robots = BuildReconciledRobotStatuses(allDevices, activeSessions, recentSessions, liveConnections, now, includeHidden)
+        var robots = BuildReconciledRobotStatuses(allDevices, activeSessions, recentSessions, liveConnections, now,
+                includeHidden, requiresLegacyDnsProof)
             .Select(robot => robot with
             {
                 IdentitySuggestion = identitySuggestionStore.GetSuggestion(robot.DeviceId, allDevices)
@@ -2067,6 +1970,7 @@ internal static class PortalEndpoints
                 deployment = new
                 {
                     mode = deploymentMode,
+                    requiredLegacyHostMappings = requiresLegacyDnsProof ? RequiredLegacyHostMappings : [],
                     revision,
                     replica = serverIdentity.InstanceId,
                     instanceId = $"{revision}/{serverIdentity.InstanceId}",
@@ -2509,7 +2413,8 @@ internal static class PortalEndpoints
         IReadOnlyList<CloudSession> recentSessions,
         IReadOnlyList<RobotPresenceConnection> liveConnections,
         DateTimeOffset now,
-        bool includeHidden)
+        bool includeHidden,
+        bool requiresLegacyDnsProof)
     {
         if (devices.Count == 0)
             return [];
@@ -2641,7 +2546,12 @@ internal static class PortalEndpoints
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(kind => kind, StringComparer.OrdinalIgnoreCase)
                     .ToArray(),
-                sleepState));
+                sleepState)
+            {
+                MissingLegacyHostMappings = requiresLegacyDnsProof && !groupIsSynthetic
+                    ? GetMissingRequiredHostMappings(primaryDevice)
+                    : null
+            });
         }
 
         return visibleRows
@@ -2906,6 +2816,7 @@ internal static class PortalEndpoints
         string? SleepState)
     {
         public RobotIdentitySuggestion? IdentitySuggestion { get; init; }
+        public IReadOnlyList<string>? MissingLegacyHostMappings { get; init; }
     }
 
     private sealed class DisjointSet
@@ -2973,27 +2884,6 @@ internal static class PortalEndpoints
             HostMappings = new Dictionary<string, string>(device.HostMappings, StringComparer.OrdinalIgnoreCase)
         };
 
-
-    private static IReadOnlyList<string> BuildAdminConversionBlockers(
-        DeviceRegistration robot,
-        IdentityGraphSnapshot graph)
-    {
-        var blockers = new List<string>();
-
-        if (!robot.IsActive)
-            blockers.Add("robot-not-active");
-
-        if (robot.HostMappings.Count == 0)
-            blockers.Add("missing-host-mappings");
-
-        if (graph.AdmissionAssessment.BlockingEvidence.Count > 0)
-            blockers.AddRange(graph.AdmissionAssessment.BlockingEvidence.Select(evidence => $"identity-{evidence}"));
-
-        foreach (var missingHost in GetMissingRequiredHostMappings(robot))
-            blockers.Add($"missing-host-mapping:{missingHost}");
-
-        return blockers.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-    }
 
     private static IReadOnlyList<string> GetMissingRequiredHostMappings(DeviceRegistration robot)
     {
@@ -3464,18 +3354,17 @@ internal static class PortalEndpoints
         return loop.LoopId;
     }
 
-    private static DeviceRegistration ResolvePortalRobot(
-        ICloudStateStore cloudStateStore,
+    private static IdentityGraphSnapshot? ResolvePortalIdentityGraph(
+        ICloudStateStore store,
         PortalSessionService.PortalSession session)
     {
-        return cloudStateStore.FindDeviceByFriendlyId(session.DeviceId) ??
-               cloudStateStore.FindDeviceByFriendlyId(session.FriendlyId) ??
-               new DeviceRegistration
-               {
-                   DeviceId = session.DeviceId,
-                   RobotId = session.FriendlyId,
-                   FriendlyName = session.FriendlyId
-               };
+        var robot = store.FindDeviceByFriendlyId(session.DeviceId);
+        if (robot is null ||
+            !robot.DeviceId.Equals(session.DeviceId, StringComparison.OrdinalIgnoreCase) ||
+            !robot.RobotId.Equals(session.FriendlyId, StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        return store.GetIdentityGraph(ResolvePortalLoopId(store, session), robot);
     }
 
     private static object BuildHomeAssistantPayload(

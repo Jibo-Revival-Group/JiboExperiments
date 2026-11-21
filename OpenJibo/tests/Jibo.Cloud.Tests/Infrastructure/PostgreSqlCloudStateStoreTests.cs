@@ -183,8 +183,26 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         Assert.Equal("loop-2", first.LoopId);
         Assert.Equal("robot-1", first.RobotId);
         Assert.Equal(first.ContentHash, second.ContentHash);
-        Assert.Equal(first.ContentHash, first.Signature);
+        Assert.Empty(first.Signature);
         Assert.Contains(first.Relationships, item => item.SubjectId == "account-1" && item.ObjectId == "loop-2");
+    }
+
+    [Fact]
+    public void IdentityGraph_ForPortalRobot_ExcludesBootstrapIdentityAndForeignPeople()
+    {
+        var selected = new DeviceRegistration { DeviceId = "selected-device", RobotId = "selected-robot" };
+        var people = new RecordingPersonRepository(
+            new PersonRecord { PersonId = "selected-person", LoopId = "loop-2", RobotId = selected.RobotId },
+            new PersonRecord { PersonId = "bootstrap-person", LoopId = "loop-2", RobotId = "robot-1" });
+        var store = CreateStore(new FakeTokenRepository(), people: people);
+
+        var graph = store.GetIdentityGraph("loop-2", selected);
+
+        Assert.Equal(selected.DeviceId, graph.DeviceId);
+        Assert.Equal(selected.RobotId, graph.RobotId);
+        Assert.Equal("selected-person", Assert.Single(graph.People).PersonId);
+        Assert.Empty(graph.Signature);
+        Assert.Empty(graph.EvidenceBundle.Envelope);
     }
 
     [Fact]

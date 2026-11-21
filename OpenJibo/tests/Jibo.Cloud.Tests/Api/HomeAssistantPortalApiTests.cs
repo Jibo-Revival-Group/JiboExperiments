@@ -273,21 +273,23 @@ public sealed class HomeAssistantPortalApiTests
     }
 
 
-    [Fact]
-    public async Task AdminSummary_ReportsRequiredLegacyHostMappingProof()
+    [Theory]
+    [InlineData("managed", false)]
+    [InlineData("self-hosted-isolated", true)]
+    [InlineData("self-hosted-hybrid", true)]
+    public async Task FleetSummary_ReportsLegacyHostMappingProofOnlyForSelfHosting(string mode, bool requiresProof)
     {
-        await using var factory = CreateFactory();
+        await using var factory = CreateFactory(deploymentMode: mode);
         var client = factory.CreateClient();
         var store = factory.Services.GetRequiredService<ICloudStateStore>();
-        var robot = store.GetRobot();
-        store.UpdateRobot(new DeviceRegistration
+        const string deviceId = "proof-device";
+        store.UpsertDevice(new DeviceRegistration
         {
-            DeviceId = robot.DeviceId,
-            RobotId = robot.RobotId,
-            FriendlyName = robot.FriendlyName,
-            FirmwareVersion = robot.FirmwareVersion,
-            ApplicationVersion = robot.ApplicationVersion,
+            DeviceId = deviceId,
+            RobotId = "proof-robot",
+            FriendlyName = "Proof Jibo",
             IsActive = true,
+            RegistrationSource = RobotRegistrationSources.Physical,
             HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["api.jibo.com"] = "openjibo.example.test",
@@ -295,28 +297,28 @@ public sealed class HomeAssistantPortalApiTests
             }
         });
 
-        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
-        var spokenCode =
-            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
-
-        var confirmPayload = await (await client.PostAsJsonAsync(
-            "/api/portal/jibo-verification/confirm",
-            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+        var sessions = factory.Services.GetRequiredService<PortalSessionService>();
         client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
-
-        var response = await client.GetAsync("/api/portal/admin/summary");
+            new AuthenticationHeaderValue("Bearer", sessions.CreateAdministratorSession().Token);
+        var response = await client.GetAsync("/api/portal/status/summary");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var summary = await response.Content.ReadFromJsonAsync<JsonElement>();
-        var conversion = summary.GetProperty("conversion");
-        Assert.Equal(3, conversion.GetProperty("requiredHostMappings").GetArrayLength());
-        Assert.Contains(conversion.GetProperty("requiredHostMappings").EnumerateArray(), item =>
-            item.GetString() == "neo-hub.jibo.com");
-        Assert.Contains(conversion.GetProperty("missingHostMappings").EnumerateArray(), item =>
-            item.GetString() == "neo-hub.jibo.com");
-        Assert.Contains(conversion.GetProperty("blockers").EnumerateArray(), item =>
-            item.GetString() == "missing-host-mapping:neo-hub.jibo.com");
+        var required = summary.GetProperty("service").GetProperty("deployment")
+            .GetProperty("requiredLegacyHostMappings");
+        var robot = Assert.Single(summary.GetProperty("robots").EnumerateArray(), item =>
+            item.GetProperty("deviceId").GetString() == deviceId);
+        if (requiresProof)
+        {
+            Assert.Equal(3, required.GetArrayLength());
+            var missing = Assert.Single(robot.GetProperty("missingLegacyHostMappings").EnumerateArray());
+            Assert.Equal("neo-hub.jibo.com", missing.GetString());
+        }
+        else
+        {
+            Assert.Empty(required.EnumerateArray());
+            Assert.Equal(JsonValueKind.Null, robot.GetProperty("missingLegacyHostMappings").ValueKind);
+        }
     }
 
     [Fact]
@@ -992,16 +994,25 @@ public sealed class HomeAssistantPortalApiTests
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
 
-        var revokeResponse = await client.PostAsJsonAsync(
-            "/api/portal/identity-graph/revocations",
-            new { anchor = "device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020" });
+        const string route = "/api/portal/identity-graph/revocations";
+        var revocation = new { anchor = "device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020" };
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync(route, revocation)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await client.GetAsync("/api/portal/trusted-servers/admissions/export")).StatusCode);
+
+        var admin = factory.CreateClient();
+        var sessions = factory.Services.GetRequiredService<PortalSessionService>();
+        admin.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", sessions.CreateAdministratorSession().Token);
+        var revokeResponse = await admin.PostAsJsonAsync(route, revocation);
 
         Assert.Equal(HttpStatusCode.OK, revokeResponse.StatusCode);
         var revoked = await revokeResponse.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(revoked.GetProperty("revoked").GetBoolean());
         Assert.Equal("device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020",
             revoked.GetProperty("anchor").GetString());
-        var admissionAssessment = revoked.GetProperty("admissionAssessment");
+        var graph = await client.GetFromJsonAsync<JsonElement>("/api/portal/identity-graph");
+        var admissionAssessment = graph.GetProperty("admissionAssessment");
         Assert.Equal("quarantine", admissionAssessment.GetProperty("recommendation").GetString());
         Assert.Contains(admissionAssessment.GetProperty("revocationChecks").EnumerateArray(), item =>
             item.GetString() == "local-revocation-match:device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020");
@@ -1009,7 +1020,7 @@ public sealed class HomeAssistantPortalApiTests
             item.GetString() == "revoked:device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020");
         Assert.Contains(admissionAssessment.GetProperty("recommendedActions").EnumerateArray(), item =>
             item.GetString() == "keep-revoked-identity-anchor-quarantined");
-        var evidenceBundle = revoked.GetProperty("evidenceBundle");
+        var evidenceBundle = graph.GetProperty("evidenceBundle");
         Assert.Equal(admissionAssessment.GetProperty("decisionHash").GetString(),
             evidenceBundle.GetProperty("admissionDecisionHash").GetString());
         Assert.Contains(
@@ -1439,6 +1450,8 @@ public sealed class HomeAssistantPortalApiTests
 
         Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
         Assert.Equal("application/json", exportResponse.Content.Headers.ContentType?.MediaType);
+        var script = await client.GetStringAsync("/portal/download.js");
+        Assert.Contains("async function downloadPortalFile", script);
         var exportBody = await exportResponse.Content.ReadAsStringAsync();
         Assert.Contains("\"exportedBy\": \"Portal Admin\"", exportBody);
         Assert.Contains("\"CanonicalHost\": \"export.example.openjibo.com\"", exportBody);

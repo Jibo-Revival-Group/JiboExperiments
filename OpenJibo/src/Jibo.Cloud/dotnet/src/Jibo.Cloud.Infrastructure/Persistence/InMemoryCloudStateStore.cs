@@ -1886,14 +1886,18 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .ToArray();
     }
 
-    public IdentityGraphSnapshot GetIdentityGraph(string? loopId = null)
+    public IdentityGraphSnapshot GetIdentityGraph(string? loopId = null, DeviceRegistration? scopedRobot = null)
     {
         var useDefaultRobot = string.IsNullOrWhiteSpace(loopId);
         var resolvedLoopId = useDefaultRobot ? ResolveDefaultLoopId() : loopId!.Trim();
         // Preserve legacy single-robot behavior for unscoped protocol callers. Portal callers
         // always pass an explicit session loop and receive that loop's robot.
-        var graphRobot = useDefaultRobot ? _robot : ResolveRobotForLoop(resolvedLoopId);
+        var graphRobot = scopedRobot ?? (useDefaultRobot ? _robot : ResolveRobotForLoop(resolvedLoopId));
         var members = GetLoopMembers(resolvedLoopId);
+        if (scopedRobot is not null)
+            members = members.Where(member =>
+                !member.Type.Equals("robot", StringComparison.OrdinalIgnoreCase) ||
+                MatchesIdentityGraphRobot(member.AccountId, scopedRobot)).ToArray();
         var people = _people
             .Where(person =>
                 person.LoopId.Equals(resolvedLoopId, StringComparison.OrdinalIgnoreCase) &&
@@ -1934,7 +1938,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
             if (string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
             {
-                var memberRobot = ResolveIdentityGraphRobotMemberDevice(member) ?? graphRobot;
+                var memberRobot = scopedRobot ?? ResolveIdentityGraphRobotMemberDevice(member) ?? graphRobot;
                 var memberRobotId = string.IsNullOrWhiteSpace(memberRobot.RobotId) ? subjectId : memberRobot.RobotId;
 
                 AddIdentityRelationship(relationships, resolvedLoopId, "loop", "served-by", memberRobotId, "robot",
@@ -1969,6 +1973,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         }
 
         var recognitionObservations = GetRecognitionObservations(resolvedLoopId);
+        if (scopedRobot is not null)
+            recognitionObservations = recognitionObservations
+                .Where(observation => MatchesIdentityGraphRobot(observation.RobotId, scopedRobot)).ToArray();
+
         foreach (var observation in recognitionObservations)
             AddIdentityRelationship(relationships, observation.MemberId, "loop-member",
                 $"{observation.Modality}-recognized-by", observation.RobotId, "robot", resolvedLoopId);
@@ -2008,6 +2016,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             EvidenceSignals = evidenceSignals
         };
     }
+
+    private static bool MatchesIdentityGraphRobot(string? identity, DeviceRegistration robot) =>
+        string.Equals(identity, robot.DeviceId, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(identity, robot.RobotId, StringComparison.OrdinalIgnoreCase);
 
     private DeviceRegistration ResolveRobotForLoop(string loopId)
     {

@@ -115,7 +115,7 @@ public interface ICloudStateStore
     TrustedServerAdmissionRecord RecordTrustedServerAdmission(TrustedServerRecord trustedServer, string action,
         string? actorDeviceId, string? actorFriendlyId, string? reason = null);
     TrustedServerRecord? FindTrustedServer(string canonicalHost);
-    IdentityGraphSnapshot GetIdentityGraph(string? loopId = null);
+    IdentityGraphSnapshot GetIdentityGraph(string? loopId = null, DeviceRegistration? scopedRobot = null);
     void RevokeIdentityGraphAnchor(string anchor);
 
     LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,

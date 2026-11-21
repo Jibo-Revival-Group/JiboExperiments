@@ -23,7 +23,7 @@ function clearSessionToken() {
   localStorage.removeItem(SESSION_KEY);
 }
 
-async function apiFetch(path, options = {}) {
+async function apiFetch(path, options = {}, downloadName = null) {
   const token = getSessionToken();
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
@@ -38,6 +38,8 @@ async function apiFetch(path, options = {}) {
     ...options,
     headers,
   });
+
+  if (response.ok && downloadName) return downloadPortalFile(response, downloadName);
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -330,20 +332,16 @@ function bindPortalControls() {
     });
   }
 
-  const revokeIdentityAnchorButton = document.getElementById("revokeIdentityAnchorButton");
-  if (revokeIdentityAnchorButton) {
-    revokeIdentityAnchorButton.addEventListener("click", async () => {
-      const anchor = document.getElementById("revocationAnchor").value.trim();
+  const graphDownload = document.getElementById("identityGraphDownload");
+  if (graphDownload) {
+    graphDownload.addEventListener("click", async () => {
       const status = document.getElementById("identityGraphActionStatus");
+      status.classList.add("hidden");
       try {
-        await apiFetch("/api/portal/identity-graph/revocations", {
-          method: "POST",
-          body: JSON.stringify({ anchor }),
-        });
-        await renderDashboard("Identity graph revocation recorded; the signed admission bundle is now quarantined.");
+        await apiFetch(graphDownload.dataset.path, {}, graphDownload.dataset.filename);
       } catch (error) {
         status.textContent = error.message;
-        status.className = "status error";
+        status.classList.remove("hidden");
       }
     });
   }
@@ -791,133 +789,43 @@ async function saveRobotName(deviceId, name) {
 }
 
 
-function shortHash(value) {
-  if (!value) return "—";
-  const text = String(value);
-  return text.length > 16 ? `${text.slice(0, 12)}…${text.slice(-6)}` : text;
-}
-
 async function renderIdentityGraphPanel() {
   try {
     const graph = await apiFetch("/api/portal/identity-graph");
+    const hasEvidenceBundle = Boolean(graph.evidenceBundle?.envelope);
     return `
       <section class="card panel wide-panel">
         <div class="panel-header">
           <div>
             <p class="eyebrow">Identity graph</p>
-            <h2>Signed relationship evidence</h2>
+            <h2>Robot identity snapshot</h2>
           </div>
-          <span class="badge success">Signed</span>
+          ${hasEvidenceBundle ? '<span class="badge success">Signed evidence available</span>' : ""}
         </div>
-        <p class="muted">This snapshot is the first owner-visible evidence bundle for future peer admission, restore validation, and Open Jibo network trust decisions.</p>
         <div class="meta-list compact">
-          <div class="meta-item"><span>Snapshot version</span><span>${escapeHtml(graph.snapshotVersion || "—")}</span></div>
-          <div class="meta-item"><span>Loop</span><span>${escapeHtml(graph.loopId || "—")}</span></div>
-          <div class="meta-item"><span>Robot</span><span>${escapeHtml(graph.robotId || "—")}</span></div>
-          <div class="meta-item"><span>Device</span><span>${escapeHtml(graph.deviceId || "—")}</span></div>
+          <div class="meta-item"><span>Loop</span><span>${escapeHtml(graph.loopId)}</span></div>
+          <div class="meta-item"><span>Robot</span><span>${escapeHtml(graph.robotId)}</span></div>
+          <div class="meta-item"><span>Device</span><span>${escapeHtml(graph.deviceId)}</span></div>
           <div class="meta-item"><span>People</span><span>${graph.people?.length || 0}</span></div>
           <div class="meta-item"><span>Relationships</span><span>${graph.relationships?.length || 0}</span></div>
           <div class="meta-item"><span>Evidence signals</span><span>${graph.evidenceSignals?.length || 0}</span></div>
-          <div class="meta-item"><span>Content hash</span><span title="${escapeHtml(graph.contentHash || "")}">${escapeHtml(shortHash(graph.contentHash))}</span></div>
-          <div class="meta-item"><span>Signature</span><span title="${escapeHtml(graph.signature || "")}">${escapeHtml(shortHash(graph.signature))}</span></div>
-          <div class="meta-item"><span>Signature payload</span><span title="${escapeHtml(graph.signaturePayload || "")}">${escapeHtml(shortHash(graph.signaturePayload))}</span></div>
-          <div class="meta-item"><span>Admission</span><span>${escapeHtml(graph.admissionAssessment?.recommendation || "quarantine")}</span></div>
-          <div class="meta-item"><span>Admission reasons</span><span>${escapeHtml((graph.admissionAssessment?.reasons || []).join(", ") || "—")}</span></div>
-          <div class="meta-item"><span>Admission hash</span><span title="${escapeHtml(graph.admissionAssessment?.decisionHash || "")}">${escapeHtml(shortHash(graph.admissionAssessment?.decisionHash))}</span></div>
-          <div class="meta-item"><span>Admission signature</span><span title="${escapeHtml(graph.admissionAssessment?.signature || "")}">${escapeHtml(shortHash(graph.admissionAssessment?.signature))}</span></div>
-          <div class="meta-item"><span>Evidence bundle</span><span title="${escapeHtml(graph.evidenceBundle?.bundleHash || "")}">${escapeHtml(shortHash(graph.evidenceBundle?.bundleHash))}</span></div>
-          <div class="meta-item"><span>Bundle signature</span><span title="${escapeHtml(graph.evidenceBundle?.signature || "")}">${escapeHtml(shortHash(graph.evidenceBundle?.signature))}</span></div>
-          <div class="meta-item"><span>Peer transport</span><span>${escapeHtml(graph.evidenceBundle?.peerTransportStatus || "not-enabled")}</span></div>
-          <div class="meta-item"><span>Replication readiness</span><span>${escapeHtml(graph.evidenceBundle?.replicationReadiness || "blocked")}</span></div>
-          <div class="meta-item"><span>Sync direction</span><span>${escapeHtml(graph.evidenceBundle?.syncDirection || "snapshot-retention-only")}</span></div>
-          <div class="meta-item"><span>Satisfied evidence</span><span>${escapeHtml((graph.admissionAssessment?.satisfiedEvidence || []).join(", ") || "—")}</span></div>
-          <div class="meta-item"><span>Blocking evidence</span><span>${escapeHtml((graph.admissionAssessment?.blockingEvidence || []).join(", ") || "—")}</span></div>
-          <div class="meta-item"><span>Recommended actions</span><span>${escapeHtml((graph.admissionAssessment?.recommendedActions || []).join(", ") || "—")}</span></div>
         </div>
-        <div class="meta-list compact">
-          <div class="meta-item"><span>Revocation checks</span><span>${escapeHtml((graph.admissionAssessment?.revocationChecks || []).join(", ") || "—")}</span></div>
-          <div class="meta-item"><span>Revocation anchors</span><span>${escapeHtml((graph.admissionAssessment?.revocationAnchors || []).join(", ") || "—")}</span></div>
-        </div>
+        ${hasEvidenceBundle ? "" : '<p class="muted">A signed evidence bundle is unavailable for this Jibo.</p>'}
         <div class="actions-row">
-          <a class="secondary-button" href="/api/portal/identity-graph/evidence-bundle?portalSessionToken=${encodeURIComponent(getSessionToken() || "")}">Download evidence bundle</a>
+          <button class="button secondary" id="identityGraphDownload" type="button"
+            data-path="${hasEvidenceBundle ? "/api/portal/identity-graph/evidence-bundle" : "/api/portal/identity-graph"}"
+            data-filename="${hasEvidenceBundle ? "openjibo-identity-evidence.txt" : "openjibo-identity-snapshot.json"}">
+            ${hasEvidenceBundle ? "Download evidence bundle" : "Download identity snapshot"}
+          </button>
         </div>
-        <div class="inline-form">
-          <label for="revocationAnchor">Quarantine by revocation anchor</label>
-          <input id="revocationAnchor" type="text" placeholder="device-id:...=...">
-          <button class="button danger" id="revokeIdentityAnchorButton" type="button">Record revocation</button>
-        </div>
-        <p id="identityGraphActionStatus" class="status hidden"></p>
+        <p id="identityGraphActionStatus" class="status error hidden" role="status"></p>
       </section>
     `;
   } catch (error) {
     return `
       <section class="card panel wide-panel">
         <p class="eyebrow">Identity graph</p>
-        <h2>Signed relationship evidence</h2>
-        <p class="status error">${escapeHtml(error.message)}</p>
-      </section>
-    `;
-  }
-}
-
-
-async function renderAdminPanel() {
-  try {
-    const admin = await apiFetch("/api/portal/admin/summary");
-    const blockers = admin.conversion?.blockers || [];
-    const questions = admin.conversion?.operatorQuestions || [];
-    const operations = admin.harness?.suggestedOperations || [];
-    const requiredHostMappings = admin.conversion?.requiredHostMappings || [];
-    const missingHostMappings = admin.conversion?.missingHostMappings || [];
-    const trustedServerAdmissions = admin.conversion?.trustedServerAdmissions || [];
-    return `
-      <section class="card panel wide-panel">
-        <div class="panel-header">
-          <div>
-            <p class="eyebrow">Admin readiness</p>
-            <h2>Cloud, conversion, and smoke harness</h2>
-          </div>
-          <span class="badge ${blockers.length ? "warning" : "success"}">${blockers.length ? "Needs review" : "Ready"}</span>
-        </div>
-        <p class="muted">Operator summary for getting a robot converted to Open Jibo and proving it can connect to this cloud.</p>
-        <div class="meta-list compact">
-          <div class="meta-item"><span>Cloud version</span><span>${escapeHtml(admin.cloudVersion || "—")}</span></div>
-          <div class="meta-item"><span>Persistence</span><span>${escapeHtml(admin.persistence?.backend || admin.persistence?.kind || "configured")}</span></div>
-          <div class="meta-item"><span>Robot active</span><span>${admin.robot?.isActive ? "Yes" : "No"}</span></div>
-          <div class="meta-item"><span>Target mode</span><span>${escapeHtml(admin.conversion?.targetMode || "unconfirmed")}</span></div>
-          <div class="meta-item"><span>Loops / people</span><span>${admin.counts?.loops || 0} / ${admin.counts?.people || 0}</span></div>
-          <div class="meta-item"><span>Updates / backups</span><span>${admin.counts?.updates || 0} / ${admin.counts?.backups || 0}</span></div>
-          <div class="meta-item"><span>Identity evidence</span><span>${admin.counts?.identityRelationships || 0} rels, ${admin.counts?.identityEvidenceSignals || 0} signals</span></div>
-          <div class="meta-item"><span>Trusted admissions</span><span>${admin.counts?.trustedServerAdmissions || 0} signed records</span></div>
-          <div class="meta-item"><span>Home Assistant</span><span>${admin.counts?.homeAssistantConnected || 0}/${admin.counts?.homeAssistantLinks || 0} connected</span></div>
-        </div>
-        <div class="meta-list compact">
-          <div class="meta-item"><span>Required DNS proof</span><span>${escapeHtml(requiredHostMappings.join(", ") || "—")}</span></div>
-          <div class="meta-item"><span>Missing DNS proof</span><span>${escapeHtml(missingHostMappings.join(", ") || "None")}</span></div>
-          <div class="meta-item"><span>Blockers</span><span>${escapeHtml(blockers.join(", ") || "None from stored cloud state")}</span></div>
-          <div class="meta-item"><span>Smoke operations</span><span>${escapeHtml(operations.join(", ") || "—")}</span></div>
-        </div>
-        <ul class="steps">
-          ${trustedServerAdmissions.length ? trustedServerAdmissions.map((admission) => `
-            <li>
-              <strong>${escapeHtml(admission.canonicalHost || "—")}</strong>
-              <span>${escapeHtml(admission.serverKind || "managed")} · ${escapeHtml(admission.action || "admit")}</span>
-              <div class="muted">${escapeHtml(admission.actorFriendlyId || "system")} · ${formatDate(admission.createdUtc)}</div>
-            </li>
-          `).join("") : `<li>No signed server admissions recorded yet.</li>`}
-        </ul>
-        <ul class="steps">${questions.map((question) => `<li>${escapeHtml(question)}</li>`).join("")}</ul>
-        <div class="actions-row">
-          <a class="secondary-button" href="${escapeHtml(admin.harness?.url || "/harness")}">Open fake robot harness</a>
-          <a class="secondary-button" href="/api/portal/trusted-servers/admissions/export?portalSessionToken=${encodeURIComponent(getSessionToken() || "")}">Export signed admissions</a>
-        </div>
-      </section>
-    `;
-  } catch (error) {
-    return `
-      <section class="card panel wide-panel">
-        <p class="eyebrow">Admin readiness</p>
-        <h2>Cloud, conversion, and smoke harness</h2>
+        <h2>Robot identity snapshot</h2>
         <p class="status error">${escapeHtml(error.message)}</p>
       </section>
     `;
@@ -1166,7 +1074,6 @@ async function renderDashboard(message = "", tone = "success") {
   }
 
   const identityGraphPanel = await renderIdentityGraphPanel();
-  const adminPanel = await renderAdminPanel();
 
   app.innerHTML = `
     <div class="shell">
@@ -1197,8 +1104,6 @@ async function renderDashboard(message = "", tone = "success") {
         ${renderHomeAssistantPanel(dashboard)}
         ${renderLoopPanel(dashboard)}
       </div>
-
-      ${adminPanel}
 
       ${identityGraphPanel}
 

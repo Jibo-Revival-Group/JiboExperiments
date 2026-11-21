@@ -173,7 +173,7 @@ public sealed class PortalAccountApiTests
     [InlineData("/api/portal/calendar-feeds")]
     [InlineData("/api/portal/loop-members")]
     [InlineData("/api/portal/home-assistant/links")]
-    [InlineData("/api/portal/admin/summary")]
+    [InlineData("/api/portal/identity-graph")]
     public async Task AccountOnlySession_CannotReadRobotResourcesOrCreateTopology(string path)
     {
         await using var factory = CreateFactory();
@@ -191,7 +191,7 @@ public sealed class PortalAccountApiTests
     [InlineData("/api/portal/calendar-feeds")]
     [InlineData("/api/portal/loop-members")]
     [InlineData("/api/portal/home-assistant/links")]
-    [InlineData("/api/portal/admin/summary")]
+    [InlineData("/api/portal/identity-graph")]
     public async Task TransferredRobot_RejectsPreviousOwnersSelectedSession(string path)
     {
         await using var factory = CreateFactory();

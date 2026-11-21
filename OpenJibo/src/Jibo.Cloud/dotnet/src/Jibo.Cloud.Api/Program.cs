@@ -90,6 +90,7 @@ app.Logger.LogInformation(
     Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? "local");
 
 app.UseCors();
+app.UsePortalAssetCachePolicy();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseWebSockets();

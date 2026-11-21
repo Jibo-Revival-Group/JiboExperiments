@@ -273,6 +273,31 @@ public sealed class HomeAssistantPortalApiTests
     }
 
 
+    [Fact]
+    public async Task PortalNavigationAndScripts_AreServedWithNoStore()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        using var entry = await client.GetAsync("/portal");
+        Assert.Equal(HttpStatusCode.Redirect, entry.StatusCode);
+        Assert.True(entry.Headers.CacheControl?.NoStore);
+
+        using var page = await client.GetAsync(entry.Headers.Location);
+        Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+        Assert.True(page.Headers.CacheControl?.NoStore);
+        var html = await page.Content.ReadAsStringAsync();
+        var scriptUrl = System.Text.RegularExpressions.Regex.Match(html, """/portal/portal\.js\?v=[^"]+""").Value;
+        Assert.NotEmpty(scriptUrl);
+
+        using var script = await client.GetAsync(scriptUrl);
+        Assert.Equal(HttpStatusCode.OK, script.StatusCode);
+        Assert.True(script.Headers.CacheControl?.NoStore);
+        var source = await script.Content.ReadAsStringAsync();
+        Assert.Contains("Download identity snapshot", source);
+        Assert.DoesNotContain("/api/portal/admin/summary", source);
+    }
+
     [Theory]
     [InlineData("managed", false)]
     [InlineData("self-hosted-isolated", true)]

@@ -12,7 +12,13 @@ public sealed class PostgreSqlPersonRepository(PostgreSqlCloudStateDataSource da
         CancellationToken cancellationToken = default)
     {
         await using var connection = await dataSource.Value.OpenConnectionAsync(cancellationToken); await using var command = connection.CreateCommand();
-        command.CommandText = $"SELECT {Columns} FROM People p WHERE p.AccountId=@account AND p.LoopId=@loop ORDER BY p.IsPrimary DESC,p.DisplayName,p.PersonId LIMIT @limit";
+        command.CommandText = $"""
+            SELECT {Columns} FROM People p
+            WHERE p.AccountId=@account AND p.LoopId=@loop AND NOT EXISTS (
+                SELECT 1 FROM LoopMembers m WHERE m.LoopId=p.LoopId AND m.MemberId=p.PersonId
+                    AND LOWER(m.Status)='removed')
+            ORDER BY p.IsPrimary DESC,p.DisplayName,p.PersonId LIMIT @limit
+            """;
         Scope(command, accountId, loopId); command.Parameters.AddWithValue("limit", Math.Clamp(limit, 1, 1000)); var result = new List<PersonRecord>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken); while (await reader.ReadAsync(cancellationToken)) result.Add(Map(reader)); return result;
     }

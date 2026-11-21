@@ -2,6 +2,18 @@ namespace Jibo.Cloud.Api.Hosting;
 
 internal static class PortalStaticFileMapper
 {
+    internal static void UsePortalAssetCachePolicy(this WebApplication app)
+    {
+        app.Use(async (context, next) =>
+        {
+            // An older dashboard can call endpoints retired by the current release.
+            if (IsPortalAssetPath(context.Request.Path))
+                context.Response.Headers.CacheControl = "no-store";
+
+            await next();
+        });
+    }
+
     internal static void MapPortalStaticFiles(this WebApplication app)
     {
         var portalDirectory = ResolveStaticDirectory(app.Environment.WebRootPath, app.Environment.ContentRootPath, "portal", "index.html");
@@ -49,8 +61,15 @@ internal static class PortalStaticFileMapper
 
     internal static bool IsPortalPath(PathString path)
     {
+        return IsPortalAssetPath(path) ||
+               path.StartsWithSegments("/api/portal", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPortalAssetPath(PathString path)
+    {
         return path.StartsWithSegments("/portal", StringComparison.OrdinalIgnoreCase) ||
-               path.StartsWithSegments("/api/portal", StringComparison.OrdinalIgnoreCase) ||
+               path.Equals("/portal.html", StringComparison.OrdinalIgnoreCase) ||
+               path.Equals("/harness.html", StringComparison.OrdinalIgnoreCase) ||
                path.StartsWithSegments("/harness", StringComparison.OrdinalIgnoreCase);
     }
 

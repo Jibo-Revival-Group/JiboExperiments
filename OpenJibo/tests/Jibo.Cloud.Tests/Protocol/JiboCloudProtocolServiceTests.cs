@@ -65,6 +65,34 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task ListLoops_ResolvesPhysicalDeviceToTheSameRegisteredLoopAsThePortal()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration { DeviceId = "physical-id", RobotId = "registered-robot" });
+        var olderLoop = store.AddLoop("Old Loop", null, "physical-id", "physical-id");
+        var portalLoop = store.AddLoop("Portal Loop", null, "registered-robot", "registered-robot");
+        store.AddLoopMember(olderLoop.LoopId, null, null, "Former", null, null, null, false, "member");
+        var added = store.AddLoopMember(portalLoop.LoopId, null, null, "Current", null, null, null, false, "member");
+        var service = new JiboCloudProtocolService(store);
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            Method = "POST",
+            HostName = "api.jibo.com",
+            ServicePrefix = "Loop_20160715",
+            Operation = "List",
+            DeviceId = "physical-id"
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var loop = Assert.Single(payload.RootElement.EnumerateArray());
+        Assert.Equal(portalLoop.LoopId, loop.GetProperty("id").GetString());
+        Assert.Contains(loop.GetProperty("members").EnumerateArray(), member =>
+            member.GetProperty("id").GetString() == added.Id);
+        Assert.DoesNotContain("Former", result.BodyText);
+    }
+
+    [Fact]
     public void CreateHubToken_WithDeviceId_BindsSessionWithoutCreatingVisibleInventory()
     {
         var store = new InMemoryCloudStateStore();

@@ -120,9 +120,14 @@ public sealed partial class PostgreSqlCloudStateStore
             var existingPerson = currentPeople.FirstOrDefault(item =>
                 item.PersonId.Equals(id, StringComparison.OrdinalIgnoreCase));
             var existingMember = currentMembers.FirstOrDefault(item =>
-                item.Id.Equals(id, StringComparison.OrdinalIgnoreCase) ||
-                (!string.IsNullOrWhiteSpace(user.AccountId) &&
-                 string.Equals(item.AccountId, user.AccountId, StringComparison.OrdinalIgnoreCase)));
+                item.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+            if (existingMember is null && !string.IsNullOrWhiteSpace(user.AccountId))
+                existingMember = currentMembers.FirstOrDefault(item =>
+                    !item.Type.Equals("robot", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(item.AccountId, user.AccountId, StringComparison.OrdinalIgnoreCase));
+            // The robot can report a roster captured before the portal removal.
+            if (existingMember?.Status.Equals("removed", StringComparison.OrdinalIgnoreCase) == true)
+                continue;
             var first = user.FirstName?.Trim();
             var last = user.LastName?.Trim();
             var nickname = user.Nickname?.Trim();
@@ -131,25 +136,10 @@ public sealed partial class PostgreSqlCloudStateStore
                 : string.Join(' ', new[] { first, last }.Where(value => !string.IsNullOrWhiteSpace(value)));
             if (string.IsNullOrWhiteSpace(display)) display = id;
             var now = DateTimeOffset.UtcNow;
-            Sync(people.UpsertAsync(new PersonRecord
-            {
-                PersonId = id,
-                // People are owned by the loop's account scope. A loop user's optional account id
-                // belongs on the member link and must not escape the composite persistence key.
-                AccountId = account,
-                LoopId = resolvedLoop,
-                RobotId = resolvedRobot,
-                DisplayName = display,
-                Alias = nickname ?? first ?? existingPerson?.Alias,
-                IsPrimary = existingPerson?.IsPrimary ?? string.Equals(user.Type, "owner", StringComparison.OrdinalIgnoreCase),
-                CreatedUtc = existingPerson?.CreatedUtc ?? now,
-                UpdatedUtc = now
-            }));
-
             var protectPortal = existingMember?.PortalEditedUtc is not null;
             var robotMatchesPortal = protectPortal && NamesEqual(first, existingMember!.FirstName) &&
                                      NamesEqual(last, existingMember.LastName);
-            Sync(members.UpsertAsync(account, new LoopMemberRecord
+            var savedMember = Sync(members.UpsertFromRosterAsync(account, new LoopMemberRecord
             {
                 Id = existingMember?.Id ?? id,
                 LoopId = resolvedLoop,
@@ -172,6 +162,22 @@ public sealed partial class PostgreSqlCloudStateStore
                 CreatedUtc = existingMember?.CreatedUtc ?? now,
                 PortalEditedUtc = robotMatchesPortal ? null : existingMember?.PortalEditedUtc
             }));
+            if (!savedMember) continue;
+
+            Sync(people.UpsertAsync(new PersonRecord
+            {
+                PersonId = id,
+                // People are owned by the loop's account scope. A loop user's optional account id
+                // belongs on the member link and must not escape the composite persistence key.
+                AccountId = account,
+                LoopId = resolvedLoop,
+                RobotId = resolvedRobot,
+                DisplayName = display,
+                Alias = nickname ?? first ?? existingPerson?.Alias,
+                IsPrimary = existingPerson?.IsPrimary ?? string.Equals(user.Type, "owner", StringComparison.OrdinalIgnoreCase),
+                CreatedUtc = existingPerson?.CreatedUtc ?? now,
+                UpdatedUtc = now
+            }));
             upserted++;
         }
 
@@ -187,7 +193,9 @@ public sealed partial class PostgreSqlCloudStateStore
     }
 
     public IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId) =>
-        Sync(Require(_members, "loop members").ListAsync(GetAccount().AccountId, loopId, 1000));
+        Sync(Require(_members, "loop members").ListAsync(GetAccount().AccountId, loopId, 1000))
+            .Where(member => !member.Status.Equals("removed", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
 
     public LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
         string? lastName, string? gender, long? birthday, bool isChild, string type,

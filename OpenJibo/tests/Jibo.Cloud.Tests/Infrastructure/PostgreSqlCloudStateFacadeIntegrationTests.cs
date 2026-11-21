@@ -14,6 +14,31 @@ public sealed partial class PostgreSqlCloudStateFacadeIntegrationTests
 {
     [PostgreSqlIntegrationFact]
     [Trait("Category", "PostgreSqlIntegration")]
+    public async Task LoopRemoval_SurvivesRobotRosterReplayOnAnotherReplica()
+    {
+        await using var database = await CloudStateTestDatabase.CreateAsync();
+        await using var sourceA = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
+        await using var sourceB = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
+        var portal = new PostgreSqlCloudStateStore(sourceA, new PlaintextTestProtector());
+        var robot = new PostgreSqlCloudStateStore(sourceB, new PlaintextTestProtector());
+        var loop = portal.AddLoop("Test Loop", null, "test-robot", "test-robot");
+        var stale = new LoopUserSnapshot("former-member", FirstName: "Former", AccountId: "former-account");
+        Assert.Equal(1, robot.SyncPeopleFromLoopUsers(loop.LoopId, "test-robot", [stale]));
+        var staleMember = Assert.Single(robot.GetLoopMembers(loop.LoopId), member => member.Id == stale.Id);
+
+        Assert.True(portal.RemoveLoopMember(loop.LoopId, stale.Id));
+        var repository = new PostgreSqlLoopMemberRepository(sourceB);
+        Assert.False(await repository.UpsertFromRosterAsync(loop.OwnerAccountId, staleMember));
+        Assert.Equal(0, robot.SyncPeopleFromLoopUsers(loop.LoopId, "test-robot",
+            [stale, stale with { Id = "alternate-local-id" }]));
+
+        Assert.DoesNotContain(portal.GetLoopMembers(loop.LoopId), member => member.Id == stale.Id);
+        Assert.Empty(portal.GetPeople(loop.LoopId));
+        Assert.Empty(portal.GetIdentityGraph(loop.LoopId).People);
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
     public async Task PortalOwnershipTransfer_RejectsOldSignedProofAcrossReplicas()
     {
         await using var database = await CloudStateTestDatabase.CreateAsync();

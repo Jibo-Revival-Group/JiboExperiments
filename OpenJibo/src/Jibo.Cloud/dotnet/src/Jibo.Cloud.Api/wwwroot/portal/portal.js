@@ -903,7 +903,7 @@ function renderLoopMembersSection(dashboard) {
         </div>
         <span class="badge success">${loopMembers.length} ${loopMembers.length === 1 ? "person" : "people"}</span>
       </div>
-      <p class="muted">Edit each person's name and gender, or add and remove people from this robot's Loop. The owner and the robot itself cannot be removed here.</p>
+      <p class="muted">Manage the household roster here. Once Jibo syncs the roster, say “Hey Jibo, meet someone new” to enroll a person's face or voice on the robot. The owner and the robot itself cannot be removed here.</p>
       ${memberRows}
       <div class="member-row member-row-add">
         <input id="newMemberFirstName" type="text" placeholder="First name">

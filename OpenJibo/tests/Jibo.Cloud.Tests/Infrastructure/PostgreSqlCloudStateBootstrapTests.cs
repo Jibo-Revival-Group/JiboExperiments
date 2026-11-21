@@ -102,6 +102,13 @@ public sealed class PostgreSqlCloudStateBootstrapTests
         public Task<IReadOnlyList<LoopMemberRecord>> ListAsync(string accountId, string loopId, int limit = 250, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LoopMemberRecord>>([]);
         public Task<LoopMemberRecord?> GetAsync(string accountId, string loopId, string memberId, CancellationToken cancellationToken = default) => Task.FromResult<LoopMemberRecord?>(null);
         public Task<LoopMemberRecord> UpsertAsync(string accountId, LoopMemberRecord member, CancellationToken cancellationToken = default) => Task.FromResult(member);
+        public async Task<bool> UpsertFromRosterAsync(string accountId, LoopMemberRecord member,
+            CancellationToken cancellationToken = default)
+        {
+            await UpsertAsync(accountId, member, cancellationToken);
+            return true;
+        }
+
         public Task<bool> DeleteAsync(string accountId, string loopId, string memberId, CancellationToken cancellationToken = default) => Task.FromResult(false);
     }
 

@@ -26,6 +26,8 @@ public interface ILoopMemberRepository
         CancellationToken cancellationToken = default);
     Task<LoopMemberRecord> UpsertAsync(string accountId, LoopMemberRecord member,
         CancellationToken cancellationToken = default);
+    Task<bool> UpsertFromRosterAsync(string accountId, LoopMemberRecord member,
+        CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(string accountId, string loopId, string memberId,
         CancellationToken cancellationToken = default);
 }

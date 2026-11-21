@@ -1654,6 +1654,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 if (string.Equals(user.Type, "robot", StringComparison.OrdinalIgnoreCase)) continue;
 
                 var personId = user.Id.Trim();
+                var memberIndex = FindLoopMemberIndexForRosterUser(resolvedLoopId, user, personId);
+                if (memberIndex >= 0 && _loopMembers[memberIndex].Status.Equals("removed", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 var firstName = user.FirstName?.Trim();
                 var lastName = user.LastName?.Trim();
                 var nickname = user.Nickname?.Trim();
@@ -1704,7 +1708,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 else
                     _people.Add(person);
 
-                UpsertLoopMemberFromLoopUserLocked(resolvedLoopId, user, firstName, lastName, nickname);
+                UpsertLoopMemberFromLoopUserLocked(resolvedLoopId, user, personId, memberIndex, firstName, lastName, nickname);
                 upserted++;
             }
 
@@ -1741,22 +1745,29 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return upserted;
     }
 
+    private int FindLoopMemberIndexForRosterUser(string loopId, LoopUserSnapshot user, string personId)
+    {
+        var index = _loopMembers.FindIndex(member =>
+            member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+            member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0 || string.IsNullOrWhiteSpace(user.AccountId))
+            return index;
+
+        return _loopMembers.FindIndex(member =>
+            member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(member.AccountId, user.AccountId, StringComparison.OrdinalIgnoreCase) &&
+            !member.Type.Equals("robot", StringComparison.OrdinalIgnoreCase));
+    }
+
     private void UpsertLoopMemberFromLoopUserLocked(
         string loopId,
         LoopUserSnapshot user,
+        string personId,
+        int index,
         string? firstName,
         string? lastName,
         string? nickname)
     {
-        var personId = user.Id.Trim();
-        var index = _loopMembers.FindIndex(member =>
-            member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
-            (member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase) ||
-             (!string.IsNullOrWhiteSpace(user.AccountId) &&
-              member.AccountId is not null &&
-              member.AccountId.Equals(user.AccountId, StringComparison.OrdinalIgnoreCase) &&
-              !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))));
-
         var memberType = string.IsNullOrWhiteSpace(user.Type)
             ? (index >= 0 ? _loopMembers[index].Type : "member")
             : user.Type.Trim();
@@ -2126,9 +2137,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             var index = _loopMembers.FindIndex(m =>
                 m.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
                 m.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
-            if (index < 0) return false;
+            if (index < 0 || _loopMembers[index].Status.Equals("removed", StringComparison.OrdinalIgnoreCase))
+                return false;
 
             var existing = _loopMembers[index];
+            _people.RemoveAll(person => person.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                                        person.PersonId.Equals(memberId, StringComparison.OrdinalIgnoreCase));
             _loopMembers[index] = new LoopMemberRecord
             {
                 Id = existing.Id,

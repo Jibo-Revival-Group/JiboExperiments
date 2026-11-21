@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
+using Jibo.Cloud.Domain.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -47,6 +48,31 @@ public sealed class PortalLoopMemberApiTests
 
         var listAfterRemove = await (await client.GetAsync("/api/portal/loop-members")).Content.ReadAsStringAsync();
         Assert.DoesNotContain("Jonathan", listAfterRemove, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RemovedLoopMember_DoesNotReturnAfterOnDeviceRosterReplay()
+    {
+        const string robotId = "roster-test-robot";
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        await AuthorizeAsync(client, factory, robotId, "roster-test-device");
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var loop = store.AddLoop(null, null, robotId, robotId);
+        var stale = new LoopUserSnapshot("former-member", FirstName: "Former", AccountId: "former-account");
+        Assert.Equal(1, store.SyncPeopleFromLoopUsers(loop.LoopId, robotId, [stale]));
+
+        using var removal = await client.DeleteAsync("/api/portal/loop-members/former-member");
+        Assert.Equal(HttpStatusCode.OK, removal.StatusCode);
+        var current = new LoopUserSnapshot("current-member", FirstName: "Current");
+        Assert.Equal(1, store.SyncPeopleFromLoopUsers(loop.LoopId, robotId,
+            [stale, stale with { Id = "alternate-local-id" }, current]));
+
+        var dashboard = await client.GetStringAsync("/api/portal/dashboard");
+        Assert.Contains("current-member", dashboard);
+        Assert.DoesNotContain("former-member", dashboard);
+        Assert.DoesNotContain("alternate-local-id", dashboard);
+        Assert.DoesNotContain(store.GetPeople(loop.LoopId), person => person.PersonId == stale.Id);
     }
 
     [Fact]

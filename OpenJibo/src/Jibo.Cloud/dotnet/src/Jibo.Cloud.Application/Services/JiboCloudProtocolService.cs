@@ -1165,7 +1165,21 @@ public sealed class JiboCloudProtocolService(
         var loops = stateStore.GetLoops();
         var identity = _identityResolver.Resolve(envelope);
         var requestedRobotId = identity.DeviceId ?? envelope.DeviceId;
-        if (!string.IsNullOrWhiteSpace(requestedRobotId) && loops.Count > 1)
+        // The customer portal keys the Loop by the registered robot ID. Stock HTTP requests
+        // can use the physical device ID even when an older Loop also matches that identifier.
+        var registeredDevice = string.IsNullOrWhiteSpace(requestedRobotId)
+            ? null
+            : stateStore.FindDeviceByFriendlyId(requestedRobotId);
+        var registeredLoop = registeredDevice is not null &&
+                             (string.Equals(registeredDevice.DeviceId, requestedRobotId, StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(registeredDevice.RobotId, requestedRobotId, StringComparison.OrdinalIgnoreCase))
+            ? loops.FirstOrDefault(loop =>
+                loop.RobotId.Equals(registeredDevice.RobotId, StringComparison.OrdinalIgnoreCase) ||
+                loop.RobotFriendlyId.Equals(registeredDevice.RobotId, StringComparison.OrdinalIgnoreCase))
+            : null;
+        if (registeredLoop is not null)
+            loops = [registeredLoop];
+        else if (!string.IsNullOrWhiteSpace(requestedRobotId) && loops.Count > 1)
         {
             var identityCandidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { requestedRobotId };
             foreach (var session in stateStore.GetSessions())

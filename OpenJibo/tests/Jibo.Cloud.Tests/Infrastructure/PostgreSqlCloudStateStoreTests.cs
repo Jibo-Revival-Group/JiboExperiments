@@ -381,6 +381,13 @@ public sealed partial class PostgreSqlCloudStateStoreTests
             return Task.FromResult(member);
         }
 
+        public async Task<bool> UpsertFromRosterAsync(string accountId, LoopMemberRecord member,
+            CancellationToken cancellationToken = default)
+        {
+            await UpsertAsync(accountId, member, cancellationToken);
+            return true;
+        }
+
         public Task<bool> DeleteAsync(string accountId, string loopId, string memberId,
             CancellationToken cancellationToken = default) => Task.FromResult(false);
     }

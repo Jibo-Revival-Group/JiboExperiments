@@ -42,6 +42,18 @@ public sealed class PostgreSqlLoopMemberRepository(PostgreSqlCloudStateDataSourc
     public async Task<LoopMemberRecord> UpsertAsync(string accountId, LoopMemberRecord member,
         CancellationToken cancellationToken = default)
     {
+        if (!await UpsertCoreAsync(accountId, member, fromRoster: false, cancellationToken))
+            throw new InvalidOperationException("Loop scope was not found.");
+        return member;
+    }
+
+    public Task<bool> UpsertFromRosterAsync(string accountId, LoopMemberRecord member,
+        CancellationToken cancellationToken = default) =>
+        UpsertCoreAsync(accountId, member, fromRoster: true, cancellationToken);
+
+    private async Task<bool> UpsertCoreAsync(string accountId, LoopMemberRecord member, bool fromRoster,
+        CancellationToken cancellationToken)
+    {
         ArgumentNullException.ThrowIfNull(member); Require(member.Id, nameof(member.Id)); Require(member.LoopId, nameof(member.LoopId));
         await using var connection = await dataSource.Value.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
@@ -60,6 +72,7 @@ public sealed class PostgreSqlLoopMemberRepository(PostgreSqlCloudStateDataSourc
                 VoiceEnrolled = EXCLUDED.VoiceEnrolled, LegalGuardianId = EXCLUDED.LegalGuardianId,
                 AgreementId = EXCLUDED.AgreementId, UpdatedUtc = NOW(), PortalEditedUtc = EXCLUDED.PortalEditedUtc
             WHERE LoopMembers.LoopId = EXCLUDED.LoopId
+                AND (NOT @fromRoster OR LOWER(LoopMembers.Status) <> 'removed')
             """, connection, transaction);
         command.Parameters.AddWithValue("id", member.Id.Trim()); command.Parameters.AddWithValue("loop", member.LoopId.Trim());
         command.Parameters.AddWithValue("owner", Require(accountId, nameof(accountId)));
@@ -75,9 +88,11 @@ public sealed class PostgreSqlLoopMemberRepository(PostgreSqlCloudStateDataSourc
         command.Parameters.AddWithValue("created", member.CreatedUtc);
         command.Parameters.Add("portal", NpgsqlDbType.TimestampTz).Value =
             (object?)member.PortalEditedUtc ?? DBNull.Value;
-        if (await command.ExecuteNonQueryAsync(cancellationToken) == 0) throw new InvalidOperationException("Loop scope was not found.");
-        await CloudStateRevision.BumpAsync(connection, transaction, cancellationToken); await transaction.CommitAsync(cancellationToken);
-        return member;
+        command.Parameters.AddWithValue("fromRoster", fromRoster);
+        if (await command.ExecuteNonQueryAsync(cancellationToken) == 0) return false;
+        await CloudStateRevision.BumpAsync(connection, transaction, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return true;
     }
 
     public async Task<bool> DeleteAsync(string accountId, string loopId, string memberId,
@@ -86,8 +101,10 @@ public sealed class PostgreSqlLoopMemberRepository(PostgreSqlCloudStateDataSourc
         await using var connection = await dataSource.Value.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await using var command = new NpgsqlCommand("""
-            DELETE FROM LoopMembers m USING Loops l
+            UPDATE LoopMembers m SET Status = 'removed', UpdatedUtc = NOW()
+            FROM Loops l
             WHERE l.LoopId = m.LoopId AND l.OwnerAccountId = @account AND m.LoopId = @loop AND m.MemberId = @member
+                AND LOWER(m.Status) <> 'removed'
             """, connection, transaction);
         AddScope(command, accountId, loopId); command.Parameters.AddWithValue("member", Require(memberId, nameof(memberId)));
         var removed = await command.ExecuteNonQueryAsync(cancellationToken) > 0;

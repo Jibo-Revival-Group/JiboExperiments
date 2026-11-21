@@ -118,7 +118,7 @@ public sealed partial class PostgreSqlCloudStateStore
         var robot = scopedRobot ?? GetRobot();
         var loop = OperationalLoop(loopId);
         var people = _people is null ? [] : Sync(_people.ListAsync(account.AccountId, loop, 1000));
-        var members = _members is null ? [] : Sync(_members.ListAsync(account.AccountId, loop, 1000));
+        var members = _members is null ? [] : GetLoopMembers(loop);
         if (scopedRobot is not null)
         {
             bool MatchesRobot(string? identity) =>

@@ -586,7 +586,7 @@ public sealed partial class JiboInteractionService
         return trimmed;
     }
 
-    private static IReadOnlyList<Domain.Models.LoopUserSnapshot> TryReadLoopUsersFromTurn(TurnContext turn)
+    internal static IReadOnlyList<Domain.Models.LoopUserSnapshot> TryReadLoopUsersFromTurn(TurnContext turn)
     {
         if (!turn.Attributes.TryGetValue("context", out var contextValue) ||
             contextValue is null ||

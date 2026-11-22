@@ -1727,8 +1727,10 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             AmbientTurnProgressPublisher.BindTurn(finalizedTurn, session);
-            var plan = await MeasurePhaseAsync("plan",
-                () => conversationBroker.HandleTurnAsync(finalizedTurn, cancellationToken), cancellationToken);
+            var plan = await MeasurePhaseAsync("plan", () =>
+                IntroductionsFollowUp.BuildPlan(finalizedTurn, NormalizeUsableTranscript) is { } localPlan
+                    ? Task.FromResult(localPlan)
+                    : conversationBroker.HandleTurnAsync(finalizedTurn, cancellationToken), cancellationToken);
 
             var intentName = plan.IntentName;
 
@@ -2739,6 +2741,8 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static bool IsYesNoTurn(TurnContext turn)
     {
+        if (IntroductionsFollowUp.HasNameRule(turn)) return false;
+
         var listenRules = ReadRules(turn, "listenRules").ToArray();
         var clientRules = ReadRules(turn, "clientRules").ToArray();
         if (listenRules
@@ -2810,6 +2814,8 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static string? ReadPrimaryYesNoRule(TurnContext turn)
     {
+        if (IntroductionsFollowUp.HasNameRule(turn)) return null;
+
         return ReadRules(turn, "listenRules")
                    .Concat(ReadRules(turn, "clientRules"))
                    .FirstOrDefault(IsConstrainedYesNoRule) ??
@@ -2895,7 +2901,7 @@ public sealed class WebSocketTurnFinalizationService(
                string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase) ||
-               IsIntroductionsRule(rule);
+               (IsIntroductionsRule(rule) && !IntroductionsFollowUp.IsNameRule(rule));
     }
 
     private static bool IsYesNoReplyTranscript(string normalizedTranscript)

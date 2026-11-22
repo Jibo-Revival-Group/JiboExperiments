@@ -3773,6 +3773,73 @@ public sealed class JiboWebSocketServiceTests
         Assert.False(session.TurnState.AwaitingTurnCompletion);
     }
 
+    [Theory]
+    [InlineData("Jake", "member-jake")]
+    [InlineData("James", "member-james")]
+    [InlineData("I'm James", "member-james")]
+    [InlineData("Morgan", null)]
+    public async Task IntroductionsOggAudio_FinalizesNameReplyForNativeEnrollment(string transcript, string? memberId)
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        var service = CreateService(stateStore, sttStrategies: [new QueuedBufferedAudioSttStrategy(transcript)]);
+        WebSocketMessageEnvelope CreateEnvelope(string? message = null, byte[]? audio = null) => new()
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-introductions-name-token",
+            Text = message,
+            Binary = audio
+        };
+
+        await service.HandleMessageAsync(CreateEnvelope(
+            """{"type":"LISTEN","transID":"trans-introductions-name","data":{"hotphrase":false,"rules":["introductions/intro_looper","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"encoding":"OGG_OPUS","sampleRate":16000}}}"""));
+        await service.HandleMessageAsync(CreateEnvelope(
+            """{"type":"CONTEXT","transID":"trans-introductions-name","data":{"runtime":{"loop":{"users":[{"id":"member-jake","firstName":"Jake","lastName":"Example"},{"id":"member-james","firstName":"James","lastName":"Example"}]}}}}"""));
+
+        foreach (var frame in new[]
+                 {
+                     BuildOggFrame(0x02, "OpusHead"),
+                     BuildOggFrame(0x00, "OpusTags"),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00)
+                 })
+        {
+            Assert.Empty(await service.HandleMessageAsync(CreateEnvelope(audio: frame)));
+        }
+
+        var session = stateStore.FindSessionByToken("hub-introductions-name-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(3);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
+
+        var replies = await service.HandleMessageAsync(CreateEnvelope(audio: BuildOggFrame(0x00)));
+
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        using var payload = JsonDocument.Parse(Assert.IsType<string>(replies[0].Text));
+        Assert.True(payload.RootElement.GetProperty("final").GetBoolean());
+        var data = payload.RootElement.GetProperty("data");
+        var match = data.GetProperty("match");
+        Assert.Equal("@be/introductions", match.GetProperty("skillID").GetString());
+        Assert.False(match.GetProperty("launch").GetBoolean());
+        var nlu = data.GetProperty("nlu");
+        Assert.Equal("introductions/intro_looper", nlu.GetProperty("rules")[0].GetString());
+        var entities = nlu.GetProperty("entities");
+        if (memberId is null)
+        {
+            Assert.Equal(string.Empty, nlu.GetProperty("intent").GetString());
+            Assert.False(entities.TryGetProperty("loopMemberReferent", out _));
+        }
+        else
+        {
+            Assert.Equal("loopmember", nlu.GetProperty("intent").GetString());
+            Assert.Equal(memberId, entities.GetProperty("loopMemberReferent").GetString());
+        }
+    }
+
     [Fact]
     public async Task BufferedYesNoOggAudio_NonYesNoPromptBleedDoesNotRouteAsChat()
     {

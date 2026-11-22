@@ -17,6 +17,11 @@ public sealed class ResponsePlanToSocketMessagesMapper
             ? transIdValue?.ToString() ?? string.Empty
             : session.LastTransId ?? string.Empty;
         var transcript = turn.NormalizedTranscript ?? turn.RawTranscript ?? string.Empty;
+        if (plan.ProtocolMetadata.TryGetValue(IntroductionsFollowUp.ReplyMetadataKey, out var localReply) &&
+            localReply is IntroductionsFollowUp.Selection selection)
+            return MapRobotSkillFollowUp(transId, IntroductionsFollowUp.Rule, transcript, selection.Intent,
+                selection.Entities, "@be/introductions");
+
         var clientIntent = ReadAttribute(turn, "clientIntent");
         var rules = ReadRules(turn, messageType);
         var yesNoRule = ReadYesNoRule(turn);
@@ -32,7 +37,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
             string.Equals(primarySkillRule, "word-of-the-day/fun_fact", StringComparison.OrdinalIgnoreCase) &&
             string.IsNullOrWhiteSpace(clientIntent) &&
             !string.IsNullOrWhiteSpace(transcript))
-            return MapUnmatchedWordOfDayFollowUp(transId, primarySkillRule!, transcript);
+            return MapRobotSkillFollowUp(transId, primarySkillRule!, transcript, string.Empty,
+                new Dictionary<string, object?>());
 
         var isPromptEchoIntent = string.Equals(plan.IntentName, "prompt_echo", StringComparison.OrdinalIgnoreCase);
         // Robot-owned skill listens speak for themselves. Personal report is cloud-owned and still
@@ -622,27 +628,30 @@ public sealed class ResponsePlanToSocketMessagesMapper
         ];
     }
 
-    private static IReadOnlyList<SocketReplyPlan> MapUnmatchedWordOfDayFollowUp(
-        string transId, string localRule, string transcript)
+    private static IReadOnlyList<SocketReplyPlan> MapRobotSkillFollowUp(
+        string transId, string localRule, string transcript, string intent,
+        IReadOnlyDictionary<string, object?> entities, string? skillId = null)
     {
+        var data = new Dictionary<string, object>
+        {
+            ["asr"] = new { confidence = 0.95, final = true, text = transcript },
+            ["nlu"] = new { confidence = 0.95, intent, rules = new[] { localRule }, entities }
+        };
+        var reply = new Dictionary<string, object>
+        {
+            ["type"] = "LISTEN",
+            ["transID"] = transId,
+            ["data"] = data
+        };
+        if (skillId is not null)
+        {
+            data["match"] = new { skillID = skillId, launch = false, onRobot = true };
+            reply["final"] = true;
+        }
+
         return
         [
-            new SocketReplyPlan(JsonSerializer.Serialize(new
-            {
-                type = "LISTEN",
-                transID = transId,
-                data = new
-                {
-                    asr = new { confidence = 0.95, final = true, text = transcript },
-                    nlu = new
-                    {
-                        confidence = 0.95,
-                        intent = string.Empty,
-                        rules = new[] { localRule },
-                        entities = new Dictionary<string, object?>()
-                    }
-                }
-            })),
+            new SocketReplyPlan(JsonSerializer.Serialize(reply)),
             new SocketReplyPlan(JsonSerializer.Serialize(new
             {
                 type = "EOS",

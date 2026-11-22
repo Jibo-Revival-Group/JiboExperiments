@@ -1174,7 +1174,7 @@ public sealed class JiboCloudProtocolService(
             var loop = stateStore.AddLoop(null, null, device.RobotId, device.RobotId);
             return ProtocolDispatchResult.Ok(new[]
             {
-                MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId), includeRobotMember: true)
+                MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId), stockClient: true)
             });
         }
 
@@ -1262,13 +1262,15 @@ public sealed class JiboCloudProtocolService(
 
         // A stock client can apply a Loop once the robot entry exists. Keep the old wire
         // shape for a managed request that fell back to the bootstrap Loop.
-        var includeRobotMember = !_managedDeployment || registeredLoop is not null;
+        var stockClient = !_managedDeployment || registeredLoop is not null;
         return ProtocolDispatchResult.Ok(loops
-            .Select(loop => MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId), includeRobotMember))
+            .Select(loop => MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId), stockClient))
             .ToArray());
     }
 
-    public static object MapLoopMember(LoopMemberRecord member)
+    public static object MapLoopMember(LoopMemberRecord member) => MapLoopMember(member, stockClient: false);
+
+    private static object MapLoopMember(LoopMemberRecord member, bool stockClient)
     {
         return new
         {
@@ -1278,7 +1280,9 @@ public sealed class JiboCloudProtocolService(
             account = new
             {
                 email = member.Email,
-                firstName = member.FirstName,
+                firstName = stockClient && member.Type.Equals("robot", StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : member.FirstName,
                 lastName = member.LastName,
                 gender = member.Gender,
                 birthday = member.Birthday,
@@ -1286,7 +1290,9 @@ public sealed class JiboCloudProtocolService(
                 phoneNumber = member.PhoneNumber
             },
             enrolled = new { face = member.FaceEnrolled, voice = member.VoiceEnrolled },
-            status = member.Status,
+            status = stockClient && member.Status.Equals("active", StringComparison.OrdinalIgnoreCase)
+                ? "accepted"
+                : member.Status,
             type = member.Type,
             nickname = member.Nickname,
             phoneticName = member.PhoneticName,
@@ -1312,13 +1318,15 @@ public sealed class JiboCloudProtocolService(
         };
     }
 
+    internal static string StockOwnerPlaceholderId(string loopId) => $"openjibo-stock-owner-{loopId}";
+
     public static object MapLoopRecord(LoopRecord loop, IEnumerable<LoopMemberRecord> members,
-        bool includeRobotMember = false)
+        bool stockClient = false)
     {
         var visibleMembers = members
             .Where(member => !member.Type.Equals("robot", StringComparison.OrdinalIgnoreCase))
             .ToList();
-        if (includeRobotMember && !string.IsNullOrWhiteSpace(loop.RobotId))
+        if (stockClient && !string.IsNullOrWhiteSpace(loop.RobotId))
         {
             // Stock SSM builds its local robot edge by looking up loop.robot in members[].accountId.
             var robotMember = members.FirstOrDefault(member =>
@@ -1329,11 +1337,23 @@ public sealed class JiboCloudProtocolService(
                 Id = $"{loop.LoopId}-robot",
                 LoopId = loop.LoopId,
                 AccountId = loop.RobotId,
-                FirstName = loop.RobotFriendlyId,
                 CreatedUtc = loop.CreatedUtc,
                 Type = "robot"
             });
         }
+
+        // SSM also needs an owner edge. A legacy Loop can lack the owner member even
+        // though it has a cloud owning account. Keep that placeholder off the human roster.
+        if (stockClient && !string.IsNullOrWhiteSpace(loop.OwnerAccountId) &&
+            !visibleMembers.Any(member => member.AccountId == loop.OwnerAccountId))
+            visibleMembers.Add(new LoopMemberRecord
+            {
+                Id = StockOwnerPlaceholderId(loop.LoopId),
+                LoopId = loop.LoopId,
+                AccountId = loop.OwnerAccountId,
+                CreatedUtc = loop.CreatedUtc,
+                Type = "owner"
+            });
 
         return new
         {
@@ -1342,7 +1362,7 @@ public sealed class JiboCloudProtocolService(
             owner = loop.OwnerAccountId,
             robot = loop.RobotId,
             robotFriendlyId = loop.RobotFriendlyId,
-            members = visibleMembers.Select(MapLoopMember).ToArray(),
+            members = visibleMembers.Select(member => MapLoopMember(member, stockClient)).ToArray(),
             isSuspended = loop.IsSuspended,
             created = loop.CreatedUtc.ToUnixTimeMilliseconds(),
             updated = loop.UpdatedUtc.ToUnixTimeMilliseconds(),

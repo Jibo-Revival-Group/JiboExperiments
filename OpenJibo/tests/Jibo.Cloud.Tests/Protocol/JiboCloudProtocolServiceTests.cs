@@ -102,6 +102,8 @@ public sealed class JiboCloudProtocolServiceTests
         var device = new DeviceRegistration { DeviceId = "verified-stock-device", RobotId = "verified-stock-robot" };
         store.UpsertDevice(device);
         var enrolledLoop = store.AddLoop(null, null, device.RobotId, device.RobotId);
+        var owner = Assert.Single(store.GetLoopMembers(enrolledLoop.LoopId), member => member.Type == "owner");
+        Assert.True(store.RemoveLoopMember(enrolledLoop.LoopId, owner.Id));
         store.AddLoopMember(enrolledLoop.LoopId, null, null, "Enrolled household", null, null, null, false, "member");
         var stock = new AccountProfile { AccessKeyId = "test-stock-access-key", SecretAccessKey = "synthetic-stock-secret-value" };
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
@@ -129,9 +131,17 @@ public sealed class JiboCloudProtocolServiceTests
         var loop = Assert.Single(payload.RootElement.EnumerateArray());
         Assert.Equal(enrolledLoop.LoopId, loop.GetProperty("id").GetString());
         Assert.Contains("Enrolled household", result.BodyText);
-        Assert.Contains(loop.GetProperty("members").EnumerateArray(), member =>
+        var members = loop.GetProperty("members").EnumerateArray().ToArray();
+        var robot = Assert.Single(members, member =>
             member.GetProperty("accountId").GetString() == device.RobotId &&
             member.GetProperty("type").GetString() == "robot");
+        var ownerEdge = Assert.Single(members, member =>
+            member.GetProperty("accountId").GetString() == loop.GetProperty("owner").GetString());
+        Assert.Equal("owner", ownerEdge.GetProperty("type").GetString());
+        Assert.Equal(JsonValueKind.Null, ownerEdge.GetProperty("account").GetProperty("firstName").ValueKind);
+        Assert.Equal(JsonValueKind.Null, robot.GetProperty("account").GetProperty("firstName").ValueKind);
+        Assert.All(members, member => Assert.Equal("accepted", member.GetProperty("status").GetString()));
+        Assert.DoesNotContain(store.GetLoopMembers(enrolledLoop.LoopId), member => member.Type == "owner");
 
         // The credential is scoped to the signed operation, even if dispatch was routed to ListLoops.
         request.Headers["X-Amz-Target"] = "Loop_20160324.List";

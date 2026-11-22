@@ -533,7 +533,10 @@ public sealed partial class JiboInteractionService
                 ReadTenantAttribute(turn, "accountId"),
                 robotId,
                 robotId);
-            cloudStateStore.SyncPeopleFromLoopUsers(loop.LoopId, robotId, loopUsers, loop.OwnerAccountId);
+            var ownerPlaceholder = JiboCloudProtocolService.StockOwnerPlaceholderId(loop.LoopId);
+            var household = loopUsers.Where(user => !user.Id.Equals(ownerPlaceholder, StringComparison.Ordinal))
+                .ToArray();
+            cloudStateStore.SyncPeopleFromLoopUsers(loop.LoopId, robotId, household, loop.OwnerAccountId);
         }
         catch (Exception exception)
         {

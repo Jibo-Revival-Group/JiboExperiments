@@ -25,6 +25,10 @@ public sealed partial class JiboInteractionService
     {
         var personScope = ResolveTenantScope(turn, presence?.PrimaryPersonId);
         var name = personalMemoryStore.GetName(personScope);
+        if (string.IsNullOrWhiteSpace(name) && presence?.SpeakerId is { } speakerId &&
+            !JiboIdentityResolver.IsStockOwnerPlaceholder(speakerId) &&
+            presence.LoopUserFirstNames.TryGetValue(speakerId, out var establishedName))
+            name = establishedName;
         if (string.IsNullOrWhiteSpace(name) && CanUseLoopLevelNameMemoryFallback(presence))
             name = personalMemoryStore.GetName(ResolveTenantScope(turn));
 

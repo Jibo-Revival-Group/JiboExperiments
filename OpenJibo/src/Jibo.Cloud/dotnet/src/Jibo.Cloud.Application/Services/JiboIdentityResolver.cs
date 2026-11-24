@@ -1,4 +1,5 @@
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -11,6 +12,12 @@ public static class JiboIdentityResolver
 
         if (!string.IsNullOrWhiteSpace(candidate))
         {
+            if (IsStockOwnerPlaceholder(candidate))
+            {
+                var canonicalRobot = FindRobotForStockOwnerPlaceholder(candidate, cloudStateStore);
+                return (canonicalRobot?.DeviceId, canonicalRobot?.RobotId);
+            }
+
             var registered = cloudStateStore.FindDeviceByFriendlyId(candidate);
             if (registered is not null)
             {
@@ -29,6 +36,26 @@ public static class JiboIdentityResolver
         var deviceId = robot.DeviceId;
         var friendlyId = string.IsNullOrWhiteSpace(robot.RobotId) ? deviceId : robot.RobotId;
         return (deviceId, friendlyId);
+    }
+
+    internal static bool IsStockOwnerPlaceholder(string? candidate) =>
+        candidate?.StartsWith(JiboCloudProtocolService.StockOwnerPlaceholderPrefix,
+            StringComparison.OrdinalIgnoreCase) is true;
+
+    internal static DeviceRegistration? FindRobotForStockOwnerPlaceholder(string candidate, ICloudStateStore store)
+    {
+        // Resolve only an owner edge generated for an existing Loop with an active robot registration.
+        var loop = store.GetLoops().SingleOrDefault(loop => string.Equals(
+            JiboCloudProtocolService.StockOwnerPlaceholderId(loop.LoopId), candidate,
+            StringComparison.OrdinalIgnoreCase));
+        if (loop is null || loop.IsSuspended || string.IsNullOrWhiteSpace(loop.RobotId) ||
+            IsStockOwnerPlaceholder(loop.RobotId)) return null;
+
+        var robot = store.FindDeviceByFriendlyId(loop.RobotId);
+        return robot is { IsHidden: false, IsActive: true, ArchivedUtc: null } &&
+               string.Equals(robot.RobotId, loop.RobotId, StringComparison.OrdinalIgnoreCase)
+            ? robot
+            : null;
     }
 
     private static string? ReadRobotKeyFromTurn(TurnContext turn)

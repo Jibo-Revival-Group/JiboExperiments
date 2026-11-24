@@ -527,6 +527,7 @@ public sealed partial class JiboInteractionService
         try
         {
             var robotId = ResolveTurnRobotId(turn);
+            if (JiboIdentityResolver.IsStockOwnerPlaceholder(robotId)) return;
             // Both fields store friendlyId (BE robotFriendlyId / Pegasus robotID) — never a shared serial.
             var loop = cloudStateStore.AddLoop(
                 null,

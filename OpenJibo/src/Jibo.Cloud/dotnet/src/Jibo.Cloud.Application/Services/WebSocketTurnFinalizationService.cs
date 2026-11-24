@@ -509,7 +509,8 @@ public sealed class WebSocketTurnFinalizationService(
             }
             SessionRobotIdentityBinder.TryBindFromContextPayload(
                 session,
-                turnState.ContextPayload ?? envelope.Text);
+                turnState.ContextPayload ?? envelope.Text,
+                cloudStateStore);
             // CONTEXT establishes the runtime identity. Reapply any administrator
             // binding from an earlier session before persisting firmware hints so a
             // reconnect cannot create a second inventory record for the same robot.

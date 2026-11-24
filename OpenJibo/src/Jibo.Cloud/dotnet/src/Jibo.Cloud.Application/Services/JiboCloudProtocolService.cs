@@ -1318,7 +1318,9 @@ public sealed class JiboCloudProtocolService(
         };
     }
 
-    internal static string StockOwnerPlaceholderId(string loopId) => $"openjibo-stock-owner-{loopId}";
+    internal const string StockOwnerPlaceholderPrefix = "openjibo-stock-owner-";
+
+    internal static string StockOwnerPlaceholderId(string loopId) => StockOwnerPlaceholderPrefix + loopId;
 
     public static object MapLoopRecord(LoopRecord loop, IEnumerable<LoopMemberRecord> members,
         bool stockClient = false)

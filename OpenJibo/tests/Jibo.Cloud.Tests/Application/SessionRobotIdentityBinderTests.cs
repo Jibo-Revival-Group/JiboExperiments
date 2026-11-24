@@ -1,11 +1,48 @@
+using System.Text.Json;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Persistence;
+using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Tests.Application;
 
 public sealed class SessionRobotIdentityBinderTests
 {
+    [Fact]
+    public void StockOwnerPlaceholder_BindsAndVerifiesTheExistingRobot()
+    {
+        var store = new InMemoryCloudStateStore();
+        var device = store.UpsertDevice(new DeviceRegistration { DeviceId = "stock-device", RobotId = "stock-robot" });
+        var loop = store.AddLoop(null, null, device.RobotId, device.RobotId);
+        var ownerEdge = $"openjibo-stock-owner-{loop.LoopId}";
+        store.UpsertDevice(new DeviceRegistration { DeviceId = ownerEdge, RobotId = ownerEdge });
+        var context = JsonSerializer.Serialize(new { runtime = new { loop = new { loopId = loop.LoopId, jibo = new { id = ownerEdge } } } });
+        var session = new CloudSession { DeviceId = ownerEdge };
+        session.TurnState.ContextPayload = context;
+
+        Assert.Equal((device.DeviceId, device.RobotId),
+            JiboIdentityResolver.Resolve(new TurnContext { DeviceId = ownerEdge }, store));
+        Assert.True(SessionRobotIdentityBinder.TryBindFromContextPayload(session, context, store));
+        var turn = ProtocolToTurnContextMapper.MapListenMessage(new WebSocketMessageEnvelope(), session, "AUTO_FINALIZE");
+
+        Assert.Equal(device.RobotId, turn.DeviceId);
+        Assert.Equal((device.DeviceId, device.RobotId), JiboIdentityResolver.Resolve(turn, store));
+    }
+
+    [Fact]
+    public void UnknownStockOwnerPlaceholder_DoesNotResolveAsARobot()
+    {
+        var store = new InMemoryCloudStateStore();
+        const string ownerEdge = "openjibo-stock-owner-loop-unknown";
+        var session = new CloudSession { DeviceId = ownerEdge };
+        Assert.False(SessionRobotIdentityBinder.TryBindFromContextPayload(session, null, store));
+
+        var turn = ProtocolToTurnContextMapper.MapListenMessage(new WebSocketMessageEnvelope(), session, "AUTO_FINALIZE");
+
+        Assert.Null(JiboIdentityResolver.Resolve(turn, store).DeviceId);
+        Assert.Null(JiboIdentityResolver.Resolve(turn, store).FriendlyId);
+    }
+
     [Fact]
     public void TryBindFromContextPayload_StampsRobotIdOntoPathTokenSession()
     {

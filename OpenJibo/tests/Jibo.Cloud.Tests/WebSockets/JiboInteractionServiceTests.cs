@@ -558,7 +558,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_IdentityFollowUp_DoesNotGuessFromLoopFirstNameWhenMemoryIsMissing()
+    public async Task BuildDecisionAsync_IdentityFollowUp_DoesNotGuessFromPeoplePresentWhenSpeakerIsUnknown()
     {
         var service = CreateService();
 
@@ -572,7 +572,7 @@ public sealed class JiboInteractionServiceTests
                 ["loopId"] = "loop-d",
                 ["context"] =
                     """
-                    {"runtime":{"perception":{"speaker":"person-9"},"loop":{"users":[{"id":"person-9","firstName":"hi"}]}}}
+                    {"runtime":{"perception":{"peoplePresent":["person-9"]},"loop":{"users":[{"id":"person-9","firstName":"Jake"}]}}}
                     """
             },
             DeviceId = "device-d"
@@ -580,6 +580,23 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("memory_get_name", decision.IntentName);
         Assert.Equal("I do not know your name yet. You can say, my name is Alex.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_WhoAmI_UsesRecognizedSpeakersLoopNameWithoutConversationMemory()
+    {
+        var service = CreateService();
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "who am i",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = """{"runtime":{"perception":{"speaker":"person-2","peoplePresent":["person-1","person-2"]},"loop":{"users":[{"id":"person-1","firstName":"James"},{"id":"person-2","firstName":"Jake"}]}}}"""
+            }
+        });
+
+        Assert.Equal("memory_get_name", decision.IntentName);
+        Assert.Equal("I think you are Jake.", decision.ReplyText);
     }
 
     [Fact]
@@ -1912,7 +1929,7 @@ public sealed class JiboInteractionServiceTests
                 ["accountId"] = "acct-presence",
                 ["loopId"] = "loop-presence",
                 ["context"] =
-                    """{"runtime":{"perception":{"speaker":"person-a","peoplePresent":[{"id":"person-a"},{"id":"person-b"}]},"loop":{"users":[{"id":"person-a","firstName":"jake"},{"id":"person-b","firstName":"sam"}]}}}"""
+                    """{"runtime":{"perception":{"speaker":"unrecognized","peoplePresent":[{"id":"person-a"},{"id":"person-b"}]},"loop":{"users":[{"id":"person-a","firstName":"jake"},{"id":"person-b","firstName":"sam"}]}}}"""
             },
             DeviceId = "device-presence"
         });

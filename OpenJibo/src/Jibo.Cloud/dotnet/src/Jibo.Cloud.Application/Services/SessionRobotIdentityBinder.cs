@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 
 namespace Jibo.Cloud.Application.Services;
@@ -12,10 +13,21 @@ namespace Jibo.Cloud.Application.Services;
 /// </summary>
 public static class SessionRobotIdentityBinder
 {
-    public static bool TryBindFromContextPayload(CloudSession session, string? contextPayloadOrEnvelopeText)
+    public static bool TryBindFromContextPayload(CloudSession session, string? contextPayloadOrEnvelopeText,
+        ICloudStateStore? cloudStateStore = null)
     {
-        if (!TryReadGeneralRobotIdentity(contextPayloadOrEnvelopeText, out var robotId, out var accountId))
-            return false;
+        var hasContextIdentity = TryReadGeneralRobotIdentity(contextPayloadOrEnvelopeText, out var robotId,
+            out var accountId);
+        if (!hasContextIdentity) robotId = session.DeviceId ?? string.Empty;
+        if (JiboIdentityResolver.IsStockOwnerPlaceholder(robotId))
+        {
+            var canonical = cloudStateStore is null
+                ? null
+                : JiboIdentityResolver.FindRobotForStockOwnerPlaceholder(robotId, cloudStateStore);
+            if (canonical is null) return false;
+            robotId = canonical.RobotId;
+        }
+        else if (!hasContextIdentity) return false;
 
         session.DeviceId = robotId;
         session.Metadata["robotID"] = robotId;
@@ -69,7 +81,8 @@ public static class SessionRobotIdentityBinder
 
     public static string? ResolveRobotFriendlyId(CloudSession session, string? contextPayload = null)
     {
-        if (TryReadGeneralRobotIdentity(contextPayload ?? ReadMetadataString(session, "context"), out var robotId, out _))
+        if (TryReadGeneralRobotIdentity(contextPayload ?? ReadMetadataString(session, "context"), out var robotId,
+                out _) && !JiboIdentityResolver.IsStockOwnerPlaceholder(robotId))
             return robotId;
 
         foreach (var key in new[] { "robotID", "robotId", "friendlyId", "robotFriendlyId" })

@@ -16,12 +16,21 @@ public sealed partial class JiboInteractionService
     ];
 
     private static readonly string[] RobotTriggeredSurpriseKinds = ["fact", "joke"];
+    private static readonly string[] DaytimeRobotTriggeredSurpriseKinds = ["fact", "word_game", "joke"];
 
-    private JiboInteractionDecision BuildRobotTriggeredSurpriseDecision(JiboExperienceCatalog catalog)
+    private JiboInteractionDecision BuildRobotTriggeredSurpriseDecision(JiboExperienceCatalog catalog,
+        DateTimeOffset? referenceLocalTime)
     {
-        return catalog.Jokes.Count > 0 && randomizer.Choose(RobotTriggeredSurpriseKinds) == "joke"
-            ? BuildProactiveJokeDecision(catalog) with { SkillName = "chitchat-skill" }
-            : BuildProactiveFunFactDecision(catalog);
+        var candidates = referenceLocalTime?.Hour is >= 8 and < 18
+            ? DaytimeRobotTriggeredSurpriseKinds
+            : RobotTriggeredSurpriseKinds;
+        return randomizer.Choose(candidates) switch
+        {
+            "word_game" => new JiboInteractionDecision("proactive_word_game_suggestion",
+                "How about a quick word game? Just ask me for the word of the day."),
+            "joke" when catalog.Jokes.Count > 0 => BuildProactiveJokeDecision(catalog) with { SkillName = "chitchat-skill" },
+            _ => BuildProactiveFunFactDecision(catalog)
+        };
     }
 
     private JiboInteractionDecision BuildSurpriseDecision(

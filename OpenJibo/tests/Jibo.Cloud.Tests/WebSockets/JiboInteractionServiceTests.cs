@@ -687,6 +687,31 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_FirstMorningArrival_GreetsAfterPreviousNightGreeting()
+    {
+        var store = new Mock<ICloudStateStore>();
+        var lastGreeting = DateTimeOffset.UtcNow.AddHours(-1);
+        var morning = lastGreeting.ToOffset(TimeSpan.FromHours(-6)).Date.AddDays(1).AddHours(6);
+        var iso = new DateTimeOffset(morning, TimeSpan.FromHours(-6)).ToString("O");
+        store.Setup(s => s.GetGreetingPresences("openjibo-default-loop"))
+            .Returns([new GreetingPresenceRecord { PersonId = "person-1", LastGreetedUtc = lastGreeting }]);
+        store.Setup(s => s.GetHolidays("openjibo-default-loop")).Returns([]);
+        store.Setup(s => s.GetLoopMembers("openjibo-default-loop")).Returns([]);
+
+        var decision = await CreateService(cloudStateStore: store.Object).BuildDecisionAsync(new TurnContext
+        {
+            Attributes = new Dictionary<string, object?>
+            {
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "NEW_ARRIVAL",
+                ["context"] = $$$$"""{"runtime":{"location":{"iso":"{{{{iso}}}}"},"perception":{"speaker":"person-1"}}}"""
+            }
+        });
+
+        Assert.StartsWith("Good morning", decision.ReplyText);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_TriggerWithRecentGreetingHistory_UsesWelcomeBackTone()
     {
         var memoryStore = new InMemoryPersonalMemoryStore();
@@ -758,6 +783,35 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("Happy birthday", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Jake", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("ProactiveBirthdayGreeting", decision.ContextUpdates![GreetingRouteKey]);
+    }
+
+    [Theory]
+    [InlineData(true, "proactive_birthday_greeting")]
+    [InlineData(false, "proactive_greeting")]
+    public async Task BuildDecisionAsync_BirthdayComesFromMatchingLoopMember(bool useBirthdayMember, string intent)
+    {
+        var store = new InMemoryCloudStateStore();
+        var loop = store.GetLoops()[0];
+        var birthday = new DateTimeOffset(1990, 3, 14, 0, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds();
+        var birthdayMember = store.AddLoopMember(loop.LoopId, null, null, "Jake", null, null, birthday, false, "member");
+        var otherMember = store.AddLoopMember(loop.LoopId, null, null, "Sam", null, null, null, false, "member");
+        var member = useBirthdayMember ? birthdayMember : otherMember;
+        var lastSpeaker = useBirthdayMember ? otherMember : birthdayMember;
+
+        var decision = await CreateService(cloudStateStore: store).BuildDecisionAsync(new TurnContext
+        {
+            Attributes = new Dictionary<string, object?>
+            {
+                ["loopId"] = loop.LoopId,
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "NEW_ARRIVAL",
+                ["triggerLooperId"] = member.Id,
+                ["context"] = $$$$"""{"runtime":{"location":{"iso":"2026-03-14T08:00:00-07:00"},"perception":{"speaker":"{{{{lastSpeaker.Id}}}}"},"loop":{"users":[{"id":"{{{{member.Id}}}}","firstName":"{{{{member.FirstName}}}}"}]}}}"""
+            }
+        });
+
+        Assert.Equal(intent, decision.IntentName);
+        Assert.Contains(member.FirstName!, decision.ReplyText);
     }
 
     [Fact]
@@ -904,6 +958,26 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("chitchat-skill", decision.SkillName);
         Assert.NotNull(decision.SkillPayload);
         Assert.Equal("completion_only", decision.SkillPayload!["cloudResponseMode"]);
+    }
+
+    [Theory]
+    [InlineData("2026-03-14T08:00:00-07:00", "proactive_word_game_suggestion")]
+    [InlineData("2026-03-14T18:00:00-07:00", "proactive_fun_fact")]
+    public async Task BuildDecisionAsync_RobotSurprise_OffersWordGameDuringLocalDaytime(string iso, string intent)
+    {
+        var service = CreateService(randomizer: new WordGameRandomizer());
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            Attributes = new Dictionary<string, object?>
+            {
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "SURPRISE",
+                ["isProactiveSocket"] = true,
+                ["context"] = $$$$"""{"runtime":{"location":{"iso":"{{{{iso}}}}"},"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"Jake"}]}}}"""
+            }
+        });
+
+        Assert.Equal(intent, decision.IntentName);
     }
 
     [Fact]
@@ -2362,6 +2436,26 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("how_are_you", decision.IntentName);
         Assert.Equal(expectedReply, decision.ReplyText);
+    }
+
+    [Theory]
+    [InlineData("how are you feeling right now")]
+    [InlineData("how's your afternoon going")]
+    public async Task BuildDecisionAsync_EmotionQueryUsesLiveRobotEmotion(string transcript)
+    {
+        var decision = await CreateService().BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            Attributes = new Dictionary<string, object?>
+            {
+                [ChitchatEmotionKey] = "neutral",
+                ["context"] = """{"runtime":{"character":{"emotion":{"name":"JOYFUL","valence":0.5,"confidence":0.8}}}}"""
+            }
+        });
+
+        Assert.Equal("EmotionQuery", decision.ContextUpdates![ChitchatRouteKey]);
+        Assert.Equal("Yes indeed. Never been better.", decision.ReplyText);
     }
 
     [Fact]
@@ -7824,6 +7918,14 @@ public sealed class JiboInteractionServiceTests
         }
 
         public double NextUnitInterval() => 0.999999;
+    }
+
+    private sealed class WordGameRandomizer : IJiboRandomizer
+    {
+        public T Choose<T>(IReadOnlyList<T> items) =>
+            items.FirstOrDefault(item => item is string value && value == "word_game", items[0]);
+
+        public double NextUnitInterval() => 0.0;
     }
 
     private sealed class FactCategoryLastRandomizer : IJiboRandomizer

@@ -101,7 +101,7 @@ public sealed partial class JiboInteractionService
                 $"You told me your birthday is {birthday}.");
     }
 
-    private static DateOnly? TryParseBirthdayDate(string birthdayText)
+    private static DateOnly? TryParseBirthdayDate(string? birthdayText)
     {
         if (string.IsNullOrWhiteSpace(birthdayText)) return null;
 

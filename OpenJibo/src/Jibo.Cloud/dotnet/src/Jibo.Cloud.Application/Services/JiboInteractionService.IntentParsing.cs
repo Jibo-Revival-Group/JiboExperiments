@@ -67,6 +67,16 @@ public sealed partial class JiboInteractionService
         }
     }
 
+    private static string? TryReadRuntimeEmotion(TurnContext turn)
+    {
+        if (!TryGetContextRuntime(turn, out var runtime) ||
+            !runtime.TryGetProperty("character", out var character) || character.ValueKind != JsonValueKind.Object ||
+            !character.TryGetProperty("emotion", out var emotion) || emotion.ValueKind != JsonValueKind.Object)
+            return null;
+
+        return TryReadStringProperty(emotion, "name");
+    }
+
     private static DateOnly ResolveRobotBirthdate(TurnContext turn)
     {
         return TryResolveRobotBirthdate(turn) ?? OpenJiboCloudBuildInfo.PersonaBirthday;
@@ -688,14 +698,14 @@ public sealed partial class JiboInteractionService
                     }
             }
 
-            var triggerLooperId = turn.Attributes.TryGetValue("triggerLooperId", out var rawTriggerLooperId)
-                ? rawTriggerLooperId?.ToString()
-                : null;
+            // Pegasus gives the identified arrival precedence over the last active speaker.
+            var triggerLooperId = ReadTenantAttribute(turn, "triggerLooperId");
+            if (string.Equals(ReadTenantAttribute(turn, "messageType"), "TRIGGER", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(triggerLooperId))
+                speakerId = triggerLooperId;
             var primaryPersonId = !string.IsNullOrWhiteSpace(speakerId)
                 ? speakerId
-                : !string.IsNullOrWhiteSpace(triggerLooperId)
-                    ? triggerLooperId
-                    : peoplePresentIds.FirstOrDefault();
+                : peoplePresentIds.FirstOrDefault();
 
             return new GreetingPresenceProfile(
                 primaryPersonId,

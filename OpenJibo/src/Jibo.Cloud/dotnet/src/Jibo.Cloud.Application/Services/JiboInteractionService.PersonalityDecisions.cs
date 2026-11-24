@@ -437,14 +437,15 @@ public sealed partial class JiboInteractionService
         DateTimeOffset? referenceLocalTime,
         GreetingPresenceRecord? greetingHistory)
     {
-        var hour = (referenceLocalTime ?? DateTimeOffset.UtcNow).Hour;
-        var isMorning = hour is >= 5 and < 12;
-        var recentGreeting = greetingHistory?.LastGreetedUtc is not null &&
-                             DateTimeOffset.UtcNow - greetingHistory.LastGreetedUtc.Value < TimeSpan.FromHours(8);
+        var localTime = referenceLocalTime ?? DateTimeOffset.UtcNow;
+        var lastGreeting = greetingHistory?.LastGreetedUtc;
+        if (localTime.Hour is >= 5 and < 12 &&
+            (lastGreeting is null || lastGreeting.Value.ToOffset(localTime.Offset).DateTime < localTime.Date.AddHours(5)))
+            return "Good morning";
 
-        if (recentGreeting) return "Welcome back";
-
-        return isMorning ? "Good morning" : ResolveTimeOfDayGreetingPrefix(referenceLocalTime);
+        if (lastGreeting is not null && DateTimeOffset.UtcNow - lastGreeting.Value < TimeSpan.FromHours(8))
+            return "Welcome back";
+        return ResolveTimeOfDayGreetingPrefix(referenceLocalTime);
     }
 
     private SpecialGreetingPrefix? ResolveSpecialGreetingPrefix(
@@ -462,15 +463,21 @@ public sealed partial class JiboInteractionService
         GreetingPresenceProfile presence,
         DateOnly today)
     {
-        var identityScope = !string.IsNullOrWhiteSpace(presence.PrimaryPersonId)
-            ? ResolveTenantScope(turn, presence.PrimaryPersonId)
-            : ResolveTenantScope(turn);
+        if (string.IsNullOrWhiteSpace(presence.PrimaryPersonId)) return null;
 
-        var birthdayText = personalMemoryStore.GetBirthday(identityScope) ??
-                           personalMemoryStore.GetBirthday(ResolveTenantScope(turn));
-        if (string.IsNullOrWhiteSpace(birthdayText)) return null;
-
-        var birthdayDate = TryParseBirthdayDate(birthdayText);
+        var identityScope = ResolveTenantScope(turn, presence.PrimaryPersonId);
+        var birthdayDate = TryParseBirthdayDate(personalMemoryStore.GetBirthday(identityScope));
+        if (birthdayDate is null && cloudStateStore is not null)
+        {
+            var member = cloudStateStore.GetLoopMembers(identityScope.LoopId).FirstOrDefault(member =>
+                member.Id.Equals(presence.PrimaryPersonId, StringComparison.OrdinalIgnoreCase) &&
+                member.Status.Equals("active", StringComparison.OrdinalIgnoreCase) &&
+                !member.Type.Equals("robot", StringComparison.OrdinalIgnoreCase));
+            if (member?.Birthday is long milliseconds &&
+                milliseconds >= DateTimeOffset.MinValue.ToUnixTimeMilliseconds() &&
+                milliseconds <= DateTimeOffset.MaxValue.ToUnixTimeMilliseconds())
+                birthdayDate = DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(milliseconds).UtcDateTime);
+        }
         if (birthdayDate is null) return null;
 
         return birthdayDate.Value.Month == today.Month && birthdayDate.Value.Day == today.Day

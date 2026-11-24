@@ -33,10 +33,10 @@ public sealed partial class JiboInteractionService
             turn.Attributes.TryGetValue("pendingProactivityOffer", out var rawPendingProactivityOffer)
                 ? rawPendingProactivityOffer?.ToString()
                 : null;
-        var chitchatEmotion =
+        var chitchatEmotion = TryReadRuntimeEmotion(turn) ?? (
             turn.Attributes.TryGetValue(ChitchatStateMachine.EmotionMetadataKey, out var rawChitchatEmotion)
                 ? rawChitchatEmotion?.ToString()
-                : null;
+                : null);
         var isYesNoTurn = IsYesNoTurn(turn);
         var isSkillOwnedListen = SkillListenOwnership.IsSkillOwnedListen(turn);
         var greetingPresence = ResolveGreetingPresenceProfile(turn);
@@ -51,7 +51,7 @@ public sealed partial class JiboInteractionService
                        proactiveSocket is true &&
                        greetingPresence.PrimaryPersonId is { } focusedPerson &&
                        greetingPresence.LoopUserFirstNames.ContainsKey(focusedPerson)
-                    ? BuildRobotTriggeredSurpriseDecision(catalog)
+                    ? BuildRobotTriggeredSurpriseDecision(catalog, referenceLocalTime)
                     : BuildTriggerIgnoredDecision();
 
             return ShouldHandleProactiveGreetingTrigger(turn, greetingPresence)

@@ -68,6 +68,7 @@ public sealed class ProactiveTransactionHandler(
         }
 
         session.Metadata["context"] = contextPayload;
+        session.Metadata.TryGetValue("registeredRobotId", out var registeredRobotId);
         SessionRobotIdentityBinder.TryBindFromContextPayload(session, contextPayload);
 
         var triggerEnvelope = new WebSocketMessageEnvelope
@@ -88,7 +89,8 @@ public sealed class ProactiveTransactionHandler(
         return await turnFinalizationService.HandleProactiveAsync(
             session,
             triggerEnvelope,
-            cancellationToken);
+            cancellationToken,
+            registeredRobotId as string);
     }
 
     private void RemoveExpired()

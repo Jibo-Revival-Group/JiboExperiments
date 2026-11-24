@@ -2,6 +2,7 @@ using System.Globalization;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Jibo.Cloud.Application.Services;
 
@@ -379,18 +380,27 @@ public sealed partial class JiboInteractionService
 
         var now = DateTimeOffset.UtcNow;
         var tenantScope = ResolveTenantScope(turn, identityId);
-        cloudStateStore.UpsertGreetingPresence(new GreetingPresenceRecord
+        try
         {
-            AccountId = tenantScope.AccountId,
-            LoopId = tenantScope.LoopId,
-            PersonId = identityId,
-            SpeakerId = presence.SpeakerId,
-            PreferredName = preferredName,
-            LastSeenUtc = now,
-            LastGreetedUtc = now,
-            LastGreetingRoute = route,
-            LastGreetingIntent = intentName
-        });
+            cloudStateStore.UpsertGreetingPresence(new GreetingPresenceRecord
+            {
+                AccountId = tenantScope.AccountId,
+                LoopId = tenantScope.LoopId,
+                PersonId = identityId,
+                SpeakerId = presence.SpeakerId,
+                PreferredName = preferredName,
+                LastSeenUtc = now,
+                LastGreetedUtc = now,
+                LastGreetingRoute = route,
+                LastGreetingIntent = intentName
+            });
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger?.LogWarning(exception,
+                "Could not save greeting history; continuing the interaction. turnId={TurnId} loopId={LoopId}",
+                turn.TurnId, tenantScope.LoopId);
+        }
     }
 
     private static string ResolveTimeOfDayGreetingPrefix(DateTimeOffset? referenceLocalTime)

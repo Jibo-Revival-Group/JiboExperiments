@@ -663,7 +663,8 @@ public sealed class WebSocketTurnFinalizationService(
     public async Task<IReadOnlyList<WebSocketReply>> HandleProactiveAsync(
         CloudSession session,
         WebSocketMessageEnvelope envelope,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? registeredRobotId = null)
     {
         var turnState = session.TurnState;
         if (!turnState.TryBeginFinalization())
@@ -679,6 +680,7 @@ public sealed class WebSocketTurnFinalizationService(
         try
         {
             var turn = ProtocolToTurnContextMapper.MapListenMessage(envelope, session, "TRIGGER");
+            ApplyProactiveLoopScope(registeredRobotId, turn);
             AmbientTurnProgressPublisher.BindTurn(turn, session);
             var plan = await conversationBroker.HandleTurnAsync(turn, cancellationToken);
             session.LastTranscript = turn.NormalizedTranscript ?? turn.RawTranscript;
@@ -716,6 +718,23 @@ public sealed class WebSocketTurnFinalizationService(
         {
             turnState.EndFinalization();
         }
+    }
+
+    private void ApplyProactiveLoopScope(string? registeredRobotId, TurnContext turn)
+    {
+        if (cloudStateStore is null || string.IsNullOrWhiteSpace(registeredRobotId))
+            return;
+
+        // Stock hubs open a new session with the bootstrap Loop in their metadata.
+        // Scope the greeting with the server-side registration from before CONTEXT.
+        var matchingLoops = cloudStateStore.GetLoops().Where(loop => !loop.IsSuspended &&
+            (loop.RobotId.Equals(registeredRobotId, StringComparison.OrdinalIgnoreCase) ||
+             loop.RobotFriendlyId.Equals(registeredRobotId, StringComparison.OrdinalIgnoreCase))).Take(2).ToArray();
+        if (matchingLoops.Length != 1) return;
+
+        var loop = matchingLoops[0];
+        turn.Attributes["loopId"] = loop.LoopId;
+        turn.Attributes["accountId"] = loop.OwnerAccountId;
     }
 
     public IReadOnlyList<WebSocketReply> HandleListenSetup(CloudSession session,

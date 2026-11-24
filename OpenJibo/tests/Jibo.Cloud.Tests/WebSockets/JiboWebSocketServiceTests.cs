@@ -9635,6 +9635,50 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ProactiveArrival_RecordsGreetingInLinkedRobotLoopInsteadOfBootstrapLoop()
+    {
+        const string runtimeId = "arrival-runtime";
+        const string deviceId = "arrival-device";
+        const string robotId = "robot-arrival-device";
+        const string connectionId = "arrival-connection";
+        _store.UpsertDevice(new DeviceRegistration { DeviceId = runtimeId, RobotId = runtimeId });
+        _store.UpsertDevice(new DeviceRegistration { DeviceId = deviceId, RobotId = robotId });
+        var loop = _store.AddLoop("Arrival household", _store.GetAccount().AccountId, robotId, robotId);
+        var token = _store.IssueHubToken(runtimeId);
+        var session = _store.OpenSession("neo-hub-proactive", runtimeId, token, "neo-hub.jibo.com", "/v1/proactive");
+        Assert.True(_store.BindSessionToDevice(session.SessionId, deviceId));
+        session.Metadata["loopId"] = "openjibo-default-loop";
+
+        var cache = new JiboExperienceContentCache(new InMemoryJiboExperienceContentRepository());
+        var broker = new DemoConversationBroker(new JiboInteractionService(cache,
+            new LastItemRandomizer(), new InMemoryPersonalMemoryStore(), cloudStateStore: _store));
+        var finalizer = new WebSocketTurnFinalizationService(broker,
+            new DefaultSttStrategySelector([]), new NullTurnTelemetrySink(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<WebSocketTurnFinalizationService>.Instance,
+            cloudStateStore: _store);
+        var service = new JiboWebSocketService(_store, new NullWebSocketTelemetrySink(), finalizer);
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = connectionId,
+            HostName = "neo-hub.jibo.com", Path = "/v1/proactive", Kind = "neo-hub-proactive", Token = token,
+            Text = """{"type":"TRIGGER","transID":"arrival-test","data":{"triggerSource":"NEW_ARRIVAL","triggerData":{"looperID":"arrival-person"}}}"""
+        });
+        var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = connectionId,
+            HostName = "neo-hub.jibo.com", Path = "/v1/proactive", Kind = "neo-hub-proactive", Token = token,
+            Text = """{"type":"CONTEXT","transID":"arrival-test","data":{"runtime":{"loop":{"jibo":{"id":"arrival-runtime"},"users":[{"id":"arrival-person","firstName":"Jake"}]},"perception":{"peoplePresent":[{"id":"arrival-person"}]}}}}"""
+        });
+
+        Assert.Contains(replies, reply => ReadReplyType(reply) == "SKILL_ACTION");
+        var greeting = Assert.Single(_store.GetGreetingPresences(loop.LoopId));
+        Assert.Equal("arrival-person", greeting.PersonId);
+        Assert.Equal("proactive_greeting", greeting.LastGreetingIntent);
+        Assert.Empty(_store.GetGreetingPresences("openjibo-default-loop"));
+    }
+
+    [Fact]
     public async Task WhoAmI_DoesNotLeaveFollowUpOpen()
     {
         var token = _store.IssueRobotToken("identity-close-token");

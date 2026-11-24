@@ -20,7 +20,8 @@ public sealed class JiboCloudProtocolService(
     LoopUpdatedPushService? loopUpdatedPushService = null,
     ILogger<JiboCloudProtocolService>? logger = null,
     RobotIdentitySuggestionStore? identitySuggestionStore = null,
-    RuntimeProtocolAccessPolicy? runtimeAccess = null)
+    RuntimeProtocolAccessPolicy? runtimeAccess = null,
+    LoopProfilePhotoService? loopProfilePhotos = null)
 {
     private const int SchedulerBackupDelayMs = 250;
     private const int SchedulerDownloadTickMs = 100;
@@ -171,7 +172,7 @@ public sealed class JiboCloudProtocolService(
             return Task.FromResult(HandleNotification(operation, envelope));
 
         if (servicePrefix.StartsWith("Loop_", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult(HandleLoop(operation, envelope));
+            return HandleLoopAsync(operation, envelope, cancellationToken);
 
         if (servicePrefix.Equals("Media_20160725", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleMedia(operation, envelope, ResolveRobotIdentity(envelope, $"media.{operation}")));
@@ -976,7 +977,8 @@ public sealed class JiboCloudProtocolService(
         };
     }
 
-    private ProtocolDispatchResult HandleLoop(string operation, ProtocolEnvelope envelope)
+    private async Task<ProtocolDispatchResult> HandleLoopAsync(string operation, ProtocolEnvelope envelope,
+        CancellationToken cancellationToken)
     {
         if (operation is "ListMembers" or "ListLoopMembers")
         {
@@ -1172,9 +1174,12 @@ public sealed class JiboCloudProtocolService(
                     "application/x-amz-json-1.1");
 
             var loop = stateStore.AddLoop(null, null, device.RobotId, device.RobotId);
+            var members = stateStore.GetLoopMembers(loop.LoopId);
+            var photoUrls = loopProfilePhotos is null ? null : await loopProfilePhotos.BuildRobotUrlsAsync(
+                loop.LoopId, members, _canonicalApiBaseUrl ?? $"https://{envelope.HostName}", cancellationToken);
             return ProtocolDispatchResult.Ok(new[]
             {
-                MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId), stockClient: true)
+                MapLoopRecord(loop, members, stockClient: true, photoUrls)
             });
         }
 
@@ -1270,7 +1275,7 @@ public sealed class JiboCloudProtocolService(
 
     public static object MapLoopMember(LoopMemberRecord member) => MapLoopMember(member, stockClient: false);
 
-    private static object MapLoopMember(LoopMemberRecord member, bool stockClient)
+    private static object MapLoopMember(LoopMemberRecord member, bool stockClient, string? photoUrl = null)
     {
         return new
         {
@@ -1287,7 +1292,8 @@ public sealed class JiboCloudProtocolService(
                 gender = member.Gender,
                 birthday = member.Birthday,
                 isChild = member.IsChild,
-                phoneNumber = member.PhoneNumber
+                phoneNumber = member.PhoneNumber,
+                photoUrl
             },
             enrolled = new { face = member.FaceEnrolled, voice = member.VoiceEnrolled },
             status = stockClient && member.Status.Equals("active", StringComparison.OrdinalIgnoreCase)
@@ -1323,7 +1329,7 @@ public sealed class JiboCloudProtocolService(
     internal static string StockOwnerPlaceholderId(string loopId) => StockOwnerPlaceholderPrefix + loopId;
 
     public static object MapLoopRecord(LoopRecord loop, IEnumerable<LoopMemberRecord> members,
-        bool stockClient = false)
+        bool stockClient = false, IReadOnlyDictionary<string, string>? photoUrls = null)
     {
         var visibleMembers = members
             .Where(member => !member.Type.Equals("robot", StringComparison.OrdinalIgnoreCase))
@@ -1364,7 +1370,8 @@ public sealed class JiboCloudProtocolService(
             owner = loop.OwnerAccountId,
             robot = loop.RobotId,
             robotFriendlyId = loop.RobotFriendlyId,
-            members = visibleMembers.Select(member => MapLoopMember(member, stockClient)).ToArray(),
+            members = visibleMembers.Select(member => MapLoopMember(member, stockClient,
+                stockClient ? photoUrls?.GetValueOrDefault(member.Id) : null)).ToArray(),
             isSuspended = loop.IsSuspended,
             created = loop.CreatedUtc.ToUnixTimeMilliseconds(),
             updated = loop.UpdatedUtc.ToUnixTimeMilliseconds(),

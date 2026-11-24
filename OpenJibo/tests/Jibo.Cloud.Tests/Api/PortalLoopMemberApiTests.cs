@@ -5,6 +5,7 @@ using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Tests.Protocol;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,6 +13,102 @@ namespace Jibo.Cloud.Tests.Api;
 
 public sealed class PortalLoopMemberApiTests
 {
+    [Fact]
+    public async Task LoopProfilePhoto_UploadReplaceAndDownloadStayWithinTheVerifiedLoop()
+    {
+        const string deviceId = "profile-photo-device";
+        const string robotId = "profile-photo-robot";
+        var credentials = new AccountProfile
+        {
+            AccessKeyId = "profile-photo-stock-key", SecretAccessKey = "profile-photo-stock-test-secret"
+        };
+        await using var factory = CreateFactory().WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("OpenJibo:CanonicalApiHostname", "api.jibo.com");
+            builder.UseSetting("OpenJibo:CanonicalApiBaseUrl", "https://api.jibo.com");
+            builder.UseSetting("OpenJibo:Security:StockLoopCredential", JsonSerializer.Serialize(new
+            {
+                deviceId, region = "open-jibo", credentials.AccessKeyId, credentials.SecretAccessKey
+            }));
+        });
+        using var owner = factory.CreateClient();
+        using var other = factory.CreateClient();
+        using var robot = factory.CreateClient();
+        await AuthorizeAsync(owner, factory, robotId, deviceId);
+        await AuthorizeAsync(other, factory, "another-photo-robot", "another-photo-device");
+
+        using var added = await owner.PostAsJsonAsync("/api/portal/loop-members", new { firstName = "Pat" });
+        added.EnsureSuccessStatusCode();
+        var member = await added.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(member.GetProperty("canUploadPhoto").GetBoolean());
+        var memberId = member.GetProperty("id").GetString();
+        var photoPath = $"/api/portal/loop-members/{memberId}/photo";
+        var original = Convert.FromBase64String(RedJpeg);
+        var replacement = Convert.FromBase64String(BlueJpeg);
+
+        Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync(photoPath)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await robot.PutAsync(photoPath, Jpeg(original))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.PutAsync(photoPath, Jpeg(original))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await owner.PutAsync(photoPath, Jpeg([0xff, 0xd8, 0xff, 0xd9]))).StatusCode);
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge,
+            (await owner.PutAsync(photoPath, Jpeg(new byte[LoopProfilePhotoService.MaxBytes + 1]))).StatusCode);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.PutAsync(photoPath, Jpeg(original))).StatusCode);
+        using var preview = await owner.GetAsync(photoPath);
+        Assert.Equal("image/jpeg", preview.Content.Headers.ContentType?.MediaType);
+        Assert.True(preview.Headers.CacheControl?.NoStore);
+        Assert.Equal(original, await preview.Content.ReadAsByteArrayAsync());
+        Assert.Equal(HttpStatusCode.NotFound, (await other.GetAsync(photoPath)).StatusCode);
+
+        var service = factory.Services.GetRequiredService<JiboCloudProtocolService>();
+        async Task<Uri> ReadRobotPhotoUrlAsync()
+        {
+            var signed = AwsSigV4RequestVerifierTests.Sign(credentials, "{}", DateTimeOffset.UtcNow,
+                ["host", "x-amz-content-sha256", "x-amz-date", "x-amz-target"], region: "open-jibo",
+                service: "Loop", target: "Loop_20160324.ListLoops");
+            var reply = await service.DispatchAsync(new ProtocolEnvelope
+            {
+                Method = "POST", Path = "/", HostName = "api.jibo.com", ServicePrefix = "Loop_20160324",
+                Operation = "ListLoops", Headers = signed.Headers, BodyBytes = signed.BodyBytes, BodyText = signed.BodyText
+            });
+            Assert.Equal(200, reply.StatusCode);
+            using var json = JsonDocument.Parse(reply.BodyText);
+            var item = json.RootElement[0].GetProperty("members").EnumerateArray().Single(value =>
+                value.GetProperty("id").GetString() == memberId);
+            Assert.False(item.GetProperty("enrolled").GetProperty("face").GetBoolean());
+            Assert.False(item.GetProperty("enrolled").GetProperty("voice").GetBoolean());
+            return new Uri(item.GetProperty("account").GetProperty("photoUrl").GetString()!);
+        }
+
+        var originalUrl = await ReadRobotPhotoUrlAsync();
+        Assert.Equal("api.jibo.com", originalUrl.Host);
+        Assert.Equal(original, await robot.GetByteArrayAsync(originalUrl.PathAndQuery));
+        Assert.Equal(HttpStatusCode.NotFound, (await robot.GetAsync(originalUrl.AbsolutePath)).StatusCode);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.PutAsync(photoPath, Jpeg(replacement))).StatusCode);
+        var replacedUrl = await ReadRobotPhotoUrlAsync();
+        Assert.NotEqual(originalUrl.AbsolutePath, replacedUrl.AbsolutePath);
+        Assert.Equal(HttpStatusCode.NotFound, (await robot.GetAsync(originalUrl.PathAndQuery)).StatusCode);
+        Assert.Equal(replacement, await robot.GetByteArrayAsync(replacedUrl.PathAndQuery));
+        Assert.Equal(replacement, await owner.GetByteArrayAsync(photoPath));
+
+        var mismatchedTicket = originalUrl.AbsolutePath + replacedUrl.Query;
+        Assert.Equal(HttpStatusCode.NotFound, (await robot.GetAsync(mismatchedTicket)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await owner.DeleteAsync($"/api/portal/loop-members/{memberId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await robot.GetAsync(replacedUrl.PathAndQuery)).StatusCode);
+    }
+
+    private static ByteArrayContent Jpeg(byte[] bytes) => new(bytes)
+    {
+        Headers = { ContentType = new MediaTypeHeaderValue("image/jpeg") }
+    };
+
+    private const string RedJpeg =
+        "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAgDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAABQf/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCMACK2/9k=";
+
+    private const string BlueJpeg =
+        "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAgDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAABgf/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCaAeJ4/9k=";
+
     [Fact]
     public async Task LoopMembers_AddUpdateAndRemove_RoundTrips()
     {
@@ -200,6 +297,7 @@ public sealed class PortalLoopMemberApiTests
                     "OpenJibo:UserIntegrations:PersistencePath",
                     Path.Combine(root, "user-integrations.json"));
                 builder.UseSetting("OpenJibo:State:Backend", "File");
+                builder.UseSetting("OpenJibo:Media:DirectoryPath", Path.Combine(root, "media"));
                 builder.UseSetting("OpenJibo:PersonalMemory:Backend", "File");
                 builder.UseSetting("OpenJibo:State:PersistencePath", Path.Combine(root, "cloud-state.json"));
                 builder.UseSetting(

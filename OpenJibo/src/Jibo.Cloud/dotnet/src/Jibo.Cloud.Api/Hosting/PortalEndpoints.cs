@@ -667,6 +667,80 @@ internal static class PortalEndpoints
             return Results.Json(new { removed = true, memberId });
         });
 
+        app.MapGet("/api/portal/loop-members/{memberId}/photo", async (
+            string memberId,
+            HttpRequest request,
+            PortalSessionService sessions,
+            ICloudStateStore store,
+            LoopProfilePhotoService photos,
+            CancellationToken cancellationToken) =>
+        {
+            var session = ResolvePortalSession(request, null, sessions);
+            if (session is null) return Results.Unauthorized();
+
+            var loopId = ResolvePortalLoopId(store, session);
+            var member = FindPhotoMember(store, loopId, memberId);
+            if (member is null) return Results.NotFound();
+
+            var photo = await photos.LoadAsync(loopId, member.Id, cancellationToken);
+            return photo is null ? Results.NotFound() : ServeLoopProfilePhoto(request.HttpContext, photo);
+        });
+
+        app.MapPut("/api/portal/loop-members/{memberId}/photo", async (
+            string memberId,
+            HttpRequest request,
+            PortalSessionService sessions,
+            ICloudStateStore store,
+            LoopProfilePhotoService photos,
+            LoopUpdatedPushService loopUpdatedPushService,
+            CancellationToken cancellationToken) =>
+        {
+            var session = ResolvePortalSession(request, null, sessions);
+            if (session is null) return Results.Unauthorized();
+
+            var loopId = ResolvePortalLoopId(store, session);
+            var member = FindPhotoMember(store, loopId, memberId);
+            if (member is null) return Results.NotFound();
+
+            if (!string.Equals(request.ContentType, LoopProfilePhotoService.ContentType, StringComparison.OrdinalIgnoreCase))
+                return Results.Json(new { error = "Upload the profile photo as a JPEG." }, statusCode: 415);
+
+            if (request.ContentLength > LoopProfilePhotoService.MaxBytes)
+                return Results.Json(new { error = "The profile photo must be 256 KB or smaller." }, statusCode: 413);
+
+            var buffer = new byte[LoopProfilePhotoService.MaxBytes + 1];
+            var length = await request.Body.ReadAtLeastAsync(buffer, buffer.Length, false, cancellationToken);
+            if (length > LoopProfilePhotoService.MaxBytes)
+                return Results.Json(new { error = "The profile photo must be 256 KB or smaller." }, statusCode: 413);
+
+            if (!LoopProfilePhotoService.IsSupportedJpeg(buffer.AsSpan(0, length)))
+                return Results.BadRequest(new { error = "Upload a JPEG no larger than 512 pixels on either side." });
+
+            await photos.StoreAsync(loopId, member.Id, buffer[..length], cancellationToken);
+            await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
+            return Results.NoContent();
+        });
+
+        app.MapGet(LoopProfilePhotoService.RobotDownloadRoute, async (
+            string loopId,
+            string memberId,
+            string version,
+            string? ticket,
+            HttpContext context,
+            PortalSessionService sessions,
+            ICloudStateStore store,
+            LoopProfilePhotoService photos,
+            CancellationToken cancellationToken) =>
+        {
+            if (!sessions.CanDownloadLoopPhoto(ticket, loopId, memberId, version) ||
+                FindPhotoMember(store, loopId, memberId) is null) return Results.NotFound();
+
+            var photo = await photos.LoadAsync(loopId, memberId, cancellationToken);
+            return photo is not null && LoopProfilePhotoService.Version(photo) == version
+                ? ServeLoopProfilePhoto(context, photo)
+                : Results.NotFound();
+        });
+
         app.MapPost("/api/portal/calendar-feeds/{memberId}/test", async (
             string memberId,
             [FromBody] TestMemberCalendarFeedRequest request,
@@ -3291,6 +3365,17 @@ internal static class PortalEndpoints
         string? LastName,
         string? Nickname);
 
+    private static LoopMemberRecord? FindPhotoMember(ICloudStateStore store, string loopId, string memberId) =>
+        store.GetLoopMembers(loopId).FirstOrDefault(member =>
+            member.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase) && LoopProfilePhotoService.CanHavePhoto(member));
+
+    private static IResult ServeLoopProfilePhoto(HttpContext context, byte[] photo)
+    {
+        context.Response.Headers.CacheControl = "private, no-store";
+        context.Response.Headers.XContentTypeOptions = "nosniff";
+        return Results.Bytes(photo, LoopProfilePhotoService.ContentType);
+    }
+
     private static object BuildLoopMembersPayload(ICloudStateStore cloudStateStore, string loopId)
     {
         var members = cloudStateStore.GetLoopMembers(loopId)
@@ -3320,7 +3405,8 @@ internal static class PortalEndpoints
             displayName,
             gender = member.Gender,
             type = member.Type,
-            canRemove = member.Type is not "owner" and not "robot"
+            canRemove = member.Type is not "owner" and not "robot",
+            canUploadPhoto = LoopProfilePhotoService.CanHavePhoto(member)
         };
     }
 

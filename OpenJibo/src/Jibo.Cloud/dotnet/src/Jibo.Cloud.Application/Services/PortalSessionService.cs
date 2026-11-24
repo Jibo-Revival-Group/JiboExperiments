@@ -13,6 +13,7 @@ public sealed class PortalSessionService
     public const string AdministratorSessionKind = "administrator";
     private static readonly TimeSpan SessionLifetime = TimeSpan.FromHours(24);
     private static readonly TimeSpan RobotMergePreviewLifetime = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan LoopPhotoLifetime = TimeSpan.FromMinutes(15);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly byte[] _signingKey;
@@ -164,6 +165,31 @@ public sealed class PortalSessionService
                string.Equals(payload.TargetDeviceId, targetDeviceId.Trim(), StringComparison.OrdinalIgnoreCase) &&
                string.Equals(payload.SnapshotFingerprint, snapshotFingerprint.Trim(), StringComparison.OrdinalIgnoreCase);
     }
+
+    internal string CreateLoopPhotoToken(string loopId, string memberId, string version) =>
+        BuildSignedToken(new LoopPhotoToken("loop-profile-photo.v1", loopId, memberId, version,
+            _timeProvider.GetUtcNow().Add(LoopPhotoLifetime).ToUnixTimeSeconds()));
+
+    public bool CanDownloadLoopPhoto(string? ticket, string loopId, string memberId, string version)
+    {
+        if (string.IsNullOrWhiteSpace(ticket) || ticket.Length > 2048 ||
+            !TryReadSignedPayload(ticket, out var bytes)) return false;
+
+        try
+        {
+            var payload = JsonSerializer.Deserialize<LoopPhotoToken>(bytes, JsonOptions);
+            return payload is { Kind: "loop-profile-photo.v1" } &&
+                   payload.ExpiresAtUtc > _timeProvider.GetUtcNow().ToUnixTimeSeconds() &&
+                   payload.LoopId == loopId && payload.MemberId == memberId && payload.PhotoVersion == version;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private sealed record LoopPhotoToken(string Kind, string LoopId, string MemberId, string PhotoVersion,
+        long ExpiresAtUtc);
 
     private static string BuildTokenString(string payloadJson, string signature)
     {

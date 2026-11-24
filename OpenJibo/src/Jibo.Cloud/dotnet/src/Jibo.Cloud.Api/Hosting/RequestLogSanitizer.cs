@@ -1,3 +1,5 @@
+using Jibo.Cloud.Application.Services;
+
 namespace Jibo.Cloud.Api.Hosting;
 
 internal static class RequestLogSanitizer
@@ -10,6 +12,10 @@ internal static class RequestLogSanitizer
         _ => path.Value ?? "/"
     };
 
-    internal static string? RedactQuery(QueryString query, bool isWebSocketRequest) =>
-        query.HasValue ? isWebSocketRequest ? "[redacted]" : query.Value : null;
+    internal static string? RedactQuery(QueryString query, bool isWebSocketRequest, PathString path = default) =>
+        query.HasValue
+            ? isWebSocketRequest || path.StartsWithSegments(LoopProfilePhotoService.RobotDownloadPrefix)
+                ? "[redacted]"
+                : query.Value
+            : null;
 }

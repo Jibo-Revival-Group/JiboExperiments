@@ -24,6 +24,7 @@ function clearSessionToken() {
 }
 
 async function apiFetch(path, options = {}, downloadName = null) {
+  const { responseType, ...requestOptions } = options;
   const token = getSessionToken();
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
@@ -35,11 +36,12 @@ async function apiFetch(path, options = {}, downloadName = null) {
   }
 
   const response = await fetch(path, {
-    ...options,
+    ...requestOptions,
     headers,
   });
 
   if (response.ok && downloadName) return downloadPortalFile(response, downloadName);
+  if (response.ok && responseType === "blob") return response.blob();
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -380,6 +382,8 @@ function bindPortalControls() {
       }
     });
   });
+
+  document.querySelectorAll(".member-photo").forEach(setupMemberPhoto);
 
   document.querySelectorAll(".remove-member-button").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -869,6 +873,81 @@ function genderOptionsHtml(selectedGender) {
   `).join("");
 }
 
+async function prepareProfilePhoto(file) {
+  if (!file.type.match(/^image\/(jpeg|png|webp)$/) || file.size > 15 * 1024 * 1024) {
+    throw new Error("Choose a JPEG, PNG, or WebP image up to 15 MB.");
+  }
+
+  let image;
+  try {
+    image = await createImageBitmap(file);
+  } catch {
+    throw new Error("This image could not be opened.");
+  }
+
+  try {
+    const maxSize = 512;
+    const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const context = canvas.getContext("2d", { alpha: false });
+    context.fillStyle = "white";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const jpeg = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.86));
+    if (!jpeg) throw new Error("This image could not be converted to JPEG.");
+    return jpeg;
+  } finally {
+    image.close();
+  }
+}
+
+function setupMemberPhoto(control) {
+  const { memberId, personName } = control.dataset;
+  const path = `/api/portal/loop-members/${encodeURIComponent(memberId)}/photo`;
+  const input = control.querySelector("input");
+  const button = control.querySelector("button");
+  const preview = control.querySelector("img");
+  const status = control.querySelector(".member-photo-status");
+
+  function showPhoto(blob) {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      preview.src = reader.result;
+      preview.classList.remove("hidden");
+      button.textContent = "Replace photo";
+      button.setAttribute("aria-label", `Replace photo for ${personName}`);
+    });
+    reader.readAsDataURL(blob);
+  }
+
+  button.disabled = true;
+  apiFetch(path, { responseType: "blob" }).then(showPhoto).catch((error) => {
+    if (error.status !== 404) status.textContent = "Could not load profile photo.";
+  }).finally(() => { button.disabled = false; });
+
+  button.addEventListener("click", () => input.click());
+  input.addEventListener("change", async () => {
+    const file = input.files[0];
+    input.value = "";
+    if (!file) return;
+
+    button.disabled = true;
+    status.textContent = "Saving photo…";
+    try {
+      const photo = await prepareProfilePhoto(file);
+      await apiFetch(path, { method: "PUT", headers: { "Content-Type": "image/jpeg" }, body: photo });
+      showPhoto(photo);
+      status.textContent = "Photo saved. It will appear after Jibo syncs the Loop.";
+    } catch (error) {
+      status.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
 function renderLoopMemberRow(member) {
   const badgeLabel = member.type === "owner" ? "Owner" : "Member";
   const badgeClass = member.type === "owner" ? "success" : "neutral";
@@ -884,6 +963,13 @@ function renderLoopMemberRow(member) {
         <button class="button secondary save-member-button" data-member-id="${escapeHtml(member.id)}" type="button">Save</button>
         ${member.canRemove ? `<button class="button danger remove-member-button" data-member-id="${escapeHtml(member.id)}" type="button">Remove</button>` : ""}
       </div>
+      ${member.canUploadPhoto ? `
+      <div class="member-photo" data-member-id="${escapeHtml(member.id)}" data-person-name="${escapeHtml(member.displayName)}">
+        <img class="member-photo-preview hidden" alt="Profile photo for ${escapeHtml(member.displayName)}">
+        <input type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        <button class="button secondary" type="button" aria-label="Add photo for ${escapeHtml(member.displayName)}">Add photo</button>
+        <span class="muted member-photo-status" role="status"></span>
+      </div>` : ""}
     </div>
   `;
 }

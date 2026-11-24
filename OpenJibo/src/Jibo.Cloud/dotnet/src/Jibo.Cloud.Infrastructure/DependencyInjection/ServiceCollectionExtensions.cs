@@ -190,6 +190,8 @@ public static class ServiceCollectionExtensions
 
         var mediaOptions = new MediaContentStoreOptions();
         configuration?.GetSection("OpenJibo:Media").Bind(mediaOptions);
+        if (string.IsNullOrWhiteSpace(mediaOptions.DirectoryPath))
+            mediaOptions.DirectoryPath = Path.Combine(AppContext.BaseDirectory, "App_Data", "media");
 
         if (string.IsNullOrWhiteSpace(mediaOptions.ConnectionString))
             mediaOptions.ConnectionString =
@@ -448,6 +450,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<JiboWebSocketService>();
         services.AddSingleton<JiboVerificationService>();
         services.AddSingleton<PortalSessionService>();
+        services.AddSingleton<LoopProfilePhotoService>();
         services.AddSingleton<HomeAssistantConnectionRegistry>();
         services.AddSingleton<HomeAssistantPendingClimateStore>();
         services.AddSingleton<RepeatLastCommandStore>();

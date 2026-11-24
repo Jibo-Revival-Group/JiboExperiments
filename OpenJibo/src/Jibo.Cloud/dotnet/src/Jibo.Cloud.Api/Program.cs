@@ -116,7 +116,7 @@ app.Use(async (context, next) =>
         : "http";
     var safePath = RequestLogSanitizer.RedactWebSocketPath(socketKind, context.Request.Path);
     var safeQuery = RequestLogSanitizer.RedactQuery(context.Request.QueryString,
-        context.WebSockets.IsWebSocketRequest);
+        context.WebSockets.IsWebSocketRequest, context.Request.Path);
 
     logger.LogInformation(
         "HTTP request started traceId={TraceId} method={Method} host={Host} path={Path} " +

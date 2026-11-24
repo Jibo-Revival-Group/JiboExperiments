@@ -25,7 +25,16 @@ internal sealed class FileMediaContentStore(string? directoryPath) : IMediaConte
         var metaPath = Path.Combine(root, $"{relative}.json");
 
         Directory.CreateDirectory(Path.GetDirectoryName(contentPath)!);
-        await File.WriteAllBytesAsync(contentPath, content, cancellationToken);
+        var temporaryPath = $"{contentPath}.{Guid.NewGuid():N}.tmp";
+        try
+        {
+            await File.WriteAllBytesAsync(temporaryPath, content, cancellationToken);
+            File.Move(temporaryPath, contentPath, overwrite: true);
+        }
+        finally
+        {
+            File.Delete(temporaryPath);
+        }
         var manifestMeta = meta is null
             ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, object?>(meta, StringComparer.OrdinalIgnoreCase);

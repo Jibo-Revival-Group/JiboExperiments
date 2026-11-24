@@ -175,6 +175,36 @@ Required coverage:
 5. G5 person queue memory extensions
 6. G6 live validation and polish
 
+## Firmware Follow-up for Missed Relaxed-Mode Arrivals
+
+On November 24, 2026, the same stock 1.9.2 robot missed a quiet walk-in after
+15 minutes away and greeted the enrolled person on a later quiet approach.
+The last logged circadian state before both approaches was `RELAXED`.
+
+| Walk-in (Central time) | Robot evidence | Cloud evidence |
+| --- | --- | --- |
+| Missed, around 3:41–3:44 p.m. | System logs continued. The robot logged no new face track, identity match, arrival evaluation, or camera fault. | No `NEW_ARRIVAL` request. |
+| Successful, 3:45:57 p.m. | Passive vision matched the enrolled household member. The robot passed its local checks and sent `NEW_ARRIVAL` without a wake word and before the on-demand camera check. | The deployed server returned `proactive_greeting`, then a separate `SURPRISE` returned `proactive_joke`. |
+
+The earliest observable difference was before the arrival tracker. Stock logs
+omit per-frame detector activity, the active perception profile, and candidate
+rejection reasons. The installed
+`normal` and `focused` perception profiles enable face detection and tracking.
+The `minimal` profile omits both. The attention warning about unavailable head
+or body controls appeared in both tests.
+
+### Diagnostics for future firmware
+
+- Log perception profile changes, camera frame age and drop counts, detector
+  runs and candidate rejection reasons, and face-track start and loss.
+- Log arrival tracker state changes and suppression reasons so a detected face
+  can be traced through to a greeting or a decision to stay quiet.
+- Reproduce with repeated quiet entries after the tracker resets. Start with
+  the same position and lighting in Alert and Relaxed, then vary approach
+  angle and lighting one at a time. Record the time from entry to detection
+  and the outcome of each stage. Keep diagnostic output to event timings,
+  counters, and reason codes without retaining frames or face templates.
+
 ## Definition Of Done For This Track
 
 - presence-aware greeting behavior works with and without identified users

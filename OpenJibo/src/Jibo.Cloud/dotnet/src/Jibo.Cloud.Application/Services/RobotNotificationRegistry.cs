@@ -49,7 +49,8 @@ public sealed class RobotNotificationRegistry(
     public async Task<int> PushLoopUpdatedAsync(
         IReadOnlyCollection<string> robotKeys,
         object loopPayload,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IReadOnlyCollection<string>? liveAliases = null)
     {
         ArgumentNullException.ThrowIfNull(loopPayload);
 
@@ -64,7 +65,12 @@ public sealed class RobotNotificationRegistry(
         var bytes = JsonSerializer.SerializeToUtf8Bytes(envelope, JsonOptions);
         _pendingStore.Enqueue("LoopUpdated", targetKeys, bytes);
 
-        var pushed = await PushBytesToLiveSocketsAsync(targetKeys, bytes, cancellationToken);
+        // Resolve observed IDs for this live send only. Queued notifications keep the
+        // registered keys so an alias that is later revoked cannot drain old deliveries.
+        var liveKeys = liveAliases is { Count: > 0 }
+            ? NormalizeKeys(robotKeys.Concat(liveAliases).ToArray())
+            : targetKeys;
+        var pushed = await PushBytesToLiveSocketsAsync(liveKeys, bytes, cancellationToken);
         if (pushed > 0)
             _pendingStore.Drain(targetKeys);
 

@@ -88,6 +88,8 @@ public interface IRobotIdentityLinkRepository
         string claimSource, IReadOnlyList<RobotIdentityLinkAuditEntry>? audit = null,
         CancellationToken cancellationToken = default);
     Task<bool> RevokeAsync(string observedDeviceId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> ListObservedDeviceIdsAsync(string inventoryDeviceId,
+        CancellationToken cancellationToken = default);
     Task<IReadOnlyList<RobotIdentityLinkRecord>> ListForAccountAsync(string accountId,
         CancellationToken cancellationToken = default);
 }

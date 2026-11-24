@@ -1534,6 +1534,46 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
+    public async Task QuietOpenNotificationSocket_RemainsVisibleAndCanBeLinked()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        await AuthenticateAdminAsync(client);
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var presence = factory.Services.GetRequiredService<RobotPresenceRegistry>();
+        var observed = store.GetOrCreateDevice("Stock-Hardware-Name", null, null);
+        var target = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "verified-portal-device", RobotId = "verified-portal-robot"
+        });
+        var session = store.OpenSession("api-socket", observed.DeviceId, "token-quiet-live", "api-socket", "/token-quiet-live");
+        var stale = store.OpenSession("api-socket", observed.DeviceId, "token-quiet-stale", "api-socket", "/token-quiet-stale");
+        session.LastSeenUtc = DateTimeOffset.UtcNow.AddHours(-1);
+        stale.LastSeenUtc = session.LastSeenUtc;
+
+        using var stream = new MemoryStream();
+        using var socket = WebSocket.CreateFromStream(stream, new WebSocketCreationOptions { IsServer = true });
+        var connectionId = presence.Register("api-socket", socket, [observed.DeviceId], session.SessionId);
+
+        var summary = await client.GetFromJsonAsync<JsonElement>("/api/portal/status/summary");
+        var row = Assert.Single(summary.GetProperty("recentSessions").EnumerateArray());
+        Assert.Equal(session.SessionId, row.GetProperty("sessionId").GetString());
+        Assert.True(row.GetProperty("isSocketOpen").GetBoolean());
+        Assert.Equal("/{notification-token}", row.GetProperty("path").GetString());
+        Assert.Equal(1, summary.GetProperty("fleet").GetProperty("staleSessions").GetInt32());
+
+        using var link = await client.PostAsJsonAsync($"/api/portal/status/sessions/{session.SessionId}/link",
+            new { deviceId = target.DeviceId });
+        Assert.Equal(HttpStatusCode.OK, link.StatusCode);
+        Assert.Equal(target.DeviceId, session.Metadata["registeredDeviceId"]?.ToString());
+
+        presence.Remove(connectionId);
+        using var closed = await client.PostAsJsonAsync($"/api/portal/status/sessions/{session.SessionId}/link",
+            new { deviceId = target.DeviceId });
+        Assert.Equal(HttpStatusCode.BadRequest, closed.StatusCode);
+    }
+
+    [Fact]
     public async Task StatusSummary_ListsAndUnlinksStaleExplicitSessionBinding()
     {
         await using var factory = CreateFactory();

@@ -263,6 +263,7 @@ function sessionRowSnapshot(session) {
     path: session.path || "",
     registeredDeviceId: session.registeredDeviceId || "",
     lastSeenUtc: session.lastSeenUtc || "",
+    isSocketOpen: !!session.isSocketOpen,
     heartbeatAgeSeconds: session.heartbeatAgeSeconds ?? null,
   });
 }
@@ -734,7 +735,7 @@ function renderRecentSessions(rows = [], robots = [], changedSessionIds = new Se
     <li class="${changedSessionIds.has(session.sessionId) ? "changed-row" : ""}">
       <strong>${escapeHtml(session.kind || "unknown")}</strong>
       <span>Observed runtime ID: ${escapeHtml(session.deviceId || "-")} · ${escapeHtml(session.hostName || "-")}${session.path ? ` · ${escapeHtml(session.path)}` : ""}</span>
-      <div class="muted-row">${formatDate(session.lastSeenUtc)} · heartbeat ${formatFloat(session.heartbeatAgeSeconds, 0)}s ago</div>
+      <div class="muted-row">${session.isSocketOpen ? "Socket open · last traffic " : "Last traffic "}${formatDate(session.lastSeenUtc)}</div>
       ${session.registeredDeviceId
         ? `<div class="muted-row">Explicit admin link: ${escapeHtml(session.registeredDeviceId)}</div>`
         : `<div class="muted-row">Unclaimed session — observed traffic never assigns a robot.</div>`}

@@ -1428,6 +1428,18 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return true;
     }
 
+    public IReadOnlyList<string> GetLinkedObservedDeviceIds(string registeredDeviceId)
+    {
+        lock (_syncRoot)
+        {
+            return _devices.Values.Where(device =>
+                    device.HostMappings.TryGetValue("openjibo.boundRegisteredDeviceId", out var targetId) &&
+                    string.Equals(targetId, registeredDeviceId, StringComparison.OrdinalIgnoreCase))
+                .Select(device => device.DeviceId)
+                .ToArray();
+        }
+    }
+
     public bool ClearSessionDeviceBinding(string sessionId)
     {
         if (string.IsNullOrWhiteSpace(sessionId)) return false;

@@ -96,6 +96,23 @@ public sealed class PostgreSqlRobotIdentityLinkRepository(PostgreSqlCloudStateDa
         return affected > 0;
     }
 
+    public async Task<IReadOnlyList<string>> ListObservedDeviceIdsAsync(string inventoryDeviceId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(inventoryDeviceId)) return [];
+        await using var connection = await dataSource.Value.OpenConnectionAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+                              SELECT ObservedDeviceId FROM RobotIdentityLinks
+                              WHERE InventoryDeviceId = @deviceId AND RevokedUtc IS NULL
+                              """;
+        command.Parameters.AddWithValue("deviceId", inventoryDeviceId.Trim());
+        var result = new List<string>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken)) result.Add(reader.GetString(0));
+        return result;
+    }
+
     public async Task<IReadOnlyList<RobotIdentityLinkRecord>> ListForAccountAsync(string accountId,
         CancellationToken cancellationToken = default)
     {

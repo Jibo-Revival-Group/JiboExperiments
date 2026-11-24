@@ -506,6 +506,11 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         public Task<IReadOnlyList<RobotIdentityLinkRecord>> ListForAccountAsync(string accountId,
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<RobotIdentityLinkRecord>>(_links.Values.ToArray());
+        public Task<IReadOnlyList<string>> ListObservedDeviceIdsAsync(string inventoryDeviceId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<string>>(_links.Values.Where(link =>
+                    string.Equals(link.InventoryDeviceId, inventoryDeviceId, StringComparison.OrdinalIgnoreCase))
+                .Select(link => link.ObservedDeviceId).ToArray());
         public Task<RobotIdentityLinkRecord?> FindAsync(string observedDeviceId,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(_links.GetValueOrDefault(observedDeviceId));

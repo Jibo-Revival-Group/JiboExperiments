@@ -372,7 +372,7 @@ internal sealed class WebSocketRequestCoordinator(
                 initialRobotKeys.Count);
             await telemetrySink.RecordConnectionOpenedAsync(openEnvelope, session, connectionCancellation);
             connectionCancellation.ThrowIfCancellationRequested();
-            presenceConnectionId = robotPresenceRegistry.Register(kind, socket, initialRobotKeys);
+            presenceConnectionId = robotPresenceRegistry.Register(kind, socket, initialRobotKeys, session.SessionId);
             if (string.Equals(kind, "api-socket", StringComparison.OrdinalIgnoreCase))
             {
                 var robotKeys = ResolveRobotKeys(token, session);

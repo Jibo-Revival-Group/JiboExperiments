@@ -35,7 +35,8 @@ public sealed class LoopUpdatedPushService(
         var payload = JiboCloudProtocolService.BuildLoopNotificationPayload(
             loop,
             cloudStateStore.GetLoopMembers(loopId));
-        var pushed = await robotNotificationRegistry.PushLoopUpdatedAsync(robotKeys, payload, cancellationToken);
+        var liveAliases = GetLinkedObservedDeviceIds(loop);
+        var pushed = await robotNotificationRegistry.PushLoopUpdatedAsync(robotKeys, payload, cancellationToken, liveAliases);
         if (pushed == 0)
         {
             logger.LogWarning(
@@ -86,5 +87,17 @@ public sealed class LoopUpdatedPushService(
         }
 
         return keys;
+    }
+
+    private IReadOnlyList<string> GetLinkedObservedDeviceIds(LoopRecord loop)
+    {
+        if (string.IsNullOrWhiteSpace(loop.RobotId)) return [];
+
+        var device = cloudStateStore.FindDeviceByFriendlyId(loop.RobotId);
+        return device is { IsActive: true, IsHidden: false, ArchivedUtc: null } &&
+               (string.Equals(device.RobotId, loop.RobotId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(device.DeviceId, loop.RobotId, StringComparison.OrdinalIgnoreCase))
+            ? cloudStateStore.GetLinkedObservedDeviceIds(device.DeviceId)
+            : [];
     }
 }

@@ -654,6 +654,9 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         return true;
     }
 
+    public IReadOnlyList<string> GetLinkedObservedDeviceIds(string registeredDeviceId) =>
+        Sync(_identityLinks.ListObservedDeviceIdsAsync(registeredDeviceId));
+
     public bool ClearSessionDeviceBinding(string sessionId)
     {
         if (string.IsNullOrWhiteSpace(sessionId)) return false;

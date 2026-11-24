@@ -11,12 +11,14 @@ public sealed class RobotPresenceRegistry
 {
     private readonly ConcurrentDictionary<Guid, PresenceConnection> _connections = new();
 
-    public Guid Register(string kind, WebSocket socket, IReadOnlyCollection<string>? robotKeys = null)
+    public Guid Register(string kind, WebSocket socket, IReadOnlyCollection<string>? robotKeys = null,
+        string? sessionId = null)
     {
         ArgumentNullException.ThrowIfNull(socket);
 
         var id = Guid.NewGuid();
-        _connections[id] = new PresenceConnection(socket, kind, NormalizeKeys(robotKeys), DateTimeOffset.UtcNow);
+        _connections[id] = new PresenceConnection(socket, kind, NormalizeKeys(robotKeys), DateTimeOffset.UtcNow,
+            sessionId);
         return id;
     }
 
@@ -40,7 +42,8 @@ public sealed class RobotPresenceRegistry
                 continue;
             }
 
-            connections.Add(new RobotPresenceConnection(connection.RobotKeys, connection.Kind, connection.ConnectedUtc));
+            connections.Add(new RobotPresenceConnection(connection.RobotKeys, connection.Kind, connection.ConnectedUtc,
+                connection.SessionId));
         }
 
         return connections;
@@ -61,10 +64,12 @@ public sealed class RobotPresenceRegistry
         WebSocket Socket,
         string Kind,
         IReadOnlySet<string> RobotKeys,
-        DateTimeOffset ConnectedUtc);
+        DateTimeOffset ConnectedUtc,
+        string? SessionId);
 }
 
 public sealed record RobotPresenceConnection(
     IReadOnlySet<string> RobotKeys,
     string Kind,
-    DateTimeOffset ConnectedUtc);
+    DateTimeOffset ConnectedUtc,
+    string? SessionId = null);

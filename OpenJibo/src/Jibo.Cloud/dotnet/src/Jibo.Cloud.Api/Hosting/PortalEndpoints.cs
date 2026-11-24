@@ -1625,7 +1625,8 @@ internal static class PortalEndpoints
             [FromBody] LinkStatusSessionRequest request,
             HttpRequest httpRequest,
             PortalSessionService portalSessionService,
-            ICloudStateStore cloudStateStore) =>
+            ICloudStateStore cloudStateStore,
+            RobotPresenceRegistry robotPresenceRegistry) =>
         {
             var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
             if (session is null || !IsAdminSession(session))
@@ -1637,8 +1638,11 @@ internal static class PortalEndpoints
             var lastSeenUtc = liveSession?.LastSeenUtc ?? request.LastSeenUtc;
             if (string.IsNullOrWhiteSpace(observedDeviceId) || lastSeenUtc is null)
                 return Results.NotFound(new { error = "Live session was not found on this replica and its observed identity was not supplied." });
-            if (DateTimeOffset.UtcNow - lastSeenUtc.Value > StatusHeartbeatWindow ||
-                lastSeenUtc.Value > DateTimeOffset.UtcNow.AddMinutes(1))
+            var now = DateTimeOffset.UtcNow;
+            var hasOpenSocket = liveSession is not null && robotPresenceRegistry.GetLiveConnections().Any(connection =>
+                string.Equals(connection.SessionId, liveSession.SessionId, StringComparison.OrdinalIgnoreCase));
+            if ((!hasOpenSocket && now - lastSeenUtc.Value > StatusHeartbeatWindow) ||
+                lastSeenUtc.Value > now.AddMinutes(1))
                 return Results.BadRequest(new { error = "Only a currently live session can be linked." });
             if (string.IsNullOrWhiteSpace(request.DeviceId) ||
                 cloudStateStore.FindDeviceByFriendlyId(request.DeviceId) is null)
@@ -1987,18 +1991,21 @@ internal static class PortalEndpoints
             configuration["OpenJibo:Stt:EnableLocalWhisperCpp"], out var localWhisperEnabled);
         var allDevices = cloudStateStore.GetDevicesForAdministration();
         var sessions = cloudStateStore.GetSessions();
+        var liveConnections = robotPresenceRegistry.GetLiveConnections();
+        var openSessionIds = liveConnections.Select(connection => connection.SessionId)
+            .OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase);
         // GetSessions intentionally includes durable issued-token records. Those
         // records are authentication history, not live WebSocket sessions, and a
         // client retrying token issuance must not flood or distort fleet presence.
         var activeSessions = sessions
-            .Where(session => !string.IsNullOrWhiteSpace(session.Token) &&
+            .Where(session => openSessionIds.Contains(session.SessionId) ||
+                              !string.IsNullOrWhiteSpace(session.Token) &&
                               cloudStateStore.FindActiveSessionByToken(session.Token)?.SessionId
                                   .Equals(session.SessionId, StringComparison.OrdinalIgnoreCase) == true)
             .ToArray();
         var recentSessions = activeSessions
-            .Where(session => now - session.LastSeenUtc <= StatusHeartbeatWindow)
+            .Where(session => openSessionIds.Contains(session.SessionId) || now - session.LastSeenUtc <= StatusHeartbeatWindow)
             .ToArray();
-        var liveConnections = robotPresenceRegistry.GetLiveConnections();
         var robots = BuildReconciledRobotStatuses(allDevices, activeSessions, recentSessions, liveConnections, now,
                 includeHidden, requiresLegacyDnsProof)
             .Select(robot => robot with
@@ -2098,7 +2105,7 @@ internal static class PortalEndpoints
                 recentlySeenRobots = robots.Count(robot => robot.Presence == "recently-seen"),
                 totalSessions = activeSessions.Length,
                 liveSessions = recentSessions.Length,
-                staleSessions = activeSessions.Count(session => now - session.LastSeenUtc > StatusHeartbeatWindow),
+                staleSessions = activeSessions.Length - recentSessions.Length,
                 latestSeenUtc,
                 oldestLiveSessionCreatedUtc,
                 averageHeartbeatAgeSeconds = recentSessions.Length > 0
@@ -2149,9 +2156,10 @@ internal static class PortalEndpoints
                     registeredRobotId = ReadSessionMetadata(session, "registeredRobotId"),
                     sessionBindingAudit = ReadSessionMetadata(session, "sessionBindingAudit"),
                     session.HostName,
-                    session.Path,
+                    path = RequestLogSanitizer.RedactWebSocketPath(session.Kind, session.Path),
                     session.CreatedUtc,
                     session.LastSeenUtc,
+                    isSocketOpen = openSessionIds.Contains(session.SessionId),
                     heartbeatAgeSeconds = (now - session.LastSeenUtc).TotalSeconds
                 })
                 .ToArray(),
@@ -2166,11 +2174,11 @@ internal static class PortalEndpoints
                     registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId"),
                     registeredRobotId = ReadSessionMetadata(session, "registeredRobotId"),
                     session.HostName,
-                    session.Path,
+                    path = RequestLogSanitizer.RedactWebSocketPath(session.Kind, session.Path),
                     session.CreatedUtc,
                     session.LastSeenUtc,
                     heartbeatAgeSeconds = (now - session.LastSeenUtc).TotalSeconds,
-                    isStale = now - session.LastSeenUtc > StatusHeartbeatWindow
+                    isStale = !openSessionIds.Contains(session.SessionId) && now - session.LastSeenUtc > StatusHeartbeatWindow
                 })
                 .ToArray()
         };

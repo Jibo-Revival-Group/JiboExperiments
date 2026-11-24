@@ -65,6 +65,35 @@ public sealed class PortalLoopMemberSyncTests
     }
 
     [Fact]
+    public async Task PortalLoopMemberAdd_UsesAnExplicitLinkForAnAlreadyOpenSocket()
+    {
+        const string hardwareId = "Stock-Hardware-Name";
+        const string registeredId = "BOJW-1000-0017-0820-0020";
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        await AuthorizeAsync(client, factory);
+
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        store.GetOrCreateDevice(hardwareId, null, null);
+        var registry = factory.Services.GetRequiredService<RobotNotificationRegistry>();
+        using var socket = new CapturingWebSocket();
+        using var unrelated = new CapturingWebSocket();
+        registry.Register([hardwareId], socket);
+        registry.Register(["Unrelated-Hardware-Name"], unrelated);
+
+        using var beforeLink = await client.PostAsJsonAsync("/api/portal/loop-members", new { firstName = "Before" });
+        Assert.Equal(HttpStatusCode.OK, beforeLink.StatusCode);
+        Assert.Null(socket.LastPayload);
+
+        Assert.True(store.BindObservedIdentityToDevice(hardwareId, registeredId));
+        using var afterLink = await client.PostAsJsonAsync("/api/portal/loop-members", new { firstName = "After" });
+        Assert.Equal(HttpStatusCode.OK, afterLink.StatusCode);
+        Assert.NotNull(socket.LastPayload);
+        Assert.Null(unrelated.LastPayload);
+        Assert.Equal("LoopUpdated", socket.LastPayload.Value.GetProperty("payload").GetProperty("name").GetString());
+    }
+
+    [Fact]
     public async Task PortalLoopMemberAdd_PushesLoopUpdated_WhenSocketKeyedByDeviceSerial()
     {
         await using var factory = CreateFactory();

@@ -1567,6 +1567,23 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal(HttpStatusCode.OK, link.StatusCode);
         Assert.Equal(target.DeviceId, session.Metadata["registeredDeviceId"]?.ToString());
 
+        var linkedSummary = await client.GetFromJsonAsync<JsonElement>("/api/portal/status/summary");
+        var linkedRows = linkedSummary.GetProperty("robots").EnumerateArray().ToArray();
+        var registeredRow = Assert.Single(linkedRows, item => item.GetProperty("deviceId").GetString() == target.DeviceId);
+        Assert.Equal("online", registeredRow.GetProperty("presence").GetString());
+        Assert.Equal(1, registeredRow.GetProperty("liveConnectionCount").GetInt32());
+        var observedRow = Assert.Single(linkedRows, item => item.GetProperty("deviceId").GetString() == observed.DeviceId);
+        Assert.Equal(0, observedRow.GetProperty("liveConnectionCount").GetInt32());
+
+        using var unlink = await client.DeleteAsync($"/api/portal/status/sessions/{session.SessionId}/link");
+        Assert.Equal(HttpStatusCode.OK, unlink.StatusCode);
+        var unlinkedSummary = await client.GetFromJsonAsync<JsonElement>("/api/portal/status/summary");
+        var unlinkedRows = unlinkedSummary.GetProperty("robots").EnumerateArray().ToArray();
+        registeredRow = Assert.Single(unlinkedRows, item => item.GetProperty("deviceId").GetString() == target.DeviceId);
+        observedRow = Assert.Single(unlinkedRows, item => item.GetProperty("deviceId").GetString() == observed.DeviceId);
+        Assert.Equal(0, registeredRow.GetProperty("liveConnectionCount").GetInt32());
+        Assert.Equal(1, observedRow.GetProperty("liveConnectionCount").GetInt32());
+
         presence.Remove(connectionId);
         using var closed = await client.PostAsJsonAsync($"/api/portal/status/sessions/{session.SessionId}/link",
             new { deviceId = target.DeviceId });

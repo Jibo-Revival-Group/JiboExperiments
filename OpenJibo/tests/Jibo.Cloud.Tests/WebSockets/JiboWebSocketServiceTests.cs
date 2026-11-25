@@ -9668,7 +9668,7 @@ public sealed class JiboWebSocketServiceTests
         {
             ConnectionId = connectionId,
             HostName = "neo-hub.jibo.com", Path = "/v1/proactive", Kind = "neo-hub-proactive", Token = token,
-            Text = """{"type":"CONTEXT","transID":"arrival-test","data":{"runtime":{"loop":{"jibo":{"id":"arrival-runtime"},"users":[{"id":"arrival-person","firstName":"Jake"}]},"perception":{"peoplePresent":[{"id":"arrival-person"}]}}}}"""
+            Text = """{"type":"CONTEXT","transID":"arrival-test","data":{"runtime":{"location":{"iso":"2026-03-14T09:00:00-05:00"},"loop":{"jibo":{"id":"arrival-runtime"},"users":[{"id":"arrival-person","firstName":"Jake"}]},"perception":{"peoplePresent":[{"id":"arrival-person"}]}}}}"""
         });
 
         Assert.Contains(replies, reply => ReadReplyType(reply) == "SKILL_ACTION");

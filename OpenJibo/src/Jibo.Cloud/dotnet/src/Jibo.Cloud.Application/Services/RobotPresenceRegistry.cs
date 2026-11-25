@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
+using Jibo.Cloud.Domain.Models;
 
 namespace Jibo.Cloud.Application.Services;
 
@@ -49,6 +50,28 @@ public sealed class RobotPresenceRegistry
         return connections;
     }
 
+    public IReadOnlyList<RobotPresenceConnection> GetLiveConnections(
+        IReadOnlyList<CloudSession> sessions, IReadOnlyList<DeviceRegistration> devices)
+    {
+        var connections = GetLiveConnections();
+        if (connections.Count == 0) return connections;
+
+        var visibleDeviceIds = devices.Where(device => !device.IsHidden && device.ArchivedUtc is null)
+            .Select(device => device.DeviceId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var linkedDevices = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var session in sessions)
+            if (session.Metadata.TryGetValue("registeredDeviceId", out var value) &&
+                value is string deviceId && visibleDeviceIds.Contains(deviceId))
+                linkedDevices[session.SessionId] = deviceId;
+
+        // An administrator can link a quiet socket after its runtime keys were captured.
+        return connections.Select(connection =>
+                connection.SessionId is { } sessionId && linkedDevices.TryGetValue(sessionId, out var deviceId)
+                    ? connection with { RegisteredDeviceId = deviceId }
+                    : connection)
+            .ToArray();
+    }
+
     private static IReadOnlySet<string> NormalizeKeys(IReadOnlyCollection<string>? robotKeys)
     {
         var normalized = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -72,4 +95,11 @@ public sealed record RobotPresenceConnection(
     IReadOnlySet<string> RobotKeys,
     string Kind,
     DateTimeOffset ConnectedUtc,
-    string? SessionId = null);
+    string? SessionId = null)
+{
+    public string? RegisteredDeviceId { get; init; }
+
+    public bool MatchesDevice(DeviceRegistration device) => RegisteredDeviceId is { } deviceId
+        ? deviceId.Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase)
+        : RobotKeys.Contains(device.DeviceId) || RobotKeys.Contains(device.RobotId);
+}

@@ -175,6 +175,13 @@ Required coverage:
 5. G5 person queue memory extensions
 6. G6 live validation and polish
 
+## Live retest pending
+
+- On November 25, 2026, both feelings prompts and a spoken “Good morning”
+  received the expected replies in production.
+- Verify the unsolicited morning greeting on the first eligible quiet arrival
+  between 5 a.m. and noon, using the robot’s local time.
+
 ## Firmware Follow-up for Missed Relaxed-Mode Arrivals
 
 On November 24, 2026, the same stock 1.9.2 robot missed a quiet walk-in after

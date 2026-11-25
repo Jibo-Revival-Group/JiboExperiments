@@ -1991,7 +1991,7 @@ internal static class PortalEndpoints
             configuration["OpenJibo:Stt:EnableLocalWhisperCpp"], out var localWhisperEnabled);
         var allDevices = cloudStateStore.GetDevicesForAdministration();
         var sessions = cloudStateStore.GetSessions();
-        var liveConnections = robotPresenceRegistry.GetLiveConnections();
+        var liveConnections = robotPresenceRegistry.GetLiveConnections(sessions, allDevices);
         var openSessionIds = liveConnections.Select(connection => connection.SessionId)
             .OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase);
         // GetSessions intentionally includes durable issued-token records. Those
@@ -2525,7 +2525,7 @@ internal static class PortalEndpoints
             var matchingDeviceIndices = new List<int>();
             for (var deviceIndex = 0; deviceIndex < devices.Count; deviceIndex++)
             {
-                if (ConnectionMatchesDevice(liveConnections[connectionIndex], devices[deviceIndex]))
+                if (liveConnections[connectionIndex].MatchesDevice(devices[deviceIndex]))
                     matchingDeviceIndices.Add(deviceIndex);
             }
 
@@ -2555,7 +2555,7 @@ internal static class PortalEndpoints
                 .Where(session => groupDevices.Any(device => SessionMatchesDevice(session, device)))
                 .ToArray();
             var groupConnections = liveConnections
-                .Where(connection => groupDevices.Any(device => ConnectionMatchesDevice(connection, device)))
+                .Where(connection => groupDevices.Any(connection.MatchesDevice))
                 .ToArray();
 
             var groupIsSynthetic = groupDevices.All(IsSyntheticDevice);
@@ -2749,7 +2749,7 @@ internal static class PortalEndpoints
                 RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
                 RobotRegistrationSources.Unknown,
                 StringComparison.OrdinalIgnoreCase))
-            .ThenByDescending(device => connections.Any(connection => ConnectionMatchesDevice(connection, device)))
+            .ThenByDescending(device => connections.Any(connection => connection.MatchesDevice(device)))
             .ThenByDescending(device => GetLatestMatchedSessionUtc(device, sessions) ?? DateTimeOffset.MinValue)
             .ThenBy(device => device.FriendlyName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(device => device.DeviceId, StringComparer.OrdinalIgnoreCase)
@@ -2815,9 +2815,6 @@ internal static class PortalEndpoints
                 yield return value.Trim();
         }
     }
-
-    private static bool ConnectionMatchesDevice(RobotPresenceConnection connection, DeviceRegistration device) =>
-        connection.RobotKeys.Contains(device.DeviceId) || connection.RobotKeys.Contains(device.RobotId);
 
     private static bool IsSyntheticDevice(DeviceRegistration device) =>
         RobotRegistrationSources.IsSynthetic(

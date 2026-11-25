@@ -58,10 +58,9 @@ internal sealed class FleetPeerSyncService(
 
         var now = DateTimeOffset.UtcNow;
         var devices = cloudStateStore.GetDevices();
-        var connections = robotPresenceRegistry.GetLiveConnections();
+        var connections = robotPresenceRegistry.GetLiveConnections(cloudStateStore.GetSessions(), devices);
         var robotIds = devices
-            .Where(device => connections.Any(connection =>
-                connection.RobotKeys.Contains(device.DeviceId) || connection.RobotKeys.Contains(device.RobotId)))
+            .Where(device => connections.Any(connection => connection.MatchesDevice(device)))
             .Select(device => device.DeviceId)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();

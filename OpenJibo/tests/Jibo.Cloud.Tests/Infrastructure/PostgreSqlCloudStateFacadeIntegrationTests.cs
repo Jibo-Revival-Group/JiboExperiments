@@ -14,6 +14,42 @@ public sealed partial class PostgreSqlCloudStateFacadeIntegrationTests
 {
     [PostgreSqlIntegrationFact]
     [Trait("Category", "PostgreSqlIntegration")]
+    public async Task BirthdayGreetingCanBeRecordedOnlyOnceAcrossReplicasAndSurvivesOrdinaryGreetings()
+    {
+        await using var database = await CloudStateTestDatabase.CreateAsync();
+        await using var sourceA = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
+        await using var sourceB = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
+        var store = new PostgreSqlCloudStateStore(sourceA, new PlaintextTestProtector());
+        var loop = store.AddLoop("Birthday Loop", null, "birthday-robot", "birthday-robot");
+        var first = new PostgreSqlGreetingPresenceRepository(sourceA);
+        var second = new PostgreSqlGreetingPresenceRepository(sourceB);
+        var date = new DateOnly(2026, 3, 14);
+        GreetingPresenceRecord Record(DateOnly? day) => new()
+        {
+            AccountId = loop.OwnerAccountId, LoopId = loop.LoopId, PersonId = "birthday-member",
+            LastGreetedUtc = DateTimeOffset.UtcNow, LastBirthdayGreetingDate = day
+        };
+
+        var claims = await Task.WhenAll(first.TryRecordBirthdayAsync(Record(date)), second.TryRecordBirthdayAsync(Record(date)));
+        Assert.Single(claims, claimed => claimed);
+        await second.UpsertAsync(Record(null));
+        Assert.False(await first.TryRecordBirthdayAsync(Record(date)));
+        var previous = Assert.Single(await second.ListAsync(loop.OwnerAccountId, loop.LoopId));
+        Assert.Equal(date, previous.LastBirthdayGreetingDate);
+        var nextMorning = previous.LastSeenUtc.AddDays(1);
+        await second.RecordInteractionAsync(new GreetingPresenceRecord
+        {
+            AccountId = loop.OwnerAccountId, LoopId = loop.LoopId, PersonId = "birthday-member", LastSeenUtc = nextMorning
+        }, nextMorning.AddHours(-1));
+        var updated = Assert.Single(await first.ListAsync(loop.OwnerAccountId, loop.LoopId));
+        Assert.Equal(nextMorning, updated.LastSeenUtc);
+        Assert.Equal(previous.LastGreetedUtc, updated.LastGreetedUtc);
+        Assert.Equal(date, updated.LastBirthdayGreetingDate);
+        Assert.True(await second.TryRecordBirthdayAsync(Record(date.AddYears(1))));
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
     public async Task LoopRemoval_SurvivesRobotRosterReplayOnAnotherReplica()
     {
         await using var database = await CloudStateTestDatabase.CreateAsync();

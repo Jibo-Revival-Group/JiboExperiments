@@ -168,5 +168,7 @@ public interface ICloudStateStore
     CalendarEventRecord UpsertCalendarEvent(CalendarEventRecord calendarEvent);
     IReadOnlyList<GreetingPresenceRecord> GetGreetingPresences(string? loopId = null);
     GreetingPresenceRecord UpsertGreetingPresence(GreetingPresenceRecord greetingPresence);
+    bool TryRecordBirthdayGreeting(GreetingPresenceRecord greetingPresence);
+    void RecordGreetingInteraction(GreetingPresenceRecord presence, DateTimeOffset windowStartUtc);
     void UpdateRobot(DeviceRegistration registration);
 }

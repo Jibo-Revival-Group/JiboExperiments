@@ -4018,8 +4018,13 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
     }
 
-    [Fact]
-    public async Task ClientAsr_WordOfDayOfferPrompt_MapsYesToWordOfDayLaunch()
+    [Theory]
+    [InlineData("word-of-the-day/surprise", "Yes!", "yes")]
+    [InlineData("word-of-the-day/surprise", "No thanks.", "no")]
+    [InlineData("word-of-the-day/surprise", "What's that?", "whatsThat")]
+    [InlineData("word-of-the-day/offer", "Yes please.", "yes")]
+    public async Task ClientAsr_WordOfDayOfferPrompt_ReturnsReplyToRunningSkill(
+        string rule, string speech, string expectedIntent)
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -4027,8 +4032,15 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-offer-yesno-token",
-            Text =
-                """{"type":"LISTEN","transID":"trans-wod-offer-yes","data":{"rules":["word-of-the-day/surprise","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+            Text = JsonSerializer.Serialize(new
+            {
+                type = "LISTEN", transID = "trans-wod-offer-yes",
+                data = new
+                {
+                    rules = new[] { rule, "globals/gui_nav", "globals/mim_repeat", "globals/global_commands_launch" },
+                    asr = new { hints = new[] { "$YESNO" } }
+                }
+            })
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -4037,24 +4049,20 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-offer-yesno-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-wod-offer-yes","data":{"text":"Yes!"}}"""
+            Text = JsonSerializer.Serialize(new
+            {
+                type = "CLIENT_ASR", transID = "trans-wod-offer-yes", data = new { text = speech }
+            })
         });
 
-        Assert.True(replies.Count >= 3);
-
+        Assert.Equal(new[] { "LISTEN", "EOS" }, replies.Select(ReadReplyType));
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
-        Assert.Single(rules.EnumerateArray());
-        var selectedRule = rules[0].GetString();
-        Assert.True(
-            string.Equals(selectedRule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(selectedRule, "word-of-the-day/menu", StringComparison.OrdinalIgnoreCase));
-        Assert.Equal(selectedRule,
-            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
-        Assert.Equal(
-            "word-of-the-day",
-            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
-                .GetProperty("domain").GetString());
+        var data = listenPayload.RootElement.GetProperty("data");
+        var nlu = data.GetProperty("nlu");
+        Assert.Equal(expectedIntent, nlu.GetProperty("intent").GetString());
+        Assert.Equal(rule, Assert.Single(nlu.GetProperty("rules").EnumerateArray()).GetString());
+        Assert.False(data.TryGetProperty("match", out var match) && match.TryGetProperty("launch", out var launch) &&
+            launch.GetBoolean());
     }
 
     [Fact]
@@ -6896,13 +6904,16 @@ public sealed class JiboWebSocketServiceTests
         Assert.False(session.TurnState.AwaitingTurnCompletion);
     }
 
-    [Fact]
-    public async Task BufferedAudio_SurprisesDateOfferPrompt_ReturnsLocalYesWithoutSkillAction()
+    [Theory]
+    [InlineData("surprises-date/offer_date_fact", "Yes.", "yes")]
+    [InlineData("word-of-the-day/surprise", "What's that?", "whatsThat")]
+    public async Task BufferedAudio_SurpriseOfferPrompt_ReturnsLocalReplyWithoutSkillAction(
+        string rule, string speech, string expectedIntent)
     {
         var stateStore = new InMemoryCloudStateStore();
         var service = CreateService(stateStore, sttStrategies:
         [
-            new QueuedBufferedAudioSttStrategy("Yes.")
+            new QueuedBufferedAudioSttStrategy(speech)
         ]);
 
         await service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -6911,8 +6922,16 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-surprises-date-yesno-token",
-            Text =
-                """{"type":"LISTEN","transID":"trans-surprises-date-yesno","data":{"hotphrase":false,"rules":["surprises-date/offer_date_fact","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"],"earlyEOS":["$YESNO"],"encoding":"OGG_OPUS","sampleRate":16000}}}"""
+            Text = JsonSerializer.Serialize(new
+            {
+                type = "LISTEN", transID = "trans-surprises-date-yesno",
+                data = new
+                {
+                    hotphrase = false,
+                    rules = new[] { rule, "globals/gui_nav", "globals/mim_repeat", "globals/global_commands_launch" },
+                    asr = new { hints = new[] { "$YESNO" }, earlyEOS = new[] { "$YESNO" }, encoding = "OGG_OPUS", sampleRate = 16000 }
+                }
+            })
         });
 
         foreach (var frame in new[]
@@ -6957,13 +6976,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("yes",
-            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("yes",
+        Assert.Equal(expectedIntent,
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("surprises-date/offer_date_fact",
+        Assert.Equal(rule,
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
-        Assert.Equal("yes", session.LastIntent);
         Assert.False(session.TurnState.AwaitingTurnCompletion);
     }
 
@@ -9634,8 +9650,12 @@ public sealed class JiboWebSocketServiceTests
         }
     }
 
-    [Fact]
-    public async Task ProactiveArrival_RecordsGreetingInLinkedRobotLoopInsteadOfBootstrapLoop()
+    [Theory]
+    [InlineData(null, "Good morning, Jake", "proactive_greeting")]
+    [InlineData("what time is it", "Hello, Jake", "proactive_greeting")]
+    [InlineData("my birthday is March 14", "Happy birthday, Jake", "proactive_birthday_greeting")]
+    public async Task ProactiveArrival_RecordsGreetingInLinkedRobotLoopInsteadOfBootstrapLoop(
+        string? earlierTranscript, string greetingText, string greetingIntent)
     {
         const string runtimeId = "arrival-runtime";
         const string deviceId = "arrival-device";
@@ -9644,6 +9664,8 @@ public sealed class JiboWebSocketServiceTests
         _store.UpsertDevice(new DeviceRegistration { DeviceId = runtimeId, RobotId = runtimeId });
         _store.UpsertDevice(new DeviceRegistration { DeviceId = deviceId, RobotId = robotId });
         var loop = _store.AddLoop("Arrival household", _store.GetAccount().AccountId, robotId, robotId);
+        _store.SyncPeopleFromLoopUsers(loop.LoopId, robotId,
+            [new LoopUserSnapshot("arrival-person", FirstName: "Jake")]);
         var token = _store.IssueHubToken(runtimeId);
         var session = _store.OpenSession("neo-hub-proactive", runtimeId, token, "neo-hub.jibo.com", "/v1/proactive");
         Assert.True(_store.BindSessionToDevice(session.SessionId, deviceId));
@@ -9658,6 +9680,32 @@ public sealed class JiboWebSocketServiceTests
             cloudStateStore: _store);
         var service = new JiboWebSocketService(_store, new NullWebSocketTelemetrySink(), finalizer);
 
+        if (earlierTranscript is not null)
+        {
+            var listenToken = _store.IssueHubToken(runtimeId);
+            var listen = _store.OpenSession("neo-hub-listen", runtimeId, listenToken, "neo-hub.jibo.com", "/v1/listen");
+            Assert.True(_store.BindSessionToDevice(listen.SessionId, deviceId));
+            await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                ConnectionId = "morning-listen", HostName = "neo-hub.jibo.com", Path = "/v1/listen",
+                Kind = "neo-hub-listen", Token = listenToken,
+                Text = """{"type":"CONTEXT","transID":"morning-interaction","data":{"runtime":{"location":{"iso":"2026-03-14T08:00:00-05:00"},"loop":{"jibo":{"id":"arrival-runtime"},"users":[{"id":"arrival-person","firstName":"Jake"}]},"perception":{"speaker":"arrival-person"}}}}"""
+            });
+            var earlierReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                ConnectionId = "morning-listen", HostName = "neo-hub.jibo.com", Path = "/v1/listen",
+                Kind = "neo-hub-listen", Token = listenToken,
+                Text = JsonSerializer.Serialize(new
+                {
+                    type = "CLIENT_ASR", transID = "morning-interaction", data = new { text = earlierTranscript }
+                })
+            });
+            Assert.NotEmpty(earlierReplies);
+            var interaction = Assert.Single(_store.GetGreetingPresences(loop.LoopId));
+            Assert.Null(interaction.LastGreetedUtc);
+            Assert.Equal(new DateTimeOffset(2026, 3, 14, 13, 0, 0, TimeSpan.Zero), interaction.LastSeenUtc);
+        }
+
         await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
             ConnectionId = connectionId,
@@ -9671,10 +9719,11 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CONTEXT","transID":"arrival-test","data":{"runtime":{"location":{"iso":"2026-03-14T09:00:00-05:00"},"loop":{"jibo":{"id":"arrival-runtime"},"users":[{"id":"arrival-person","firstName":"Jake"}]},"perception":{"peoplePresent":[{"id":"arrival-person"}]}}}}"""
         });
 
-        Assert.Contains(replies, reply => ReadReplyType(reply) == "SKILL_ACTION");
+        var greetingReply = Assert.Single(replies, reply => ReadReplyType(reply) == "SKILL_ACTION");
+        Assert.Contains(greetingText, greetingReply.Text);
         var greeting = Assert.Single(_store.GetGreetingPresences(loop.LoopId));
         Assert.Equal("arrival-person", greeting.PersonId);
-        Assert.Equal("proactive_greeting", greeting.LastGreetingIntent);
+        Assert.Equal(greetingIntent, greeting.LastGreetingIntent);
         Assert.Empty(_store.GetGreetingPresences("openjibo-default-loop"));
     }
 

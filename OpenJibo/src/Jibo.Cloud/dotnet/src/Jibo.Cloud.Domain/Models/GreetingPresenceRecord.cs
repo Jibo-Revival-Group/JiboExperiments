@@ -10,6 +10,7 @@ public sealed class GreetingPresenceRecord
     public string? PreferredName { get; init; }
     public DateTimeOffset LastSeenUtc { get; init; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? LastGreetedUtc { get; init; }
+    public DateOnly? LastBirthdayGreetingDate { get; init; }
     public string? LastGreetingRoute { get; init; }
     public string? LastGreetingIntent { get; init; }
     public DateTimeOffset CreatedUtc { get; init; } = DateTimeOffset.UtcNow;

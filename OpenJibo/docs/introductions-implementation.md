@@ -73,3 +73,16 @@ The implementation was verified by:
 - The cloud server only handles the initial launch routing
 - All enrollment processing happens robot-side through the Jibo SDK
 - The skill prompt is "Meet someone new" as defined in package.json
+
+## Stock contact picker order
+
+The installed 1.9.2 skill and the Pegasus source both define the sort in
+`mims/en-us/VoiceFaceTrainingMenu.mim`. Jibo's `ContactsView` reads the local
+Loop and displays people with neither face nor voice enrolled first, people with
+one enrolled next, and people with both enrolled last. It excludes the robot
+itself. Each group retains its order from the local Loop.
+
+A profile photo is separate from face and voice enrollment. Uploading one can
+change the contact image after sync without moving the person to another group.
+Putting an enrolled person ahead of unenrolled people requires a robot-side
+picker change.

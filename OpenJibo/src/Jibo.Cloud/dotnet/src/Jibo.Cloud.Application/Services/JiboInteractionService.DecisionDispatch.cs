@@ -1510,6 +1510,7 @@ public sealed partial class JiboInteractionService
             "yes" => new JiboInteractionDecision("yes", "Yes."),
             "no" => new JiboInteractionDecision("no", "No."),
             "skill_listen" => new JiboInteractionDecision("skill_listen", string.Empty),
+            WordOfDayOffer.TutorialIntent => new JiboInteractionDecision(WordOfDayOffer.TutorialIntent, string.Empty),
             "prompt_echo" => new JiboInteractionDecision("prompt_echo", string.Empty),
             "word_of_the_day" => BuildWordOfTheDayLaunchDecision(),
             "word_of_the_day_guess" => BuildWordOfTheDayGuessDecision(clientEntities, transcript, listenAsrHints),

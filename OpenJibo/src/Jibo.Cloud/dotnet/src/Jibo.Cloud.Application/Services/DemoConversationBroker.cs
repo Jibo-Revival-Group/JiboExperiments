@@ -86,6 +86,7 @@ public sealed class DemoConversationBroker(JiboInteractionService interactionSer
             "memory_get_affinity" => false,
             "word_of_the_day" => false,
             "word_of_the_day_guess" => false,
+            WordOfDayOffer.TutorialIntent => false,
             "radio" => false,
             "radio_genre" => false,
             "bad_apple" => false,

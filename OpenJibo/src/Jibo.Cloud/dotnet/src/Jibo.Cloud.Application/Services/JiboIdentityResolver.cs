@@ -42,6 +42,16 @@ public static class JiboIdentityResolver
         candidate?.StartsWith(JiboCloudProtocolService.StockOwnerPlaceholderPrefix,
             StringComparison.OrdinalIgnoreCase) is true;
 
+    internal static LoopRecord? FindRegisteredRobotLoop(string? registeredRobotId, ICloudStateStore? store)
+    {
+        if (store is null || string.IsNullOrWhiteSpace(registeredRobotId)) return null;
+
+        var matchingLoops = store.GetLoops().Where(loop => !loop.IsSuspended &&
+            (loop.RobotId.Equals(registeredRobotId, StringComparison.OrdinalIgnoreCase) ||
+             loop.RobotFriendlyId.Equals(registeredRobotId, StringComparison.OrdinalIgnoreCase))).Take(2).ToArray();
+        return matchingLoops.Length == 1 ? matchingLoops[0] : null;
+    }
+
     internal static DeviceRegistration? FindRobotForStockOwnerPlaceholder(string candidate, ICloudStateStore store)
     {
         // Resolve only an owner edge generated for an existing Loop with an active robot registration.

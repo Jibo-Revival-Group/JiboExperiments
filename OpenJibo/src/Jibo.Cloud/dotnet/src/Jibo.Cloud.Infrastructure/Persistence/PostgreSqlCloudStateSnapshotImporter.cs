@@ -557,14 +557,14 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
         foreach (var item in s.GreetingPresences ?? [])
             await ExecuteAsync(c, tx, """
                 INSERT INTO GreetingPresences (GreetingPresenceId,AccountId,LoopId,PersonId,SpeakerId,PreferredName,
-                    LastSeenUtc,LastGreetedUtc,LastGreetingRoute,LastGreetingIntent,CreatedUtc,UpdatedUtc)
-                VALUES (@id,@account,@loop,@person,@speaker,@preferred,@seen,@greeted,@route,@intent,@created,@updated)
+                    LastSeenUtc,LastGreetedUtc,LastGreetingRoute,LastGreetingIntent,CreatedUtc,UpdatedUtc,LastBirthdayGreetingDate)
+                VALUES (@id,@account,@loop,@person,@speaker,@preferred,@seen,@greeted,@route,@intent,@created,@updated,@birthday)
                 ON CONFLICT (GreetingPresenceId) DO NOTHING
                 """, ct, ("id", item.Id), ("account", item.AccountId), ("loop", item.LoopId),
                 ("person", item.PersonId), ("speaker", item.SpeakerId), ("preferred", item.PreferredName),
                 ("seen", item.LastSeenUtc), ("greeted", item.LastGreetedUtc),
                 ("route", item.LastGreetingRoute), ("intent", item.LastGreetingIntent),
-                ("created", item.CreatedUtc), ("updated", item.UpdatedUtc));
+                ("created", item.CreatedUtc), ("updated", item.UpdatedUtc), ("birthday", item.LastBirthdayGreetingDate));
     }
 
     private async Task ImportSecretsAndTokensAsync(NpgsqlConnection c, NpgsqlTransaction tx,

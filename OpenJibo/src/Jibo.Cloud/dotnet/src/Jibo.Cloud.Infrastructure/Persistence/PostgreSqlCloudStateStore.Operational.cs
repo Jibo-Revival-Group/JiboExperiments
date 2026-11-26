@@ -71,6 +71,12 @@ public sealed partial class PostgreSqlCloudStateStore
     public GreetingPresenceRecord UpsertGreetingPresence(GreetingPresenceRecord greetingPresence) =>
         Sync(Required(_greetings, nameof(UpsertGreetingPresence)).UpsertAsync(greetingPresence));
 
+    public bool TryRecordBirthdayGreeting(GreetingPresenceRecord greetingPresence) =>
+        Sync(Required(_greetings, nameof(TryRecordBirthdayGreeting)).TryRecordBirthdayAsync(greetingPresence));
+
+    public void RecordGreetingInteraction(GreetingPresenceRecord presence, DateTimeOffset windowStartUtc) =>
+        Sync(Required(_greetings, nameof(RecordGreetingInteraction)).RecordInteractionAsync(presence, windowStartUtc));
+
     public IReadOnlyList<TrustedServerRecord> GetTrustedServers() =>
         Sync(Required(_trustedServers, nameof(GetTrustedServers)).ListAsync(includeInactive: true));
     public TrustedServerRecord? FindTrustedServer(string canonicalHost) => GetTrustedServers().FirstOrDefault(item =>

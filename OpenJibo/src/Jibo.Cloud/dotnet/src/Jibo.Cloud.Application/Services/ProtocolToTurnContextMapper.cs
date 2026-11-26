@@ -23,6 +23,9 @@ public sealed class ProtocolToTurnContextMapper
         if (!string.IsNullOrWhiteSpace(turnState.TransId)) attributes["transID"] = turnState.TransId;
 
         if (!string.IsNullOrWhiteSpace(session.AccountId)) attributes["accountId"] = session.AccountId;
+        if (session.Metadata.TryGetValue("registeredRobotId", out var registeredRobotId) &&
+            registeredRobotId is string registeredRobotIdText)
+            attributes["registeredRobotId"] = registeredRobotIdText;
 
         var robotFriendlyId = SessionRobotIdentityBinder.ResolveRobotFriendlyId(session, turnState.ContextPayload);
         if (!string.IsNullOrWhiteSpace(robotFriendlyId))

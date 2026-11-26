@@ -22,6 +22,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
             return MapRobotSkillFollowUp(transId, IntroductionsFollowUp.Rule, transcript, selection.Intent,
                 selection.Entities, "@be/introductions");
 
+        if (string.Equals(plan.IntentName, WordOfDayOffer.TutorialIntent, StringComparison.Ordinal))
+            return MapRobotSkillFollowUp(transId, WordOfDayOffer.SurpriseRule, transcript, "whatsThat",
+                new Dictionary<string, object?>());
+
         var clientIntent = ReadAttribute(turn, "clientIntent");
         var rules = ReadRules(turn, messageType);
         var yesNoRule = ReadYesNoRule(turn);
@@ -855,7 +859,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
     {
         return rule.StartsWith("tutorial/", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "create/is_it_a_keeper", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase);
+               string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
+               WordOfDayOffer.IsYesNoRule(rule);
     }
 
     private static string? ReadYesNoRule(TurnContext turn)

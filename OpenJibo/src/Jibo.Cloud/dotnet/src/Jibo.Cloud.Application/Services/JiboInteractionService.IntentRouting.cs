@@ -56,15 +56,20 @@ public sealed partial class JiboInteractionService
         if (TranscriptHeuristics.IsLikelySkillOfferPromptEcho(loweredTranscript))
             return isYesNoTurn || isSkillOwnedListen ? "skill_listen" : "prompt_echo";
 
+        if (isSkillOwnedListen && WordOfDayOffer.IsSurpriseRule(yesNoRule) &&
+            (string.Equals(clientIntent, "whatsThat", StringComparison.OrdinalIgnoreCase) ||
+             WordOfDayOffer.IsTutorialReply(loweredTranscript)))
+            return WordOfDayOffer.TutorialIntent;
+
         if (isYesNoTurn)
         {
             var yesNoReply = TryClassifyYesNoReply(NormalizeCommandPhrase(loweredTranscript));
             switch (yesNoReply)
             {
                 case YesNoReply.Affirmative:
-                    return ResolveAffirmativeYesNoIntent(yesNoRule);
+                    return "yes";
                 case YesNoReply.Negative:
-                    return ResolveNegativeYesNoIntent(yesNoRule);
+                    return "no";
                 case YesNoReply.Ambiguous:
                     return "yes_no_clarify";
             }

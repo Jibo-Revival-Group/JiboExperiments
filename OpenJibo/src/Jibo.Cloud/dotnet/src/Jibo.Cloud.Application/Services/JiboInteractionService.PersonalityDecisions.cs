@@ -256,7 +256,11 @@ public sealed partial class JiboInteractionService
         DateTimeOffset? referenceLocalTime)
     {
         var displayName = ResolvePreferredGreetingName(turn, presence);
-        var specialGreeting = ResolveSpecialGreetingPrefix(turn, presence, referenceLocalTime);
+        var today = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).Date);
+        var birthday = ResolveBirthdayGreeting(turn, presence, today);
+        var birthdayRecorded = birthday is not null &&
+            RecordGreetingPresence(turn, presence, birthday.Route, birthday.IntentName, displayName, true, today);
+        var specialGreeting = birthdayRecorded ? birthday : ResolveHolidayGreeting(turn, today);
         var route = specialGreeting?.Route ?? "ProactiveGreeting";
         var intentName = specialGreeting?.IntentName ?? "proactive_greeting";
         var replyText = specialGreeting is null
@@ -264,7 +268,8 @@ public sealed partial class JiboInteractionService
             : string.IsNullOrWhiteSpace(displayName)
                 ? $"{specialGreeting.Prefix}. I am glad to see you."
                 : $"{specialGreeting.Prefix}, {displayName}. It is nice to celebrate with you.";
-        RecordGreetingPresence(turn, presence, route, intentName, displayName, true);
+        if (!birthdayRecorded)
+            RecordGreetingPresence(turn, presence, route, intentName, displayName, true);
         return new JiboInteractionDecision(
             intentName,
             replyText,
@@ -365,24 +370,25 @@ public sealed partial class JiboInteractionService
         return updates;
     }
 
-    private void RecordGreetingPresence(
+    private bool RecordGreetingPresence(
         TurnContext turn,
         GreetingPresenceProfile presence,
         string route,
         string intentName,
         string? preferredName,
-        bool proactive)
+        bool proactive,
+        DateOnly? birthdayDate = null)
     {
-        if (cloudStateStore is null) return;
+        if (cloudStateStore is null) return true;
 
         var identityId = ResolveGreetingHistoryIdentity(presence);
-        if (string.IsNullOrWhiteSpace(identityId)) return;
+        if (string.IsNullOrWhiteSpace(identityId)) return false;
 
         var now = DateTimeOffset.UtcNow;
         var tenantScope = ResolveTenantScope(turn, identityId);
         try
         {
-            cloudStateStore.UpsertGreetingPresence(new GreetingPresenceRecord
+            var record = new GreetingPresenceRecord
             {
                 AccountId = tenantScope.AccountId,
                 LoopId = tenantScope.LoopId,
@@ -391,15 +397,21 @@ public sealed partial class JiboInteractionService
                 PreferredName = preferredName,
                 LastSeenUtc = now,
                 LastGreetedUtc = now,
+                LastBirthdayGreetingDate = birthdayDate,
                 LastGreetingRoute = route,
                 LastGreetingIntent = intentName
-            });
+            };
+            if (birthdayDate is not null)
+                return cloudStateStore.TryRecordBirthdayGreeting(record);
+            cloudStateStore.UpsertGreetingPresence(record);
+            return true;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger?.LogWarning(exception,
                 "Could not save greeting history; continuing the interaction. turnId={TurnId} loopId={LoopId}",
                 turn.TurnId, tenantScope.LoopId);
+            return false;
         }
     }
 
@@ -439,24 +451,17 @@ public sealed partial class JiboInteractionService
     {
         var localTime = referenceLocalTime ?? DateTimeOffset.UtcNow;
         var lastGreeting = greetingHistory?.LastGreetedUtc;
-        if (localTime.Hour is >= 5 and < 12 &&
-            (lastGreeting is null || lastGreeting.Value.ToOffset(localTime.Offset).DateTime < localTime.Date.AddHours(5)))
+        var isMorning = localTime.Hour is >= 5 and < 12;
+        if (isMorning && (greetingHistory is null || greetingHistory.LastSeenUtc < GetGreetingMorningStart(localTime)))
             return "Good morning";
 
         if (lastGreeting is not null && DateTimeOffset.UtcNow - lastGreeting.Value < TimeSpan.FromHours(8))
             return "Welcome back";
-        return ResolveTimeOfDayGreetingPrefix(referenceLocalTime);
+        return isMorning ? "Hello" : ResolveTimeOfDayGreetingPrefix(referenceLocalTime);
     }
 
-    private SpecialGreetingPrefix? ResolveSpecialGreetingPrefix(
-        TurnContext turn,
-        GreetingPresenceProfile presence,
-        DateTimeOffset? referenceLocalTime)
-    {
-        var today = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).Date);
-        var birthday = ResolveBirthdayGreeting(turn, presence, today);
-        return birthday ?? ResolveHolidayGreeting(turn, today);
-    }
+    internal static DateTimeOffset GetGreetingMorningStart(DateTimeOffset localTime) =>
+        new(localTime.Date.AddHours(5), localTime.Offset);
 
     private SpecialGreetingPrefix? ResolveBirthdayGreeting(
         TurnContext turn,
@@ -466,7 +471,9 @@ public sealed partial class JiboInteractionService
         if (string.IsNullOrWhiteSpace(presence.PrimaryPersonId)) return null;
 
         var identityScope = ResolveTenantScope(turn, presence.PrimaryPersonId);
-        var birthdayDate = TryParseBirthdayDate(personalMemoryStore.GetBirthday(identityScope));
+        var registeredScope = ResolveRegisteredBirthdayScope(turn, presence.PrimaryPersonId);
+        var birthday = registeredScope is null ? null : personalMemoryStore.GetBirthday(registeredScope);
+        var birthdayDate = TryParseBirthdayDate(birthday ?? personalMemoryStore.GetBirthday(identityScope));
         if (birthdayDate is null && cloudStateStore is not null)
         {
             var member = cloudStateStore.GetLoopMembers(identityScope.LoopId).FirstOrDefault(member =>

@@ -181,6 +181,17 @@ Required coverage:
   received the expected replies in production.
 - Verify the unsolicited morning greeting on the first eligible quiet arrival
   between 5 a.m. and noon, using the robot’s local time.
+- For the birthday path, have an enrolled household member say “My birthday is
+  [month and day]” and confirm “When is my birthday?” recalls it. On that local
+  date, have them return quietly after the greeting cooldown. Expect one
+  birthday wish, then an ordinary greeting on a later eligible return that day.
+- For daytime suggestions, watch for a Word of the Day suggestion during an idle
+  surprise. If it comes up, ask for the word of the day and confirm the game
+  opens. A surprise can also choose another routine, so a single idle period
+  is inconclusive.
+- If the stock Word of the Day skill asks whether you want to play, reply
+  “Yes,” “No,” or “What's that?” on separate offers. Expect the game, a return
+  to idle, or the tutorial, respectively.
 
 ## Firmware Follow-up for Missed Relaxed-Mode Arrivals
 

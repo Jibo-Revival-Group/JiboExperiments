@@ -254,12 +254,13 @@ internal sealed class PostgreSqlAtomicLoopBackupRestorer(PostgreSqlCloudStateDat
     {
         await using var q = new NpgsqlCommand("""
             INSERT INTO GreetingPresences(GreetingPresenceId,AccountId,LoopId,PersonId,SpeakerId,PreferredName,
-                LastSeenUtc,LastGreetedUtc,LastGreetingRoute,LastGreetingIntent,CreatedUtc,UpdatedUtc)
-            VALUES(@id,@account,@loop,@person,@speaker,@preferred,@seen,@greeted,@route,@intent,@created,@updated)
+                LastSeenUtc,LastGreetedUtc,LastGreetingRoute,LastGreetingIntent,CreatedUtc,UpdatedUtc,LastBirthdayGreetingDate)
+            VALUES(@id,@account,@loop,@person,@speaker,@preferred,@seen,@greeted,@route,@intent,@created,@updated,@birthday)
             ON CONFLICT(LoopId,PersonId) DO UPDATE SET SpeakerId=EXCLUDED.SpeakerId,
                 PreferredName=EXCLUDED.PreferredName,LastSeenUtc=EXCLUDED.LastSeenUtc,
                 LastGreetedUtc=EXCLUDED.LastGreetedUtc,LastGreetingRoute=EXCLUDED.LastGreetingRoute,
-                LastGreetingIntent=EXCLUDED.LastGreetingIntent,UpdatedUtc=EXCLUDED.UpdatedUtc
+                LastGreetingIntent=EXCLUDED.LastGreetingIntent,UpdatedUtc=EXCLUDED.UpdatedUtc,
+                LastBirthdayGreetingDate=EXCLUDED.LastBirthdayGreetingDate
             WHERE GreetingPresences.AccountId=EXCLUDED.AccountId
             """, c, t);
         q.Parameters.AddWithValue("id", value.Id); q.Parameters.AddWithValue("account", value.AccountId);
@@ -267,6 +268,7 @@ internal sealed class PostgreSqlAtomicLoopBackupRestorer(PostgreSqlCloudStateDat
         Text(q, "speaker", value.SpeakerId); Text(q, "preferred", value.PreferredName);
         q.Parameters.AddWithValue("seen", value.LastSeenUtc); Time(q, "greeted", value.LastGreetedUtc);
         Text(q, "route", value.LastGreetingRoute); Text(q, "intent", value.LastGreetingIntent);
+        Ops.NullableDate(q, "birthday", value.LastBirthdayGreetingDate);
         q.Parameters.AddWithValue("created", value.CreatedUtc); q.Parameters.AddWithValue("updated", value.UpdatedUtc);
         await RequireMutationAsync(q, ct);
     }

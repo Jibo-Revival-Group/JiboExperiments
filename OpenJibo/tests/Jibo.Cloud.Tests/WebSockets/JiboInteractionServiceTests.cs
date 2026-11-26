@@ -783,6 +783,29 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("Happy birthday", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Jake", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("ProactiveBirthdayGreeting", decision.ContextUpdates![GreetingRouteKey]);
+
+        Assert.Equal(new DateOnly(2026, 3, 14),
+            Assert.Single(cloudStateStore.GetGreetingPresences("loop-bday")).LastBirthdayGreetingDate);
+        cloudStateStore.UpsertGreetingPresence(new GreetingPresenceRecord
+        {
+            AccountId = "acct-bday", LoopId = "loop-bday", PersonId = "person-7",
+            LastGreetedUtc = DateTimeOffset.UtcNow.AddHours(-1), LastGreetingIntent = "hello"
+        });
+
+        var returnVisit = await service.BuildDecisionAsync(new TurnContext
+        {
+            DeviceId = "device-bday",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-bday", ["loopId"] = "loop-bday", ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "NEW_ARRIVAL",
+                ["context"] = """{"runtime":{"location":{"iso":"2026-03-14T10:00:00-05:00"},"perception":{"speaker":"person-7"}}}"""
+            }
+        });
+
+        Assert.Equal("proactive_greeting", returnVisit.IntentName);
+        Assert.Equal(new DateOnly(2026, 3, 14),
+            Assert.Single(cloudStateStore.GetGreetingPresences("loop-bday")).LastBirthdayGreetingDate);
     }
 
     [Theory]
@@ -2752,6 +2775,39 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("memory_get_birthday", recallDecision.IntentName);
         Assert.Equal("You told me your birthday is april 12.", recallDecision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_BirthdayMemory_RecallsOnlyTheRecognizedLoopMemberBirthday()
+    {
+        const string robotId = "birthday-robot";
+        var state = new InMemoryCloudStateStore();
+        var loop = state.AddLoop("Birthday household", state.GetAccount().AccountId, robotId, robotId);
+        state.SyncPeopleFromLoopUsers(loop.LoopId, robotId,
+            [new LoopUserSnapshot("pat", FirstName: "Pat"), new LoopUserSnapshot("sam", FirstName: "Sam")]);
+        var service = CreateService(new InMemoryPersonalMemoryStore(), cloudStateStore: state);
+
+        async Task<JiboInteractionDecision> Ask(string speaker, string text) =>
+            await service.BuildDecisionAsync(new TurnContext
+            {
+                RawTranscript = text,
+                NormalizedTranscript = text,
+                DeviceId = "birthday-runtime",
+                Attributes = new Dictionary<string, object?>
+                {
+                    ["registeredRobotId"] = robotId,
+                    ["context"] = $$$$"""
+                        {"runtime":{"perception":{"speaker":"{{{{speaker}}}}"},
+                        "loop":{"users":[{"id":"pat","firstName":"Pat"},{"id":"sam","firstName":"Sam"}]}}}
+                        """
+                }
+            });
+
+        var remembered = await Ask("pat", "my birthday is April 12");
+        Assert.Equal("memory_set_birthday", remembered.IntentName);
+        Assert.Equal("pat", Assert.Single(state.GetHolidays(loop.LoopId), holiday => holiday.Category == "birthday").MemberId);
+        Assert.Equal("You told me your birthday is april 12.", (await Ask("pat", "when is my birthday")).ReplyText);
+        Assert.StartsWith("I do not know your birthday yet.", (await Ask("sam", "when is my birthday")).ReplyText);
     }
 
     [Fact]
@@ -5895,7 +5951,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_WordOfDayOfferPrompt_WithNoisyAffirmation_MapsToWordOfDayLaunch()
+    public async Task BuildDecisionAsync_WordOfDayOfferPrompt_WithNoisyAffirmation_ReturnsLocalYes()
     {
         var service = CreateService();
 
@@ -5911,9 +5967,8 @@ public sealed class JiboInteractionServiceTests
             }
         });
 
-        Assert.Equal("word_of_the_day", decision.IntentName);
-        Assert.Equal("Starting word of the day.", decision.ReplyText);
-        Assert.Equal("@be/word-of-the-day", decision.SkillName);
+        Assert.Equal("yes", decision.IntentName);
+        Assert.Null(decision.SkillName);
     }
 
     [Fact]

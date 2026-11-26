@@ -2510,7 +2510,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     public IReadOnlyList<GreetingPresenceRecord> GetGreetingPresences(string? loopId = null)
     {
         var resolvedLoopId = string.IsNullOrWhiteSpace(loopId) ? ResolveDefaultLoopId() : loopId.Trim();
-        return _greetingPresences
+        lock (_syncRoot)
+            return _greetingPresences
             .Where(greeting =>
                 string.Equals(greeting.LoopId, resolvedLoopId, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(static greeting => greeting.LastGreetedUtc ?? greeting.LastSeenUtc)
@@ -2519,6 +2520,27 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     public GreetingPresenceRecord UpsertGreetingPresence(GreetingPresenceRecord greetingPresence)
+    {
+        lock (_syncRoot)
+            return UpsertGreetingPresenceCore(greetingPresence, onlyIfNewBirthday: false)!;
+    }
+
+    public bool TryRecordBirthdayGreeting(GreetingPresenceRecord greetingPresence)
+    {
+        if (greetingPresence.LastBirthdayGreetingDate is null)
+            throw new ArgumentException("The local birthday greeting date is required.", nameof(greetingPresence));
+        lock (_syncRoot)
+            return UpsertGreetingPresenceCore(greetingPresence, onlyIfNewBirthday: true) is not null;
+    }
+
+    public void RecordGreetingInteraction(GreetingPresenceRecord presence, DateTimeOffset windowStartUtc)
+    {
+        lock (_syncRoot)
+            UpsertGreetingPresenceCore(presence, onlyIfNewBirthday: false, interactionWindowStart: windowStartUtc);
+    }
+
+    private GreetingPresenceRecord? UpsertGreetingPresenceCore(GreetingPresenceRecord greetingPresence,
+        bool onlyIfNewBirthday, DateTimeOffset? interactionWindowStart = null)
     {
         var resolvedLoopId = string.IsNullOrWhiteSpace(greetingPresence.LoopId)
             ? ResolveDefaultLoopId()
@@ -2529,35 +2551,43 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         var normalizedId = string.IsNullOrWhiteSpace(greetingPresence.Id)
             ? $"greeting-presence-{resolvedLoopId}-{Slugify(resolvedPersonId)}"
             : greetingPresence.Id.Trim();
-        var now = DateTimeOffset.UtcNow;
-        var resolvedPresence = new GreetingPresenceRecord
-        {
-            Id = normalizedId,
-            AccountId = string.IsNullOrWhiteSpace(greetingPresence.AccountId)
-                ? _account.AccountId
-                : greetingPresence.AccountId.Trim(),
-            LoopId = resolvedLoopId,
-            PersonId = resolvedPersonId,
-            SpeakerId =
-                string.IsNullOrWhiteSpace(greetingPresence.SpeakerId) ? null : greetingPresence.SpeakerId.Trim(),
-            PreferredName = string.IsNullOrWhiteSpace(greetingPresence.PreferredName)
-                ? null
-                : greetingPresence.PreferredName.Trim(),
-            LastSeenUtc = greetingPresence.LastSeenUtc == default ? now : greetingPresence.LastSeenUtc,
-            LastGreetedUtc = greetingPresence.LastGreetedUtc,
-            LastGreetingRoute = string.IsNullOrWhiteSpace(greetingPresence.LastGreetingRoute)
-                ? null
-                : greetingPresence.LastGreetingRoute.Trim(),
-            LastGreetingIntent = string.IsNullOrWhiteSpace(greetingPresence.LastGreetingIntent)
-                ? null
-                : greetingPresence.LastGreetingIntent.Trim(),
-            CreatedUtc = greetingPresence.CreatedUtc == default ? now : greetingPresence.CreatedUtc,
-            UpdatedUtc = now
-        };
-
         var existingIndex = _greetingPresences.FindIndex(existing =>
             string.Equals(existing.LoopId, resolvedLoopId, StringComparison.OrdinalIgnoreCase) &&
             string.Equals(existing.PersonId, resolvedPersonId, StringComparison.OrdinalIgnoreCase));
+        var previous = existingIndex >= 0 ? _greetingPresences[existingIndex] : null;
+        var previousBirthday = previous?.LastBirthdayGreetingDate;
+        if (onlyIfNewBirthday && previousBirthday >= greetingPresence.LastBirthdayGreetingDate)
+            return null;
+        if (interactionWindowStart is not null && previous?.LastSeenUtc >= interactionWindowStart)
+            return null;
+
+        var now = DateTimeOffset.UtcNow;
+        var lastSeenUtc = greetingPresence.LastSeenUtc == default ? now : greetingPresence.LastSeenUtc;
+        var greeting = interactionWindowStart is not null ? previous ?? greetingPresence : greetingPresence;
+        var resolvedPresence = new GreetingPresenceRecord
+        {
+            Id = previous?.Id ?? normalizedId,
+            AccountId = string.IsNullOrWhiteSpace(greeting.AccountId)
+                ? _account.AccountId
+                : greeting.AccountId.Trim(),
+            LoopId = resolvedLoopId,
+            PersonId = resolvedPersonId,
+            SpeakerId = string.IsNullOrWhiteSpace(greeting.SpeakerId) ? null : greeting.SpeakerId.Trim(),
+            PreferredName = string.IsNullOrWhiteSpace(greeting.PreferredName)
+                ? null
+                : greeting.PreferredName.Trim(),
+            LastSeenUtc = previous?.LastSeenUtc > lastSeenUtc ? previous.LastSeenUtc : lastSeenUtc,
+            LastGreetedUtc = greeting.LastGreetedUtc,
+            LastBirthdayGreetingDate = onlyIfNewBirthday ? greetingPresence.LastBirthdayGreetingDate : previousBirthday,
+            LastGreetingRoute = string.IsNullOrWhiteSpace(greeting.LastGreetingRoute)
+                ? null
+                : greeting.LastGreetingRoute.Trim(),
+            LastGreetingIntent = string.IsNullOrWhiteSpace(greeting.LastGreetingIntent)
+                ? null
+                : greeting.LastGreetingIntent.Trim(),
+            CreatedUtc = previous?.CreatedUtc ?? (greetingPresence.CreatedUtc == default ? now : greetingPresence.CreatedUtc),
+            UpdatedUtc = now
+        };
 
         if (existingIndex >= 0)
             _greetingPresences[existingIndex] = resolvedPresence;

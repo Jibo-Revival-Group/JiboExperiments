@@ -37,6 +37,9 @@ public interface IGreetingPresenceRepository
 {
     Task<IReadOnlyList<GreetingPresenceRecord>> ListAsync(string accountId, string loopId, int limit = 250, CancellationToken cancellationToken = default);
     Task<GreetingPresenceRecord> UpsertAsync(GreetingPresenceRecord presence, CancellationToken cancellationToken = default);
+    Task<bool> TryRecordBirthdayAsync(GreetingPresenceRecord presence, CancellationToken cancellationToken = default);
+    Task RecordInteractionAsync(GreetingPresenceRecord presence, DateTimeOffset windowStartUtc,
+        CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(string accountId, string loopId, string presenceId, CancellationToken cancellationToken = default);
 }
 

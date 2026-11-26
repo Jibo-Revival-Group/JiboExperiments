@@ -61,7 +61,8 @@ public sealed partial class JiboInteractionService
                 "memory_set_birthday",
                 "I can remember it if you say, my birthday is March 14.");
 
-        var tenantScope = ResolveTenantScope(turn);
+        var tenantScope = ResolveRegisteredBirthdayScope(turn, ReadKnownGreetingSpeaker(turn)) ??
+            ResolveTenantScope(turn);
         personalMemoryStore.SetBirthday(tenantScope, birthday);
         var birthdayDate = TryParseBirthdayDate(birthday);
         if (birthdayDate is null)
@@ -91,7 +92,12 @@ public sealed partial class JiboInteractionService
 
     private JiboInteractionDecision BuildRecallBirthdayDecision(TurnContext turn)
     {
-        var birthday = personalMemoryStore.GetBirthday(ResolveTenantScope(turn));
+        var speaker = ReadKnownGreetingSpeaker(turn);
+        var registeredScope = ResolveRegisteredBirthdayScope(turn, speaker);
+        var birthday = registeredScope is null
+            ? personalMemoryStore.GetBirthday(ResolveTenantScope(turn))
+            : personalMemoryStore.GetBirthday(registeredScope) ??
+              personalMemoryStore.GetBirthday(registeredScope with { DeviceId = ResolveTenantScope(turn).DeviceId });
         return string.IsNullOrWhiteSpace(birthday)
             ? new JiboInteractionDecision(
                 "memory_get_birthday",
@@ -99,6 +105,23 @@ public sealed partial class JiboInteractionService
             : new JiboInteractionDecision(
                 "memory_get_birthday",
                 $"You told me your birthday is {birthday}.");
+    }
+
+    private PersonalMemoryTenantScope? ResolveRegisteredBirthdayScope(TurnContext turn, string? personId)
+    {
+        if (string.IsNullOrWhiteSpace(personId) || JiboIdentityResolver.IsStockOwnerPlaceholder(personId) ||
+            cloudStateStore is null ||
+            JiboIdentityResolver.FindRegisteredRobotLoop(
+                ReadTenantAttribute(turn, "registeredRobotId"), cloudStateStore) is not { } loop)
+            return null;
+
+        var member = cloudStateStore.GetLoopMembers(loop.LoopId).FirstOrDefault(member =>
+            member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase) &&
+            member.Status.Equals("active", StringComparison.OrdinalIgnoreCase) &&
+            !member.Type.Equals("robot", StringComparison.OrdinalIgnoreCase));
+        return member is null
+            ? null
+            : new PersonalMemoryTenantScope(loop.OwnerAccountId, loop.LoopId, loop.RobotId, member.Id);
     }
 
     private static DateOnly? TryParseBirthdayDate(string? birthdayText)

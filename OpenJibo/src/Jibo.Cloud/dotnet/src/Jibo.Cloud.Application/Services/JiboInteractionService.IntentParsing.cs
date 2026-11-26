@@ -44,7 +44,7 @@ public sealed partial class JiboInteractionService
         };
     }
 
-    private static DateTimeOffset? TryResolveReferenceLocalTime(TurnContext turn)
+    internal static DateTimeOffset? TryResolveReferenceLocalTime(TurnContext turn)
     {
         if (!TryGetContextRuntime(turn, out var runtime)) return null;
 
@@ -240,21 +240,7 @@ public sealed partial class JiboInteractionService
                string.Equals(rule, "shared/yes_no", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string ResolveAffirmativeYesNoIntent(string? yesNoRule)
-    {
-        if (string.Equals(yesNoRule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase))
-            return "word_of_the_day";
-
-        return "yes";
-    }
-
-    private static string ResolveNegativeYesNoIntent(string? yesNoRule)
-    {
-        _ = yesNoRule;
-        return "no";
+               WordOfDayOffer.IsYesNoRule(rule);
     }
 
     private static bool MatchesAny(string loweredTranscript, params string[] candidates)
@@ -717,6 +703,12 @@ public sealed partial class JiboInteractionService
         {
             return GreetingPresenceProfile.Empty;
         }
+    }
+
+    internal static string? ReadKnownGreetingSpeaker(TurnContext turn)
+    {
+        var presence = ResolveGreetingPresenceProfile(turn);
+        return presence.SpeakerId is { } speaker && presence.LoopUserFirstNames.ContainsKey(speaker) ? speaker : null;
     }
 
     private static string? TryReadStringProperty(JsonElement source, params string[] propertyNames)

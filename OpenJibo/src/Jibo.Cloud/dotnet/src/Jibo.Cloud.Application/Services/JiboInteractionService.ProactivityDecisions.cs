@@ -27,7 +27,7 @@ public sealed partial class JiboInteractionService
         return randomizer.Choose(candidates) switch
         {
             "word_game" => new JiboInteractionDecision("proactive_word_game_suggestion",
-                "How about a quick word game? Just ask me for the word of the day."),
+                "For a quick word game, ask me to play Word of the Day."),
             "joke" when catalog.Jokes.Count > 0 => BuildProactiveJokeDecision(catalog) with { SkillName = "chitchat-skill" },
             _ => BuildProactiveFunFactDecision(catalog)
         };

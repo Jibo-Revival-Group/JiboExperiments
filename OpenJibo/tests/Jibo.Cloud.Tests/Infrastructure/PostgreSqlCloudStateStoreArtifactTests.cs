@@ -437,6 +437,10 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         internal List<GreetingPresenceRecord> Items { get; } = [.. values]; internal void Clear() => Items.Clear();
         public Task<IReadOnlyList<GreetingPresenceRecord>> ListAsync(string accountId, string loopId, int limit = 250, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<GreetingPresenceRecord>>(Items.Where(x => x.AccountId == accountId && x.LoopId == loopId).ToArray());
         public Task<GreetingPresenceRecord> UpsertAsync(GreetingPresenceRecord value, CancellationToken cancellationToken = default) { Items.RemoveAll(x => x.Id == value.Id); Items.Add(value); return Task.FromResult(value); }
+        public Task<bool> TryRecordBirthdayAsync(GreetingPresenceRecord value, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+        public Task RecordInteractionAsync(GreetingPresenceRecord value, DateTimeOffset windowStartUtc,
+            CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> DeleteAsync(string accountId, string loopId, string presenceId, CancellationToken cancellationToken = default) => Task.FromResult(false);
     }
 }

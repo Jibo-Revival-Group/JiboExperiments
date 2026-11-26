@@ -39,13 +39,107 @@ public sealed class PostgreSqlCalendarEventRepository(PostgreSqlCloudStateDataSo
 
 public sealed class PostgreSqlGreetingPresenceRepository(PostgreSqlCloudStateDataSource ds) : IGreetingPresenceRepository
 {
-    public async Task<IReadOnlyList<GreetingPresenceRecord>> ListAsync(string a, string l, int limit = 250, CancellationToken ct = default) { await using var c = await ds.Value.OpenConnectionAsync(ct); await using var q = c.CreateCommand(); q.CommandText = "SELECT GreetingPresenceId,AccountId,LoopId,PersonId,SpeakerId,PreferredName,LastSeenUtc,LastGreetedUtc,LastGreetingRoute,LastGreetingIntent,CreatedUtc,UpdatedUtc FROM GreetingPresences WHERE AccountId=@a AND LoopId=@l ORDER BY LastSeenUtc DESC LIMIT @limit"; Ops.Scope(q, a, l); q.Parameters.AddWithValue("limit", Math.Clamp(limit, 1, 1000)); var z = new List<GreetingPresenceRecord>(); await using var r = await q.ExecuteReaderAsync(ct); while (await r.ReadAsync(ct)) z.Add(new GreetingPresenceRecord { Id = r.GetString(0), AccountId = r.GetString(1), LoopId = r.GetString(2), PersonId = r.GetString(3), SpeakerId = Ops.Text(r, 4), PreferredName = Ops.Text(r, 5), LastSeenUtc = r.GetFieldValue<DateTimeOffset>(6), LastGreetedUtc = Ops.Time(r, 7), LastGreetingRoute = Ops.Text(r, 8), LastGreetingIntent = Ops.Text(r, 9), CreatedUtc = r.GetFieldValue<DateTimeOffset>(10), UpdatedUtc = r.GetFieldValue<DateTimeOffset>(11) }); return z; }
-    public async Task<GreetingPresenceRecord> UpsertAsync(GreetingPresenceRecord p, CancellationToken ct = default) { ArgumentNullException.ThrowIfNull(p); await using var c = await ds.Value.OpenConnectionAsync(ct); await using var t = await c.BeginTransactionAsync(ct); await using var q = new NpgsqlCommand("""
- INSERT INTO GreetingPresences(GreetingPresenceId,AccountId,LoopId,PersonId,SpeakerId,PreferredName,LastSeenUtc,LastGreetedUtc,LastGreetingRoute,LastGreetingIntent,CreatedUtc,UpdatedUtc)
- SELECT @id,@a,@l,@person,@speaker,@preferred,@seen,@greeted,@route,@intent,@created,@updated WHERE EXISTS(SELECT 1 FROM Loops WHERE LoopId=@l AND OwnerAccountId=@a)
- ON CONFLICT(LoopId,PersonId) DO UPDATE SET SpeakerId=EXCLUDED.SpeakerId,PreferredName=EXCLUDED.PreferredName,LastSeenUtc=EXCLUDED.LastSeenUtc,LastGreetedUtc=EXCLUDED.LastGreetedUtc,LastGreetingRoute=EXCLUDED.LastGreetingRoute,LastGreetingIntent=EXCLUDED.LastGreetingIntent,UpdatedUtc=EXCLUDED.UpdatedUtc WHERE GreetingPresences.AccountId=EXCLUDED.AccountId
- """, c, t); Ops.Scope(q, p.AccountId, p.LoopId); q.Parameters.AddWithValue("id", Ops.Req(p.Id)); q.Parameters.AddWithValue("person", Ops.Req(p.PersonId)); Ops.Nullable(q, "speaker", p.SpeakerId); Ops.Nullable(q, "preferred", p.PreferredName); q.Parameters.AddWithValue("seen", p.LastSeenUtc); Ops.NullableTime(q, "greeted", p.LastGreetedUtc); Ops.Nullable(q, "route", p.LastGreetingRoute); Ops.Nullable(q, "intent", p.LastGreetingIntent); q.Parameters.AddWithValue("created", p.CreatedUtc); q.Parameters.AddWithValue("updated", p.UpdatedUtc); await Ops.Mutate(q, c, t, ct); return p; }
-    public Task<bool> DeleteAsync(string a, string l, string id, CancellationToken ct = default) => Ops.DeleteAsync(ds, "GreetingPresences", "GreetingPresenceId", a, l, id, ct, true);
+    public async Task<IReadOnlyList<GreetingPresenceRecord>> ListAsync(
+        string accountId, string loopId, int limit = 250, CancellationToken ct = default)
+    {
+        await using var connection = await ds.Value.OpenConnectionAsync(ct);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT GreetingPresenceId,AccountId,LoopId,PersonId,SpeakerId,PreferredName,LastSeenUtc,
+                LastGreetedUtc,LastGreetingRoute,LastGreetingIntent,CreatedUtc,UpdatedUtc,LastBirthdayGreetingDate
+            FROM GreetingPresences WHERE AccountId=@a AND LoopId=@l ORDER BY LastSeenUtc DESC LIMIT @limit
+            """;
+        Ops.Scope(command, accountId, loopId);
+        command.Parameters.AddWithValue("limit", Math.Clamp(limit, 1, 1000));
+        var greetings = new List<GreetingPresenceRecord>();
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            greetings.Add(new GreetingPresenceRecord
+            {
+                Id = reader.GetString(0), AccountId = reader.GetString(1), LoopId = reader.GetString(2),
+                PersonId = reader.GetString(3), SpeakerId = Ops.Text(reader, 4), PreferredName = Ops.Text(reader, 5),
+                LastSeenUtc = reader.GetFieldValue<DateTimeOffset>(6), LastGreetedUtc = Ops.Time(reader, 7),
+                LastGreetingRoute = Ops.Text(reader, 8), LastGreetingIntent = Ops.Text(reader, 9),
+                CreatedUtc = reader.GetFieldValue<DateTimeOffset>(10), UpdatedUtc = reader.GetFieldValue<DateTimeOffset>(11),
+                LastBirthdayGreetingDate = Ops.Date(reader, 12)
+            });
+        }
+
+        return greetings;
+    }
+
+    public async Task<GreetingPresenceRecord> UpsertAsync(GreetingPresenceRecord presence, CancellationToken ct = default)
+    {
+        if (!await RecordAsync(presence, null, ct))
+            throw new InvalidOperationException("Loop scope was not found.");
+        return presence;
+    }
+
+    public Task<bool> TryRecordBirthdayAsync(GreetingPresenceRecord presence, CancellationToken ct = default) =>
+        RecordAsync(presence, presence.LastBirthdayGreetingDate ??
+            throw new ArgumentException("The local birthday greeting date is required.", nameof(presence)), ct);
+
+    private async Task<bool> RecordAsync(GreetingPresenceRecord presence, DateOnly? birthdayDate, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(presence);
+        await using var connection = await ds.Value.OpenConnectionAsync(ct);
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+        await using var command = new NpgsqlCommand("""
+            INSERT INTO GreetingPresences(GreetingPresenceId,AccountId,LoopId,PersonId,SpeakerId,PreferredName,
+                LastSeenUtc,LastGreetedUtc,LastGreetingRoute,LastGreetingIntent,CreatedUtc,UpdatedUtc,LastBirthdayGreetingDate)
+            SELECT @id,@a,@l,@person,@speaker,@preferred,@seen,@greeted,@route,@intent,@created,@updated,@birthday
+            WHERE EXISTS(SELECT 1 FROM Loops WHERE LoopId=@l AND OwnerAccountId=@a)
+            ON CONFLICT(LoopId,PersonId) DO UPDATE SET SpeakerId=EXCLUDED.SpeakerId,PreferredName=EXCLUDED.PreferredName,
+                LastSeenUtc=GREATEST(EXCLUDED.LastSeenUtc,GreetingPresences.LastSeenUtc),
+                LastGreetedUtc=EXCLUDED.LastGreetedUtc,LastGreetingRoute=EXCLUDED.LastGreetingRoute,
+                LastGreetingIntent=EXCLUDED.LastGreetingIntent,UpdatedUtc=EXCLUDED.UpdatedUtc,
+                LastBirthdayGreetingDate=COALESCE(EXCLUDED.LastBirthdayGreetingDate,GreetingPresences.LastBirthdayGreetingDate)
+            WHERE GreetingPresences.AccountId=EXCLUDED.AccountId AND
+                (@birthday IS NULL OR GreetingPresences.LastBirthdayGreetingDate IS NULL OR GreetingPresences.LastBirthdayGreetingDate < @birthday)
+            """, connection, transaction);
+        Ops.Scope(command, presence.AccountId, presence.LoopId);
+        command.Parameters.AddWithValue("id", Ops.Req(presence.Id));
+        command.Parameters.AddWithValue("person", Ops.Req(presence.PersonId));
+        Ops.Nullable(command, "speaker", presence.SpeakerId);
+        Ops.Nullable(command, "preferred", presence.PreferredName);
+        command.Parameters.AddWithValue("seen", presence.LastSeenUtc);
+        Ops.NullableTime(command, "greeted", presence.LastGreetedUtc);
+        Ops.Nullable(command, "route", presence.LastGreetingRoute);
+        Ops.Nullable(command, "intent", presence.LastGreetingIntent);
+        command.Parameters.AddWithValue("created", presence.CreatedUtc);
+        command.Parameters.AddWithValue("updated", presence.UpdatedUtc);
+        Ops.NullableDate(command, "birthday", birthdayDate);
+        if (await command.ExecuteNonQueryAsync(ct) == 0) return false;
+        await CloudStateRevision.BumpAsync(connection, transaction, ct);
+        await transaction.CommitAsync(ct);
+        return true;
+    }
+
+    public async Task RecordInteractionAsync(GreetingPresenceRecord presence, DateTimeOffset windowStartUtc,
+        CancellationToken ct = default)
+    {
+        await using var connection = await ds.Value.OpenConnectionAsync(ct);
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+        await using var command = new NpgsqlCommand("""
+            INSERT INTO GreetingPresences(GreetingPresenceId,AccountId,LoopId,PersonId,LastSeenUtc)
+            SELECT @id,@a,@l,@person,@seen WHERE EXISTS(SELECT 1 FROM Loops WHERE LoopId=@l AND OwnerAccountId=@a)
+            ON CONFLICT(LoopId,PersonId) DO UPDATE SET LastSeenUtc=EXCLUDED.LastSeenUtc,UpdatedUtc=NOW()
+            WHERE GreetingPresences.AccountId=EXCLUDED.AccountId AND GreetingPresences.LastSeenUtc < @window
+                AND GreetingPresences.LastSeenUtc < EXCLUDED.LastSeenUtc
+            """, connection, transaction);
+        Ops.Scope(command, presence.AccountId, presence.LoopId);
+        command.Parameters.AddWithValue("id", Ops.Req(presence.Id));
+        command.Parameters.AddWithValue("person", Ops.Req(presence.PersonId));
+        command.Parameters.AddWithValue("seen", presence.LastSeenUtc.ToUniversalTime());
+        command.Parameters.AddWithValue("window", windowStartUtc.ToUniversalTime());
+        if (await command.ExecuteNonQueryAsync(ct) == 0) return;
+        await CloudStateRevision.BumpAsync(connection, transaction, ct);
+        await transaction.CommitAsync(ct);
+    }
+
+    public Task<bool> DeleteAsync(string accountId, string loopId, string id, CancellationToken ct = default) =>
+        Ops.DeleteAsync(ds, "GreetingPresences", "GreetingPresenceId", accountId, loopId, id, ct, true);
 }
 
 internal static class Ops

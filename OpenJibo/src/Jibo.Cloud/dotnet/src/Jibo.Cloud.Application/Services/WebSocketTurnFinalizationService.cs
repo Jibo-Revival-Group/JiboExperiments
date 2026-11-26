@@ -722,19 +722,38 @@ public sealed class WebSocketTurnFinalizationService(
 
     private void ApplyProactiveLoopScope(string? registeredRobotId, TurnContext turn)
     {
-        if (cloudStateStore is null || string.IsNullOrWhiteSpace(registeredRobotId))
-            return;
-
-        // Stock hubs open a new session with the bootstrap Loop in their metadata.
-        // Scope the greeting with the server-side registration from before CONTEXT.
-        var matchingLoops = cloudStateStore.GetLoops().Where(loop => !loop.IsSuspended &&
-            (loop.RobotId.Equals(registeredRobotId, StringComparison.OrdinalIgnoreCase) ||
-             loop.RobotFriendlyId.Equals(registeredRobotId, StringComparison.OrdinalIgnoreCase))).Take(2).ToArray();
-        if (matchingLoops.Length != 1) return;
-
-        var loop = matchingLoops[0];
+        // Stock hubs may open a session with the bootstrap Loop in their metadata.
+        if (JiboIdentityResolver.FindRegisteredRobotLoop(registeredRobotId, cloudStateStore) is not { } loop) return;
         turn.Attributes["loopId"] = loop.LoopId;
         turn.Attributes["accountId"] = loop.OwnerAccountId;
+    }
+
+    private void RecordMorningInteraction(CloudSession session, TurnContext turn, ResponsePlan plan)
+    {
+        if (cloudStateStore is null || plan.Status != ResponseStatus.Succeeded ||
+            string.IsNullOrWhiteSpace(turn.NormalizedTranscript ?? turn.RawTranscript) ||
+            !plan.Actions.Any(action => action is InvokeNativeSkillAction ||
+                action is SpeakAction speech && !string.IsNullOrWhiteSpace(speech.Text)) ||
+            JiboInteractionService.TryResolveReferenceLocalTime(turn) is not { Hour: >= 5 and < 12 } localTime ||
+            JiboInteractionService.ReadKnownGreetingSpeaker(turn) is not { } speaker)
+            return;
+
+        try
+        {
+            var robotId = session.Metadata.TryGetValue("registeredRobotId", out var registered) ? registered as string : null;
+            if (JiboIdentityResolver.FindRegisteredRobotLoop(robotId, cloudStateStore) is not { } loop) return;
+            cloudStateStore.RecordGreetingInteraction(new GreetingPresenceRecord
+            {
+                AccountId = loop.OwnerAccountId,
+                LoopId = loop.LoopId,
+                PersonId = speaker,
+                LastSeenUtc = localTime.ToUniversalTime()
+            }, JiboInteractionService.GetGreetingMorningStart(localTime));
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(exception, "Could not record morning interaction. turnId={TurnId}", turn.TurnId);
+        }
     }
 
     public IReadOnlyList<WebSocketReply> HandleListenSetup(CloudSession session,
@@ -1751,6 +1770,7 @@ public sealed class WebSocketTurnFinalizationService(
                 IntroductionsFollowUp.BuildPlan(finalizedTurn, NormalizeUsableTranscript) is { } localPlan
                     ? Task.FromResult(localPlan)
                     : conversationBroker.HandleTurnAsync(finalizedTurn, cancellationToken), cancellationToken);
+            RecordMorningInteraction(session, finalizedTurn, plan);
 
             var intentName = plan.IntentName;
 
@@ -2920,7 +2940,7 @@ public sealed class WebSocketTurnFinalizationService(
                string.Equals(rule, "settings/download_now_later", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase) ||
+               WordOfDayOffer.IsYesNoRule(rule) ||
                (IsIntroductionsRule(rule) && !IntroductionsFollowUp.IsNameRule(rule));
     }
 
@@ -3571,6 +3591,9 @@ public sealed class WebSocketTurnFinalizationService(
     {
         var yesNoReply = TryClassifyYesNoReply(normalizedTranscript);
         if (yesNoReply is YesNoReply.Affirmative or YesNoReply.Negative or YesNoReply.Ambiguous) return true;
+        if (WordOfDayOffer.IsSurpriseRule(ReadPrimaryYesNoRule(turn)) &&
+            WordOfDayOffer.IsTutorialReply(normalizedTranscript))
+            return true;
 
         if (!ReadRules(turn, "listenRules")
                 .Concat(ReadRules(turn, "clientRules"))

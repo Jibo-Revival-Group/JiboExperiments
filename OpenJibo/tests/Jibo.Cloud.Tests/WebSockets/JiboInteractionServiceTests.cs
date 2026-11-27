@@ -1713,10 +1713,15 @@ public sealed class JiboInteractionServiceTests
     [Theory]
     [InlineData("Show me ping pong probably did", "robot_play_ping_pong")]
     [InlineData("Show me ping-pong, um", "robot_play_ping_pong")]
+    [InlineData("Show me ping pong and we go", "robot_play_ping_pong")]
+    [InlineData("Show me ping pong and they went", "robot_play_ping_pong")]
     [InlineData("Show me Christmas stockings, I think", "robot_show_christmas_stockings")]
+    [InlineData("Show me Christmas stockings and she said", "robot_show_christmas_stockings")]
     [InlineData("I heard show me ping pong probably did", "not_understood")]
     [InlineData("Show me ping pong rules", "not_understood")]
     [InlineData("Show me ping pong and chess", "not_understood")]
+    [InlineData("Show me ping pong and show me chess", "not_understood")]
+    [InlineData("Show me ping pong and we go upstairs", "not_understood")]
     [InlineData("Show me ping pong probably not", "not_understood")]
     public async Task BuildDecisionAsync_PegasusQuip_RecoversOnlyFromShortTrailingSpeech(
         string transcript, string expectedIntent)

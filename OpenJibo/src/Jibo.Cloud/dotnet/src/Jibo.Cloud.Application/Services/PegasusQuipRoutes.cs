@@ -673,31 +673,35 @@ public static class PegasusQuipRoutes
 
     internal static string? TryRecoverFromTrailingSpeech(string phrase)
     {
-        // Require a whole, known request at the start and a short conversational tail.
-        // A generic substring match could mistake a search topic or a compound request for a quip.
-        var lastSpace = phrase.LastIndexOf(' ');
-        if (lastSpace <= 0) return null;
-
-        var tailStart = phrase.LastIndexOf(' ', lastSpace - 1);
-        if (tailStart >= 0 && phrase[(tailStart + 1)..] is
-            "probably did" or "i think" or "i know" or "you know")
+        // Try the longest command prefix first. Cap the search at three trailing words
+        // and only accept a known command of at least three words.
+        phrase = NormalizeSpokenPhrase(phrase);
+        var boundary = phrase.Length;
+        for (var trailingWords = 1; trailingWords <= 3 && boundary > 0; trailingWords++)
         {
-            return FindUnambiguousRequest(phrase[..tailStart]);
-        }
+            boundary = phrase.LastIndexOf(' ', boundary - 1);
+            if (boundary < 0) return null;
 
-        return phrase[(lastSpace + 1)..] is "uh" or "um" or "er" or "hmm" or "yeah" or "okay" or "ok"
-            ? FindUnambiguousRequest(phrase[..lastSpace])
-            : null;
+            var request = phrase[..boundary];
+            if (request.AsSpan().Count(' ') < 2) return null;
 
-        static string? FindUnambiguousRequest(string request)
-        {
-            var firstSpace = request.IndexOf(' ');
-            if (firstSpace < 0 || request.IndexOf(' ', firstSpace + 1) < 0) return null;
+            if (!SpokenIntents.Contains(request)) continue;
+            if (!IsTrailingConversation(phrase[(boundary + 1)..])) return null;
 
-            var intents = SpokenIntents[NormalizeSpokenPhrase(request)].Distinct(StringComparer.Ordinal).Take(2).ToArray();
+            var intents = SpokenIntents[request].Distinct(StringComparer.Ordinal).Take(2).ToArray();
             return intents.Length == 1 ? intents[0] : null;
         }
+
+        return null;
     }
+
+    private static bool IsTrailingConversation(string tail) =>
+        tail is "uh" or "um" or "er" or "hmm" or "yeah" or "okay" or "ok" or
+            "probably did" or "i think" or "i know" or "you know" ||
+        // A short subject and verb can come from a nearby conversation. A coordinated
+        // item ("and chess") or another command ("and show me chess") needs its own routing.
+        tail.Split(' ', 4) is ["and", "i" or "we" or "he" or "she" or "they" or "it",
+            "go" or "went" or "did" or "said" or "know" or "think"];
 
     private static string NormalizeSpokenPhrase(string phrase) =>
         phrase.Replace("april fool's ", "april fools ", StringComparison.Ordinal)

@@ -637,6 +637,10 @@ public static class PegasusQuipRoutes
     private static readonly IReadOnlyDictionary<string, Route> ByMimId =
         Routes.ToDictionary(route => route.MimId, StringComparer.OrdinalIgnoreCase);
 
+    private static readonly ILookup<string, string> SpokenIntents =
+        Routes.SelectMany(route => route.Phrases.Select(phrase => (Phrase: phrase, route.Intent)))
+            .ToLookup(entry => entry.Phrase, entry => entry.Intent, StringComparer.Ordinal);
+
     internal static string? Resolve(
         string phrase, string? clientIntent, IReadOnlyDictionary<string, string> entities)
     {
@@ -647,13 +651,12 @@ public static class PegasusQuipRoutes
             if (string.Equals(animalSound, "Dog", StringComparison.OrdinalIgnoreCase)) return "robot_make_dog_sound";
         }
 
-        phrase = phrase.Replace("april fool's ", "april fools ", StringComparison.Ordinal)
-            .Replace("april fool s ", "april fools ", StringComparison.Ordinal);
+        phrase = NormalizeSpokenPhrase(phrase);
         const string trailingReaction = " oh wow";
         if (phrase.EndsWith(trailingReaction, StringComparison.Ordinal)) phrase = phrase[..^trailingReaction.Length];
 
-        var spokenRoute = Routes.FirstOrDefault(route => route.Phrases.Contains(phrase, StringComparer.Ordinal));
-        if (spokenRoute is not null) return spokenRoute.Intent;
+        var spokenIntent = SpokenIntents[phrase].FirstOrDefault();
+        if (spokenIntent is not null) return spokenIntent;
 
         // The generic emoji route has an entity key but no value, so it only matches
         // a request that did not name a particular emoji.
@@ -667,6 +670,38 @@ public static class PegasusQuipRoutes
              string.Equals(entities.GetValueOrDefault(required.Entity), required.Value, StringComparison.OrdinalIgnoreCase)))
             ?.Intent;
     }
+
+    internal static string? TryRecoverFromTrailingSpeech(string phrase)
+    {
+        // Require a whole, known request at the start and a short conversational tail.
+        // A generic substring match could mistake a search topic or a compound request for a quip.
+        var lastSpace = phrase.LastIndexOf(' ');
+        if (lastSpace <= 0) return null;
+
+        var tailStart = phrase.LastIndexOf(' ', lastSpace - 1);
+        if (tailStart >= 0 && phrase[(tailStart + 1)..] is
+            "probably did" or "i think" or "i know" or "you know")
+        {
+            return FindUnambiguousRequest(phrase[..tailStart]);
+        }
+
+        return phrase[(lastSpace + 1)..] is "uh" or "um" or "er" or "hmm" or "yeah" or "okay" or "ok"
+            ? FindUnambiguousRequest(phrase[..lastSpace])
+            : null;
+
+        static string? FindUnambiguousRequest(string request)
+        {
+            var firstSpace = request.IndexOf(' ');
+            if (firstSpace < 0 || request.IndexOf(' ', firstSpace + 1) < 0) return null;
+
+            var intents = SpokenIntents[NormalizeSpokenPhrase(request)].Distinct(StringComparer.Ordinal).Take(2).ToArray();
+            return intents.Length == 1 ? intents[0] : null;
+        }
+    }
+
+    private static string NormalizeSpokenPhrase(string phrase) =>
+        phrase.Replace("april fool's ", "april fools ", StringComparison.Ordinal)
+            .Replace("april fool s ", "april fools ", StringComparison.Ordinal);
 
     internal static string? GetMimId(string intent) => ByIntent.GetValueOrDefault(intent)?.MimId;
 

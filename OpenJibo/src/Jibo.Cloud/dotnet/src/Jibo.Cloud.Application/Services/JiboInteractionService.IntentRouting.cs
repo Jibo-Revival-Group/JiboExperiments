@@ -3368,10 +3368,16 @@ public sealed partial class JiboInteractionService
             return pegasusGapIntent!;
 
         var firstWord = TranscriptTextNormalizer.NormalizeLooseText(loweredTranscript).Split(' ', 2)[0];
-        return (firstWord is "hello" or "hi" or "hey") &&
-               !TranscriptHeuristics.IsLikelyQuestion(spokenRequest)
-            ? "hello"
-            : "chat";
+        if ((firstWord is "hello" or "hi" or "hey") &&
+            !TranscriptHeuristics.IsLikelyQuestion(spokenRequest))
+            return "hello";
+
+        if (!isYesNoTurn && !isTimerValueTurn && !isAlarmValueTurn && !isSkillOwnedListen &&
+            !wordOfDayPuzzleTurn && clientEntities.Count == 0 &&
+            PegasusQuipRoutes.TryRecoverFromTrailingSpeech(spokenRequest) is { } recoveredQuip)
+            return recoveredQuip;
+
+        return "chat";
     }
 
     private static bool TryResolvePegasusPersonalityGap(

@@ -1714,16 +1714,28 @@ public sealed class JiboInteractionServiceTests
     [InlineData("Show me ping pong probably did", "robot_play_ping_pong")]
     [InlineData("Show me ping-pong, um", "robot_play_ping_pong")]
     [InlineData("Show me ping pong and we go", "robot_play_ping_pong")]
+    [InlineData("Show me ping pong in we go", "robot_play_ping_pong")]
     [InlineData("Show me ping pong and they went", "robot_play_ping_pong")]
     [InlineData("Show me Christmas stockings, I think", "robot_show_christmas_stockings")]
     [InlineData("Show me Christmas stockings and she said", "robot_show_christmas_stockings")]
+    [InlineData("Show me a turkey and I don't know why I hear some", "robot_show_turkey")]
+    [InlineData("Show me a turkey in I don't know why I hear some", "robot_show_turkey")]
+    [InlineData("Show me a turkey and I don't know why I hear some voices nearby", "robot_show_turkey")]
+    [InlineData("Show me Christmas stockings and she didn't know what they heard earlier", "robot_show_christmas_stockings")]
+    [InlineData("Show me Christmas stockings and follow along", "not_understood")]
+    [InlineData("Show me a turkey and I don't know why I hear some then go", "not_understood")]
+    [InlineData("Show me a turkey and I don't know why I hear some play chess", "not_understood")]
+    [InlineData("Show me a turkey and I don't know why I hear some volume up", "not_understood")]
+    [InlineData("Show me a turkey and I don't know why you want chess", "not_understood")]
+    [InlineData("Show me a turkey and I don't know why I hear some voices over there", "not_understood")]
     [InlineData("I heard show me ping pong probably did", "not_understood")]
     [InlineData("Show me ping pong rules", "not_understood")]
     [InlineData("Show me ping pong and chess", "not_understood")]
+    [InlineData("Show me ping pong in chess", "not_understood")]
     [InlineData("Show me ping pong and show me chess", "not_understood")]
     [InlineData("Show me ping pong and we go upstairs", "not_understood")]
     [InlineData("Show me ping pong probably not", "not_understood")]
-    public async Task BuildDecisionAsync_PegasusQuip_RecoversOnlyFromShortTrailingSpeech(
+    public async Task BuildDecisionAsync_PegasusQuip_DistinguishesTrailingSpeechFromCompoundRequests(
         string transcript, string expectedIntent)
     {
         var decision = await CreateService().BuildDecisionAsync(new TurnContext { RawTranscript = transcript });

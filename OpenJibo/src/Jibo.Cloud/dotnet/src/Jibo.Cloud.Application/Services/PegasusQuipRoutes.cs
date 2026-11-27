@@ -673,11 +673,12 @@ public static class PegasusQuipRoutes
 
     internal static string? TryRecoverFromTrailingSpeech(string phrase)
     {
-        // Try the longest command prefix first. Cap the search at three trailing words
+        // Try the longest command prefix first. Cap the search at ten trailing words
         // and only accept a known command of at least three words.
+        const int maxTrailingWords = 10;
         phrase = NormalizeSpokenPhrase(phrase);
         var boundary = phrase.Length;
-        for (var trailingWords = 1; trailingWords <= 3 && boundary > 0; trailingWords++)
+        for (var trailingWords = 1; trailingWords <= maxTrailingWords && boundary > 0; trailingWords++)
         {
             boundary = phrase.LastIndexOf(' ', boundary - 1);
             if (boundary < 0) return null;
@@ -695,13 +696,32 @@ public static class PegasusQuipRoutes
         return null;
     }
 
-    private static bool IsTrailingConversation(string tail) =>
-        tail is "uh" or "um" or "er" or "hmm" or "yeah" or "okay" or "ok" or
-            "probably did" or "i think" or "i know" or "you know" ||
-        // A short subject and verb can come from a nearby conversation. A coordinated
-        // item ("and chess") or another command ("and show me chess") needs its own routing.
-        tail.Split(' ', 4) is ["and", "i" or "we" or "he" or "she" or "they" or "it",
-            "go" or "went" or "did" or "said" or "know" or "think"];
+    private static bool IsTrailingConversation(string tail)
+    {
+        if (tail is "uh" or "um" or "er" or "hmm" or "yeah" or "okay" or "ok" or
+            "probably did" or "i think" or "i know" or "you know")
+            return true;
+
+        // A joining word alone is insufficient. Match a conversational clause
+        // with a subject and a verb before treating it as background speech.
+        var words = tail.Split(' ');
+        if (words is ["and" or "in", "i" or "we" or "he" or "she" or "they" or "it",
+            "go" or "went" or "did" or "said" or "know" or "think"])
+            return true;
+
+        return words is ["and" or "in", "i" or "we" or "he" or "she" or "they",
+            "don't" or "didn't" or "doesn't", "know", "why" or "how" or "what" or "where" or "when",
+            "i" or "we" or "he" or "she" or "they" or "it",
+            "hear" or "heard" or "saw" or "said" or "thought", .. var ending] &&
+            // Accept ordinary sentence endings here. A second instruction can
+            // otherwise be hidden after a valid conversational lead-in.
+            ending is [] or
+                ["some" or "something" or "anything" or "nothing" or "it" or "that" or "this" or "them"] or
+                ["earlier" or "before" or "again" or "nearby"] or
+                ["a" or "the" or "some", "sound" or "sounds" or "noise" or "voices" or "music"] or
+                ["a" or "the" or "some", "sound" or "sounds" or "noise" or "voices" or "music",
+                    "earlier" or "before" or "again" or "nearby"];
+    }
 
     private static string NormalizeSpokenPhrase(string phrase) =>
         phrase.Replace("april fool's ", "april fools ", StringComparison.Ordinal)

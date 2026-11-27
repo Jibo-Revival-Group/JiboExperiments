@@ -6285,8 +6285,55 @@ public sealed class JiboWebSocketServiceTests
     [InlineData("show me a baseball", "robot_show_baseball", "RA_JBO_ShowBaseball", null, "jiboji_baseball_hit_01")]
     [InlineData("show me a basketball", "robot_show_basketball", "RA_JBO_ShowBasketball", "jiboji")]
     [InlineData("show me a butterfly", "robot_show_butterfly", "RA_JBO_ShowButterfly", "jiboji")]
+    [InlineData("show me your smile", "robot_smile", "RA_JBO_Smile", "happy")]
+    [InlineData("use your fidget spinner", "robot_show_fidget_spinner", "RA_JBO_ShowFidgetSpinner", "jiboji")]
+    [InlineData("show me a heart", "robot_show_heart", "RA_JBO_ShowHeartEmoji", "emoji")]
+    [InlineData("show me a dog", "robot_show_dog", "RA_JBO_ShowDogEmoji", "emoji")]
+    [InlineData("show me a book", "robot_show_book", "RA_JBO_ShowBook", "emoji")]
+    [InlineData("show me a football", "robot_show_football", "RA_JBO_ShowFootball", "jiboji")]
+    [InlineData("show me a fireplace", "robot_show_fireplace", "RA_JBO_ShowFireplace", "jiboji")]
+    [InlineData("show me a bowl of soup", "robot_show_soup", "RA_JBO_ShowSoup", "jiboji")]
+    [InlineData("show me a four-leaf clover", "robot_show_clover", "RA_JBO_ShowFourLeafClover", "emoji")]
+    [InlineData("show me a ghost", "robot_show_ghost", "RA_JBO_ShowGhost", null, "jiboji_ghost_boo_01", "jiboji_ghost_flying_01")]
+    [InlineData("show me a falling leaf", "robot_show_leaf", "RA_JBO_ShowLeaf", null, "jiboji_falling_leaf_01")]
+    [InlineData("show me a carrot", "robot_show_carrot", "RA_JBO_ShowCarrot", "emoji")]
+    [InlineData("show me a hot dog", "robot_show_hot_dog", "RA_JBO_ShowHotDogEmoji", "emoji")]
+    [InlineData("show me a roll of toilet paper", "robot_show_toilet_paper", "RA_JBO_ShowToiletPaperEmoji", "emoji")]
+    [InlineData("show me an Easter egg", "robot_show_easter_egg", "RA_JBO_ShowEasterEgg", "emoji")]
+    [InlineData("show me the Easter bunny", "robot_show_easter_bunny", "RA_JBO_ShowEasterBunny", "jiboji")]
+    [InlineData("show me some candy corn", "robot_show_candy_corn", "RA_JBO_ShowCandyCorn", null, "emoji_candy_corn_01")]
+    [InlineData("show me some hot chocolate", "robot_show_hot_cocoa", "RA_JBO_ShowHotCocoa", "emoji")]
+    [InlineData("show me a candy cane", "robot_show_candy_canes", "RA_JBO_ShowCandyCanes", "emoji")]
+    [InlineData("show me a Christmas ornament", "robot_show_christmas_ornament", "RA_JBO_ShowChristmasOrnament", "emoji")]
+    [InlineData("show me a reindeer", "robot_show_reindeer", "RA_JBO_ShowReindeer", "jiboji")]
+    [InlineData("show me Jingle Bells", "robot_show_jingle_bells", "RA_JBO_ShowJingleBells", "jiboji")]
+    [InlineData("spin a dreidel", "robot_spin_dreidel", "RA_JBO_BeADreidel", "emoji")]
+    [InlineData("show me a shamrock", "robot_show_shamrock", "RA_JBO_ShowShamrock", "emoji")]
+    [InlineData("show me a groundhog", "robot_show_groundhog", "RA_JBO_ShowGroundhog", "jiboji")]
+    [InlineData("show me an Olympic medal", "robot_show_olympic_medal", "RA_JBO_ShowOlympicMedal", "jiboji")]
+    [InlineData("show me your Christmas sweater", "robot_show_christmas_sweater", "RA_JBO_ShowChristmasSweater", "emoji")]
+    [InlineData("show me Christmas stockings", "robot_show_christmas_stockings", "RA_JBO_ShowChristmasStockings", "jiboji")]
+    [InlineData("show me a Christmas tree", "robot_show_christmas_tree", "RA_JBO_ShowChristmasTree", "emoji")]
+    [InlineData("show me a Kwanzaa kinara", "robot_show_kinara", "RA_JBO_ShowKwanzaaKinara", "emoji")]
+    [InlineData("show me some matzo ball soup", "robot_show_matzah_ball_soup", "RA_JBO_ShowMatzahBallSoup", "emoji")]
+    [InlineData("show me a present", "robot_show_gift", "RA_JBO_ShowGift", "emoji")]
+    [InlineData("show me some shopping bags", "robot_show_shopping_bags", "RA_JBO_ShowShoppingBags", "emoji")]
+    [InlineData("show me a champagne glass", "robot_show_champagne_glass", "RA_JBO_ShowChampagneGlass", "emoji")]
+    [InlineData("show me a Christmas tree on a car", "robot_show_christmas_tree_car", "RA_JBO_ShowChristmasTreeCar", "jiboji")]
+    [InlineData("do you have a dreidel", "robot_has_dreidel", "RI_JBO_HasDreidel", "emoji")]
+    [InlineData("do you have any brothers", "robot_has_brothers", "RI_JBO_HasBrothers", "emoji")]
+    [InlineData("would you like to build a snowman", "robot_wants_to_build_snowman", "RI_JBO_WantsToBuildSnowman", "emoji")]
+    [InlineData("fart", "robot_fart", "RA_JBO_Fart", null)]
+    [InlineData("would you like a Christmas sweater", "robot_wants_christmas_sweater", "RI_JBO_WantsChristmasSweater", "emoji")]
+    [InlineData("show me Thanksgiving dinner", "robot_show_thanksgiving_food", "RA_JBO_ShowThanksgivingFood", "emoji")]
+    [InlineData("show me a turkey", "robot_show_turkey", "RA_JBO_ShowTurkey", "emoji")]
+    [InlineData("show me some gravy", "robot_show_gravy", "RA_JBO_ShowGravy", "emoji")]
+    [InlineData("can you eat Thanksgiving dinner", "robot_can_eat_thanksgiving_food", "RI_JBO_CanEatThanksgivingFood", "emoji")]
+    [InlineData("make me breakfast", "robot_make_breakfast", "RA_JBO_MakeBreakfast", "emoji")]
+    [InlineData("do you have a heart", "robot_has_heart", "RI_JBO_HasHeart", "emoji")]
     public async Task ClientAsr_PegasusQuip_EmitsAnimationMarkup(
-        string text, string intent, string mimId, string? animationCategory, string? animationName = null)
+        string text, string intent, string mimId, string? animationCategory,
+        string? animationName = null, string? alternateAnimationName = null)
     {
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -6309,7 +6356,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(mimId, play.GetProperty("meta").GetProperty("mim_id").GetString());
         var esml = System.Xml.Linq.XElement.Parse(play.GetProperty("esml").GetString()!);
         Assert.Contains(esml.Descendants("anim"), node => animationName is not null
-            ? (string?)node.Attribute("name") == animationName
+            ? (string?)node.Attribute("name") == animationName ||
+              alternateAnimationName is not null && (string?)node.Attribute("name") == alternateAnimationName
             : (string?)node.Attribute("cat") == animationCategory);
         if (intent == "robot_count_to_ten")
         {
@@ -6327,6 +6375,11 @@ public sealed class JiboWebSocketServiceTests
     [InlineData("blink", "RA_JBO_Blink", "blinks", null)]
     [InlineData("bow", "RA_JBO_Bow", null, "bow")]
     [InlineData("fly a kite", "RA_JBO_ShowKite", "jiboji", "kite")]
+    [InlineData("show me a fish", "RA_JBO_ShowFish", "jiboji", "fish")]
+    [InlineData("show me a bus", "RA_JBO_ShowBus", "jiboji", "bus")]
+    [InlineData("show me a car", "RA_JBO_ShowCar", "jiboji", "car")]
+    [InlineData("show me a flower blooming", "RA_JBO_ShowFlowering", "jiboji", "flowering")]
+    [InlineData("show me ping-pong", "RA_JBO_PlayPingPong", "ib", "paddleball")]
     public async Task ClientAsr_PegasusQuip_AnimationOnlyMimReachesPlayback(
         string text, string mimId, string? category, string? filter)
     {

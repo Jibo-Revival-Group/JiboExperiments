@@ -29,7 +29,7 @@
 			"prompt_sub_category": "AN",
 			"index": 1,
 			"condition": "dt.now.isInRange('11/20', '12/31')",
-			"prompt": "<anim cat='jiboji' filter='christmas-fireplace' layers'!audio' nonBlocking='true'/><break size='2.0'/>I've hung them with care.",
+			"prompt": "<anim cat='jiboji' filter='christmas-fireplace' layers='!audio' nonBlocking='true'/><break size='2.0'/>I've hung them with care.",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_ShowChristmasStockings_AN_02",
 			"weight": 2,

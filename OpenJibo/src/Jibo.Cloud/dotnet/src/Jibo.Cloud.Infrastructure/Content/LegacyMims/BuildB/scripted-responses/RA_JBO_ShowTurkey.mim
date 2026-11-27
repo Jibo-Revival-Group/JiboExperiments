@@ -27,7 +27,7 @@
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
 			"index": 1,
-			"condition": "dt.now.isInRange('11/23', '11/23')",
+			"condition": "dt.now.isInRange('usThanksgiving', 'usThanksgiving')",
 			"prompt": "<anim cat='emoji' filter='thanksgiving, !hot-frame' layers='!audio' nonBlocking='true'/> Don't forget to chew.",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_ShowTurkey_AN_02",

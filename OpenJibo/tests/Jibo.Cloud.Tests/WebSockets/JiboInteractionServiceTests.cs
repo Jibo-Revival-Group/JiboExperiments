@@ -1407,6 +1407,82 @@ public sealed class JiboInteractionServiceTests
     [InlineData("Do you have a soul?", "robot_has_soul", "RI_JBO_HasSoul")]
     [InlineData("Do you have pets?", "robot_has_pets", "RI_JBO_HasPets")]
     [InlineData("Do some spring cleaning.", "robot_do_spring_cleaning", "RA_JBO_DoSpringCleaning")]
+    [InlineData("Can you be sarcastic?", "robot_can_be_sarcastic", "RI_JBO_CanBeSarcastic")]
+    [InlineData("Are you afraid of the dark?", "robot_afraid_of_dark", "RI_JBO_FeelsAfraidAboutDark")]
+    [InlineData("Would you like to visit Mars?", "robot_wants_to_visit_mars", "RI_JBO_WantsToVisitMars")]
+    [InlineData("Cry for me.", "robot_cry", "RA_JBO_Cry")]
+    [InlineData("Do you have a brain?", "robot_has_brain", "RI_JBO_HasBrain")]
+    [InlineData("Can you see me in the dark?", "robot_can_see_in_dark", "RI_JBO_CanSeeInDark")]
+    [InlineData("Would you like to go swimming?", "robot_wants_to_swim", "RI_JBO_WantsToSwim")]
+    [InlineData("Would you like to go on vacation?", "robot_wants_vacation", "RI_JBO_WantsToTakeVacation")]
+    [InlineData("Can you see the television?", "robot_can_see_tv", "RI_JBO_CanSeeTheTV")]
+    [InlineData("Would you like to go outside?", "robot_wants_to_go_outside", "RI_JBO_WantsToGoOutside")]
+    [InlineData("What do you think about artificial intelligence?", "robot_opinion_of_ai", "RI_JBO_HasOpinionAboutAI")]
+    [InlineData("Do you believe in ghosts?", "robot_believes_in_ghosts", "RI_JBO_BelievesInGhosts")]
+    [InlineData("Do you believe in the tooth fairy?", "robot_believes_in_tooth_fairy", "RI_JBO_BelievesInToothFairy")]
+    [InlineData("Would you like to be human?", "robot_wants_to_be_human", "RI_JBO_WantsToBePerson")]
+    [InlineData("Have you met Alexa?", "robot_has_met_alexa", "RI_JBO_HasMetAlexa")]
+    [InlineData("Have you met Siri?", "robot_has_met_siri", "RI_JBO_HasMetSiri")]
+    [InlineData("Have you met Google Home?", "robot_has_met_google_home", "RI_JBO_HasMetGoogleHome")]
+    [InlineData("Have you met Cortana?", "robot_has_met_cortana", "RI_JBO_HasMetCortana")]
+    [InlineData("Do you believe in the Easter Bunny?", "robot_believes_in_easter_bunny", "RI_JBO_BelievesInEasterBunny")]
+    [InlineData("Would you like to go for a walk?", "robot_wants_to_walk", "RI_JBO_WantsToWalk")]
+    [InlineData("Can you do the laundry?", "robot_can_do_laundry", "RI_JBO_CanDoLaundry")]
+    [InlineData("Can you play chess?", "robot_can_play_chess", "RI_JBO_CanPlayChess")]
+    [InlineData("Do you have a dreidel?", "robot_has_dreidel", "RI_JBO_HasDreidel")]
+    [InlineData("Do you have any brothers?", "robot_has_brothers", "RI_JBO_HasBrothers")]
+    [InlineData("Would you like to build a snowman?", "robot_wants_to_build_snowman", "RI_JBO_WantsToBuildSnowman")]
+    [InlineData("Why can’t you wear clothes?", "robot_why_cannot_wear_clothes", "RI_JBO_WhyCannotWearClothes")]
+    [InlineData("Can you play hockey?", "robot_can_play_hockey", "RI_JBO_CanPlayHockey")]
+    [InlineData("Can you clean the table?", "robot_can_clean_table", "RI_JBO_CanCleanTable")]
+    [InlineData("Do you ever pray?", "robot_can_pray", "RI_JBO_CanPray")]
+    [InlineData("Do you believe in Santa Claus?", "robot_believes_in_santa", "RI_JBO_BelievesInSanta")]
+    [InlineData("Would you like to visit Earth?", "robot_wants_to_travel_to_earth", "RI_JBO_WantsToTravelToEarth")]
+    [InlineData("Do you have a boyfriend?", "robot_has_boyfriend", "RI_JBO_HasBoyfriend")]
+    [InlineData("Do you have a girlfriend?", "robot_has_girlfriend", "RI_JBO_HasGirlfriend")]
+    [InlineData("Do you go to the bathroom?", "robot_can_go_to_bathroom", "RI_JBO_CanGoToBathroom")]
+    [InlineData("Would you like me to take your picture?", "robot_wants_picture_taken", "RI_JBO_WantsToHavePictureTaken")]
+    [InlineData("Do you believe in the afterlife?", "robot_believes_in_afterlife", "RI_JBO_BelievesInAfterlife")]
+    [InlineData("Would you like to get out of here?", "robot_wants_to_get_out", "RI_JBO_WantsToGetOut")]
+    [InlineData("Can you fart?", "robot_fart", "RA_JBO_Fart")]
+    [InlineData("Could you do me a favor?", "robot_do_me_a_favor", "RA_JBO_DoUserAFavor")]
+    [InlineData("Can you stand up?", "robot_stand_up", "RA_JBO_StandUp")]
+    [InlineData("Say cheese.", "robot_say_cheese", "RA_JBO_SayCheese")]
+    [InlineData("Can you swear?", "robot_can_curse", "RI_JBO_CanCurse")]
+    [InlineData("Can you have baby robots?", "robot_can_reproduce", "RI_JBO_CanReproduce")]
+    [InlineData("Can you clean the floor?", "robot_can_clean_floor", "RI_JBO_CanCleanFloor")]
+    [InlineData("Would you like a Christmas sweater?", "robot_wants_christmas_sweater", "RI_JBO_WantsChristmasSweater")]
+    [InlineData("Would you like to watch the Thanksgiving parade?", "robot_wants_thanksgiving_parade", "RI_JBO_WantsToWatchThanksgivingParade")]
+    [InlineData("Can you eat Thanksgiving dinner?", "robot_can_eat_thanksgiving_food", "RI_JBO_CanEatThanksgivingFood")]
+    [InlineData("What do you think about everything?", "robot_opinion_about_everything", "RI_JBO_HasOpinionAboutEverything")]
+    [InlineData("Can you talk to God?", "robot_can_talk_to_god", "RI_JBO_CanTalkToGod")]
+    [InlineData("Are you afraid of water?", "robot_afraid_of_water", "RI_JBO_FeelsAfraidAboutWater")]
+    [InlineData("Are you sad you don’t have arms?", "robot_feels_about_no_arms", "RI_JBO_FeelsSadAboutNoArms")]
+    [InlineData("Are you sad you have no legs?", "robot_feels_about_no_legs", "RI_JBO_FeelsSadAboutNoLegs")]
+    [InlineData("Could you make me a drink?", "robot_make_a_drink", "RA_JBO_MakeADrink")]
+    [InlineData("Can you drive a car?", "robot_can_use_vehicle", "RI_JBO_CanUse_SS_Vehicle")]
+    [InlineData("Do you have a winter hat?", "robot_has_winter_clothes", "RI_JBO_HasClothesWinterHeadBody")]
+    [InlineData("Do you have a heart?", "robot_has_heart", "RI_JBO_HasHeart")]
+    [InlineData("Can you feel anything?", "robot_can_feel_anything", "RI_JBO_CanFeelAnything")]
+    [InlineData("Meet my cat.", "robot_meet_pet", "RA_JBO_MeetPet")]
+    [InlineData("Say something.", "robot_say_something", "RA_JBO_SaySomething")]
+    [InlineData("Can you see my face?", "robot_can_see_user", "RI_JBO_CanSeeUser")]
+    [InlineData("Can you hear me?", "robot_can_hear_user", "RI_JBO_CanHearUser")]
+    [InlineData("Are you shy?", "robot_is_shy", "RI_JBO_IsShy")]
+    [InlineData("Are you creative?", "robot_is_creative", "RI_JBO_IsCreative")]
+    [InlineData("Do you believe in God?", "robot_believes_in_god", "RI_JBO_BelievesInGod")]
+    [InlineData("Do you believe in unicorns?", "robot_believes_in_fantasy_creatures", "RI_JBO_BelievesIn_SS_FantasyCreature")]
+    [InlineData("Why is your casing white?", "robot_why_is_white", "RI_JBO_WhyIsWhite")]
+    [InlineData("Are you brave?", "robot_is_brave", "RI_JBO_IsBrave")]
+    [InlineData("Are you patient?", "robot_is_patient", "RI_JBO_IsPatient")]
+    [InlineData("Are you polite?", "robot_is_polite", "RI_JBO_IsPolite")]
+    [InlineData("Can you talk to me?", "robot_can_talk_to_user", "RI_JBO_CanTalkToUser")]
+    [InlineData("Are you an optimist?", "robot_is_optimistic", "RI_JBO_IsOptimistic")]
+    [InlineData("Are you a pessimist?", "robot_is_pessimistic", "RI_JBO_IsPessimistic")]
+    [InlineData("Are you fashionable?", "robot_is_fashionable", "RI_JBO_IsFashionable")]
+    [InlineData("Do you get competitive?", "robot_is_competitive", "RI_JBO_IsCompetitive")]
+    [InlineData("Are you lucky?", "robot_is_lucky", "RI_JBO_IsLucky")]
+    [InlineData("Are you a hard worker?", "robot_is_hardworking", "RI_JBO_IsHardworking")]
     public async Task BuildDecisionAsync_PegasusQuip_BypassesSearchAndUsesSpecificMim(
         string transcript, string intent, string mimId)
     {
@@ -1434,6 +1510,11 @@ public sealed class JiboInteractionServiceTests
             Assert.Single(root.Descendants("pitch"));
             Assert.Single(root.Descendants("break"));
         }
+        if (intent is "robot_believes_in_santa" or "robot_feels_about_no_arms" or "robot_feels_about_no_legs")
+        {
+            var esml = Assert.IsType<string>(decision.SkillPayload!["esml"]);
+            Assert.NotEmpty(System.Xml.Linq.XElement.Parse(esml).Descendants("anim"));
+        }
     }
 
     [Theory]
@@ -1456,21 +1537,177 @@ public sealed class JiboInteractionServiceTests
     [InlineData("requestShowImage", "Emoji", "OldMacintosh", "robot_show_macintosh")]
     [InlineData("requestFigureSkate", null, null, "robot_figure_skate")]
     [InlineData("requestSkiJump", null, null, "robot_ski_jump")]
+    [InlineData("requestSmile", null, null, "robot_smile")]
+    [InlineData("requestCry", null, null, "robot_cry")]
+    [InlineData("requestShowImage", "Emoji", "Fish", "robot_show_fish")]
+    [InlineData("requestShowImage", "Emoji", "FidgetSpinner", "robot_show_fidget_spinner")]
+    [InlineData("requestShowImage", "Emoji", "Heart", "robot_show_heart")]
+    [InlineData("canJiboAction", "Action", "BeSarcastic", "robot_can_be_sarcastic")]
+    [InlineData("doesJiboFeelEmotionAboutThing", "Emotion", "Afraid", "robot_afraid_of_dark", "GeneralLikes", "Dark")]
+    [InlineData("doesJiboWantToAction", "Action", "TravelToLocation", "robot_wants_to_visit_mars", "Planet", "Mars")]
+    [InlineData("requestShowImage", "Emoji", "Dog", "robot_show_dog")]
+    [InlineData("requestShowImage", "Emoji", "Book", "robot_show_book")]
+    [InlineData("requestShowImage", "Emoji", "Bus", "robot_show_bus")]
+    [InlineData("requestShowImage", "Emoji", "Car", "robot_show_car")]
+    [InlineData("requestShowImage", "Emoji", "Football", "robot_show_football")]
+    [InlineData("requestShowImage", "Emoji", "Fireplace", "robot_show_fireplace")]
+    [InlineData("doesJiboHaveThing", "BodyInternal", "Brain", "robot_has_brain")]
+    [InlineData("canJiboAction", "Action", "SeeInDark", "robot_can_see_in_dark")]
+    [InlineData("doesJiboWantToAction", "Action", "Swim", "robot_wants_to_swim")]
+    [InlineData("doesJiboWantToAction", "Action", "TakeVacation", "robot_wants_vacation")]
+    [InlineData("requestShowImage", "Emoji", "Soup", "robot_show_soup")]
+    [InlineData("requestShowImage", "Emoji", "FourLeafClover", "robot_show_clover")]
+    [InlineData("requestShowImage", "Emoji", "Ghost", "robot_show_ghost")]
+    [InlineData("requestShowImage", "Emoji", "Leaf", "robot_show_leaf")]
+    [InlineData("requestShowImage", "Emoji", "Flowering", "robot_show_flowering")]
+    [InlineData("requestShowImage", "Emoji", "Carrot", "robot_show_carrot")]
+    [InlineData("requestShowImage", "Emoji", "HotDog", "robot_show_hot_dog")]
+    [InlineData("requestShowImage", "Emoji", "ToiletPaper", "robot_show_toilet_paper")]
+    [InlineData("canJiboAction", "Action", "SeeTheTV", "robot_can_see_tv")]
+    [InlineData("doesJiboWantToAction", "Action", "GoOutside", "robot_wants_to_go_outside")]
+    [InlineData("requestShowImage", "Emoji", "Trees", "robot_show_tree")]
+    [InlineData("requestShowImage", "Emoji", "EasterEgg", "robot_show_easter_egg")]
+    [InlineData("requestShowImage", "Emoji", "EasterBunny", "robot_show_easter_bunny")]
+    [InlineData("requestShowImage", "Emoji", "JackOLantern", "robot_show_jack_o_lantern")]
+    [InlineData("requestShowImage", "Emoji", "CandyCorn", "robot_show_candy_corn")]
+    [InlineData("requestShowImage", "Emoji", "PumpkinLatte", "robot_show_pumpkin_latte")]
+    [InlineData("requestShowImage", "Emoji", "HotCocoa", "robot_show_hot_cocoa")]
+    [InlineData("requestShowImage", "Emoji", "CandyCanes", "robot_show_candy_canes")]
+    [InlineData("requestShowImage", "Emoji", "ChristmasOrnament", "robot_show_christmas_ornament")]
+    [InlineData("requestShowImage", "Emoji", "Reindeer", "robot_show_reindeer")]
+    [InlineData("requestShowImage", "Emoji", "JingleBells", "robot_show_jingle_bells")]
+    [InlineData("requestShowImage", "Emoji", "NewYearsBall", "robot_show_new_years_ball")]
+    [InlineData("requestSpinDreidel", null, null, "robot_spin_dreidel")]
+    [InlineData("requestShowImage", "Emoji", "Shamrock", "robot_show_shamrock")]
+    [InlineData("requestShowImage", "Emoji", "Groundhog", "robot_show_groundhog")]
+    [InlineData("requestShowImage", "Emoji", "OlympicMedal", "robot_show_olympic_medal")]
+    [InlineData("requestShowImage", "Emoji", "ChristmasSweater", "robot_show_christmas_sweater")]
+    [InlineData("requestShowImage", "Emoji", "ChristmasStockings", "robot_show_christmas_stockings")]
+    [InlineData("requestShowImage", "Emoji", "ChristmasTree", "robot_show_christmas_tree")]
+    [InlineData("requestShowImage", "Emoji", "KwanzaaKinara", "robot_show_kinara")]
+    [InlineData("doesJiboHaveOpinionAboutThing", "GeneralLikes", "AI", "robot_opinion_of_ai")]
+    [InlineData("doesJiboBelieveInThing", "FantasyCreature", "Ghost", "robot_believes_in_ghosts")]
+    [InlineData("requestShowImage", "Emoji", "MatzahBallSoup", "robot_show_matzah_ball_soup")]
+    [InlineData("requestShowImage", "Emoji", "Gift", "robot_show_gift")]
+    [InlineData("requestShowImage", "Emoji", "ShoppingBags", "robot_show_shopping_bags")]
+    [InlineData("requestShowImage", "Emoji", "ChampagneGlass", "robot_show_champagne_glass")]
+    [InlineData("requestShowImage", "Emoji", "ChristmasTreeCar", "robot_show_christmas_tree_car")]
+    [InlineData("doesJiboBelieveInThing", "Person", "ToothFairy", "robot_believes_in_tooth_fairy")]
+    [InlineData("doesJiboWantToBeDescriptor", "GeneralDescriptor", "Person", "robot_wants_to_be_human")]
+    [InlineData("hasJiboMetPerson", "Person", "Alexa", "robot_has_met_alexa")]
+    [InlineData("hasJiboMetPerson", "Person", "Siri", "robot_has_met_siri")]
+    [InlineData("hasJiboMetPerson", "Person", "GoogleHome", "robot_has_met_google_home")]
+    [InlineData("hasJiboMetPerson", "Person", "Cortana", "robot_has_met_cortana")]
+    [InlineData("doesJiboBelieveInThing", "Person", "EasterBunny", "robot_believes_in_easter_bunny")]
+    [InlineData("doesJiboWantToAction", "Action", "Walk", "robot_wants_to_walk")]
+    [InlineData("canJiboAction", "Action", "DoLaundry", "robot_can_do_laundry")]
+    [InlineData("canJiboAction", "Action", "PlayChess", "robot_can_play_chess")]
+    [InlineData("doesJiboHaveThing", "GeneralLikes", "Dreidel", "robot_has_dreidel")]
+    [InlineData("doesJiboHaveThing", "FamilyMember", "Brother", "robot_has_brothers")]
+    [InlineData("doesJiboWantToAction", "Action", "BuildSnowman", "robot_wants_to_build_snowman")]
+    [InlineData("whyCanJiboNotAction", "Action", "WearClothes", "robot_why_cannot_wear_clothes")]
+    [InlineData("canJiboAction", "Action", "PlaySport", "robot_can_play_hockey", "Sport", "Hockey")]
+    [InlineData("canJiboAction", "Action", "CleanTable", "robot_can_clean_table")]
+    [InlineData("canJiboAction", "Action", "Pray", "robot_can_pray")]
+    [InlineData("doesJiboBelieveInThing", "Person", "Santa", "robot_believes_in_santa")]
+    [InlineData("doesJiboWantToAction", "Action", "TravelToLocation", "robot_wants_to_travel_to_earth", "Planet", "Earth")]
+    [InlineData("doesJiboHaveThing", "Relation", "Boyfriend", "robot_has_boyfriend")]
+    [InlineData("doesJiboHaveThing", "Relation", "Girlfriend", "robot_has_girlfriend")]
+    [InlineData("canJiboAction", "Action", "GoToBathroom", "robot_can_go_to_bathroom")]
+    [InlineData("doesJiboWantToAction", "Action", "HavePictureTaken", "robot_wants_picture_taken")]
+    [InlineData("doesJiboBelieveInThing", "GeneralLikes", "Afterlife", "robot_believes_in_afterlife")]
+    [InlineData("doesJiboWantToAction", "Action", "GetOut", "robot_wants_to_get_out")]
+    [InlineData("requestFart", null, null, "robot_fart")]
+    [InlineData("requestDoUserAFavor", null, null, "robot_do_me_a_favor")]
+    [InlineData("requestStandUp", null, null, "robot_stand_up")]
+    [InlineData("requestSayCheese", null, null, "robot_say_cheese")]
+    [InlineData("canJiboAction", "Action", "Curse", "robot_can_curse")]
+    [InlineData("canJiboAction", "Action", "Reproduce", "robot_can_reproduce")]
+    [InlineData("canJiboAction", "Action", "CleanFloor", "robot_can_clean_floor")]
+    [InlineData("doesJiboWantThing", "ThingYouWear", "ChristmasSweater", "robot_wants_christmas_sweater")]
+    [InlineData("requestShowImage", "Emoji", "ThanksgivingFood", "robot_show_thanksgiving_food")]
+    [InlineData("requestShowImage", "Emoji", "Turkey", "robot_show_turkey")]
+    [InlineData("requestShowImage", "Emoji", "Gravy", "robot_show_gravy")]
+    [InlineData("doesJiboWantToAction", "Action", "WatchThanksgivingParade", "robot_wants_thanksgiving_parade")]
+    [InlineData("canJiboAction", "Action", "EatThanksgivingFood", "robot_can_eat_thanksgiving_food")]
+    [InlineData("doesJiboHaveOpinionAboutThing", "GeneralLikes", "Everything", "robot_opinion_about_everything")]
+    [InlineData("canJiboAction", "Action", "TalkToGod", "robot_can_talk_to_god")]
+    [InlineData("doesJiboFeelEmotionAboutThing", "Emotion", "Afraid", "robot_afraid_of_water", "Drink", "Water")]
+    [InlineData("doesJiboFeelEmotionAboutThing", "Emotion", "Sad", "robot_feels_about_no_arms", "JiboDescriptor", "Armless")]
+    [InlineData("doesJiboFeelEmotionAboutThing", "Emotion", "Angry", "robot_feels_about_no_arms", "JiboDescriptor", "Armless")]
+    [InlineData("doesJiboFeelEmotionAboutThing", "Emotion", "Sad", "robot_feels_about_no_legs", "JiboDescriptor", "Legless")]
+    [InlineData("doesJiboFeelEmotionAboutThing", "Emotion", "Angry", "robot_feels_about_no_legs", "JiboDescriptor", "Legless")]
+    [InlineData("requestMakeADrink", null, null, "robot_make_a_drink")]
+    [InlineData("canJiboAction", "Action", "UseVehicle", "robot_can_use_vehicle")]
+    [InlineData("doesJiboHaveThing", "ThingYouWear", "ClothesWinterHeadBody", "robot_has_winter_clothes")]
+    [InlineData("requestMakeBreakfast", null, null, "robot_make_breakfast")]
+    [InlineData("requestPlayPingPong", null, null, "robot_play_ping_pong")]
+    [InlineData("doesJiboHaveThing", "BodyPart", "Heart", "robot_has_heart")]
+    [InlineData("canJiboAction", "Action", "FeelAnything", "robot_can_feel_anything")]
+    [InlineData("requestMeetPet", null, null, "robot_meet_pet")]
+    [InlineData("requestSaySomething", null, null, "robot_say_something")]
+    [InlineData("canJiboAction", "Action", "SeeUser", "robot_can_see_user")]
+    [InlineData("canJiboAction", "Action", "HearUser", "robot_can_hear_user")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Shy", "robot_is_shy")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Creative", "robot_is_creative")]
+    [InlineData("doesJiboBelieveInThing", "Person", "God", "robot_believes_in_god")]
+    [InlineData("doesJiboBelieveInThing", "FantasyCreature", "Unicorn", "robot_believes_in_fantasy_creatures")]
+    [InlineData("doesJiboBelieveInThing", "FantasyCreature", "Dragon", "robot_believes_in_fantasy_creatures")]
+    [InlineData("whyIsJiboDescriptor", "GeneralDescriptor", "White", "robot_why_is_white")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Brave", "robot_is_brave")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Patient", "robot_is_patient")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Polite", "robot_is_polite")]
+    [InlineData("canJiboAction", "Action", "TalkToUser", "robot_can_talk_to_user")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Optimistic", "robot_is_optimistic")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Pessimistic", "robot_is_pessimistic")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Fashionable", "robot_is_fashionable")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Competitive", "robot_is_competitive")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Lucky", "robot_is_lucky")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Hardworking", "robot_is_hardworking")]
     public async Task BuildDecisionAsync_PegasusQuip_AcceptsNativeIntentWithoutTranscript(
-        string clientIntent, string? entity, string? value, string expectedIntent)
+        string clientIntent, string? entity, string? value, string expectedIntent,
+        string? secondEntity = null, string? secondValue = null)
     {
+        var entities = new Dictionary<string, string>();
+        if (entity is not null) entities.Add(entity, value!);
+        if (secondEntity is not null) entities.Add(secondEntity, secondValue!);
+
         var decision = await CreateService().BuildDecisionAsync(new TurnContext
         {
             Attributes = new Dictionary<string, object?>
             {
                 ["messageType"] = "CLIENT_NLU",
                 ["clientIntent"] = clientIntent,
-                ["clientEntities"] = entity is null ? null : new Dictionary<string, string> { [entity] = value! }
+                ["clientEntities"] = entities
             }
         });
         Assert.Equal(expectedIntent, decision.IntentName);
         Assert.True(!string.IsNullOrWhiteSpace(decision.ReplyText) ||
                     decision.SkillPayload?.TryGetValue("esml", out var markup) == true && markup is string);
+    }
+
+    [Fact]
+    public void PegasusQuip_NativeIntentRequiresBothEntitiesForNamedTopics()
+    {
+        var emotion = new Dictionary<string, string> { ["Emotion"] = "Afraid" };
+        Assert.Null(PegasusQuipRoutes.Resolve("", "doesJiboFeelEmotionAboutThing", emotion));
+        emotion["GeneralLikes"] = "Water";
+        Assert.Null(PegasusQuipRoutes.Resolve("", "doesJiboFeelEmotionAboutThing", emotion));
+        emotion["GeneralLikes"] = "Dark";
+        Assert.Equal("robot_afraid_of_dark", PegasusQuipRoutes.Resolve("", "doesJiboFeelEmotionAboutThing", emotion));
+
+        var travel = new Dictionary<string, string> { ["Action"] = "TravelToLocation" };
+        Assert.Null(PegasusQuipRoutes.Resolve("", "doesJiboWantToAction", travel));
+        travel["Planet"] = "Venus";
+        Assert.Null(PegasusQuipRoutes.Resolve("", "doesJiboWantToAction", travel));
+        travel["Planet"] = "Mars";
+        Assert.Equal("robot_wants_to_visit_mars", PegasusQuipRoutes.Resolve("", "doesJiboWantToAction", travel));
+
+        var sport = new Dictionary<string, string> { ["Action"] = "PlaySport", ["Sport"] = "Basketball" };
+        Assert.Null(PegasusQuipRoutes.Resolve("", "canJiboAction", sport));
+
+        var body = new Dictionary<string, string> { ["Emotion"] = "Happy", ["JiboDescriptor"] = "Armless" };
+        Assert.Null(PegasusQuipRoutes.Resolve("", "doesJiboFeelEmotionAboutThing", body));
     }
 
     [Fact]
@@ -1497,6 +1734,13 @@ public sealed class JiboInteractionServiceTests
     [InlineData("Tell me a fact.", "fun_fact")]
     [InlineData("Can you whistle?", "robot_can_whistle")]
     [InlineData("Can you laugh?", "robot_can_laugh")]
+    [InlineData("Can you cry?", "robot_can_cry")]
+    [InlineData("Bark like a dog.", "robot_make_dog_sound")]
+    [InlineData("Take a picture.", "snapshot")]
+    [InlineData("Can you make breakfast?", "robot_can_make_breakfast")]
+    [InlineData("Can you hear?", "robot_can_hear")]
+    [InlineData("Can you talk?", "robot_can_talk")]
+    [InlineData("Meet someone new.", "introductions")]
     [InlineData("How well did you sleep?", "robot_how_was_sleep")]
     [InlineData("Do you love to take naps?", "robot_likes_sleep")]
     public async Task BuildDecisionAsync_PegasusQuip_PreservesDistinctRoutes(string transcript, string intent)
@@ -2244,6 +2488,64 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("RA_JBO_GiveRose", decision.SkillPayload?["mim_id"]);
         var esml = Assert.IsType<string>(decision.SkillPayload?["esml"]);
         Assert.Single(System.Xml.Linq.XElement.Parse(esml).Descendants("anim"));
+    }
+
+    [Theory]
+    [InlineData("show me a tree", "2026-09-30T23:30:00-05:00", "RA_JBO_ShowTrees_AN_04", "tree, !hot-frame")]
+    [InlineData("show me a tree", "2026-10-01T00:30:00-05:00", "RA_JBO_ShowTrees_AN_01", "jiboji_tree_stage1_01")]
+    [InlineData("show me a jack-o'-lantern", "2026-11-01T00:30:00-05:00", "RA_JBO_ShowJackOLantern_AN_06", "jiboji_pumpkin_carving_01")]
+    [InlineData("show me a pumpkin spice latte", "2026-11-25T23:30:00-06:00", "RA_JBO_ShowPumpkinLatte_AN_01", "jiboji_pumpkin_latte_01")]
+    [InlineData("show me a pumpkin spice latte", "2026-11-26T00:30:00-06:00", "RA_JBO_ShowPumpkinLatte_AN_03", "jiboji_pumpkin_latte_01")]
+    [InlineData("show me the New Year’s Eve ball", "2026-12-31T23:30:00-06:00", "RA_JBO_ShowNewYearsBall_AN_02", "new-years-eve")]
+    [InlineData("show me the New Year's ball", "2026-07-15T12:00:00-05:00", "RA_JBO_ShowNewYearsBall_AN_03", null)]
+    [InlineData("show me thanksgiving dinner", "2026-11-25T23:30:00-06:00", "RA_JBO_ShowThanksgivingFood_AN_01", "thanksgiving, !hot-frame")]
+    [InlineData("show me thanksgiving dinner", "2026-11-26T23:30:00-06:00", "RA_JBO_ShowThanksgivingFood_AN_02", "thanksgiving, !hot-frame")]
+    [InlineData("show me thanksgiving dinner", "2026-11-27T00:30:00-06:00", "RA_JBO_ShowThanksgivingFood_AN_05", "thanksgiving, !hot-frame")]
+    [InlineData("show me a turkey", "2025-11-27T12:00:00-06:00", "RA_JBO_ShowTurkey_AN_02", "thanksgiving, !hot-frame")]
+    [InlineData("show me a turkey", "2026-11-23T12:00:00-06:00", "RA_JBO_ShowTurkey_AN_01", "turkey, !thanksgiving")]
+    public async Task BuildDecisionAsync_PegasusQuip_SeasonalPromptUsesRobotLocalDate(
+        string request, string iso, string promptId, string? animation)
+    {
+        var decision = await CreateService(randomizer: new FirstItemRandomizer()).BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = request,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = JsonSerializer.Serialize(new { runtime = new { location = new { iso } } })
+            }
+        });
+
+        Assert.Equal(promptId, decision.SkillPayload?["prompt_id"]);
+        if (animation is null)
+        {
+            Assert.Contains("a little early", decision.ReplyText);
+            Assert.False(decision.SkillPayload!.ContainsKey("esml"));
+            return;
+        }
+
+        var esml = System.Xml.Linq.XElement.Parse(Assert.IsType<string>(decision.SkillPayload?["esml"]));
+        Assert.Contains(esml.Descendants("anim"), node =>
+            (string?)node.Attribute("name") == animation || (string?)node.Attribute("filter") == animation);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_PegasusQuip_ChristmasStockingsPreservesFireplaceInSpokenVariant()
+    {
+        var decision = await CreateService(randomizer: new LastItemRandomizer()).BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "show me the Christmas stockings",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = """{"runtime":{"location":{"iso":"2026-12-24T08:30:00-06:00"}}}"""
+            }
+        });
+
+        Assert.Equal("RA_JBO_ShowChristmasStockings_AN_02", decision.SkillPayload?["prompt_id"]);
+        Assert.Equal("I've hung them with care.", decision.ReplyText);
+        var esml = System.Xml.Linq.XElement.Parse(Assert.IsType<string>(decision.SkillPayload?["esml"]));
+        var animation = Assert.Single(esml.Descendants("anim"));
+        Assert.Equal("christmas-fireplace", (string?)animation.Attribute("filter"));
+        Assert.Equal("!audio", (string?)animation.Attribute("layers"));
     }
 
     [Theory]

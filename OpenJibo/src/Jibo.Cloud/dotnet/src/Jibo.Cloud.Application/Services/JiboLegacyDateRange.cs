@@ -45,9 +45,26 @@ internal static class JiboLegacyDateRange
         var parts = arguments.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (parts.Length != 2) return false;
 
-        if (!TryParseMonthDay(parts[0], out var startMonth, out var startDay)) return false;
-        if (!TryParseMonthDay(parts[1], out var endMonth, out var endDay)) return false;
+        if (!TryResolveBoundary(parts[0], currentDate.Year, out var startMonth, out var startDay)) return false;
+        if (!TryResolveBoundary(parts[1], currentDate.Year, out var endMonth, out var endDay)) return false;
 
         return IsDateInRange(currentDate, startMonth, startDay, endMonth, endDay);
+    }
+
+    private static bool TryResolveBoundary(string value, int year, out int month, out int day)
+    {
+        var thanksgivingOffset = value.Trim().Trim('\'', '"') switch
+        {
+            "usthanksgiving-1" => -1,
+            "usthanksgiving" => 0,
+            "usthanksgiving+1" => 1,
+            _ => (int?)null
+        };
+        if (thanksgivingOffset is not { } offset) return TryParseMonthDay(value, out month, out day);
+
+        var boundary = HolidayDateCalculator.NthWeekdayOfMonth(year, 11, DayOfWeek.Thursday, 4).AddDays(offset);
+        month = boundary.Month;
+        day = boundary.Day;
+        return true;
     }
 }

@@ -8474,6 +8474,80 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("what's your cloud version", session.LastTranscript);
     }
 
+    [Theory]
+    [InlineData("so it's back to the future show me christmas", false, true, "show me Christmas stockings",
+        "robot_show_christmas_stockings")]
+    [InlineData("so what's your what's your show me a christmas stock", false, true, "show me Christmas stockings",
+        "robot_show_christmas_stockings")]
+    [InlineData("so it's back to the future show me christmas", false, true, null, "not_understood")]
+    [InlineData("show me christmas stockings", false, false, null, "robot_show_christmas_stockings")]
+    [InlineData("show me christmas stockings and follow along", false, false, null, "not_understood")]
+    [InlineData("show me christmas", true, false, null, "not_understood")]
+    public async Task BufferedHotphraseOggAudio_VisualRequestDefersOnlyWhileMoreAudioMayHelp(
+        string initialTranscript, bool endOfStream, bool shouldDefer, string? continuation, string expectedIntent)
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        var service = CreateService(stateStore, sttStrategies:
+        [
+            new QueuedBufferedAudioSttStrategy(initialTranscript, continuation ?? initialTranscript)
+        ]);
+        const string token = "hub-incomplete-visual-request";
+        WebSocketMessageEnvelope Envelope(string? text = null, byte[]? binary = null) => new()
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = text,
+            Binary = binary
+        };
+        await service.HandleMessageAsync(Envelope(
+            """{"type":"LISTEN","transID":"trans-visual","data":{"hotphrase":true,"rules":["launch"]}}"""));
+        await service.HandleMessageAsync(Envelope(
+            """{"type":"CONTEXT","transID":"trans-visual","data":{"hotphrase":true}}"""));
+        foreach (var frame in new[]
+                 {
+                     BuildOggFrame(0x02, "OpusHead"), BuildOggFrame(0x00, "OpusTags"),
+                     BuildOggFrame(0x00), BuildOggFrame(0x00), BuildOggFrame(0x00),
+                     BuildOggFrame(0x00), BuildOggFrame(0x00), BuildOggFrame(0x00)
+                 })
+            Assert.Empty(await service.HandleMessageAsync(Envelope(binary: frame)));
+
+        var envelope = Envelope();
+        var session = stateStore.FindSessionByToken(token);
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow.AddMilliseconds(-3100);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
+
+        var replies = endOfStream
+            ? await service.HandleMessageAsync(Envelope(binary: BuildOggFrame(0x04)))
+            : await service.HandleIdleAsync(session, envelope);
+        if (shouldDefer)
+        {
+            Assert.Empty(replies);
+            Assert.True(session.TurnState.DeferredIncompleteVisualRequest);
+            Assert.Empty(await service.HandleIdleAsync(session, envelope));
+            Assert.Null(session.LastIntent);
+
+            if (continuation is not null)
+            {
+                // A fresh non-EOS page should allow the next probe to use the expanded buffer.
+                session.TurnState.LastAutoFinalizeAttemptUtc = DateTimeOffset.UtcNow.AddMilliseconds(-350);
+                replies = await service.HandleMessageAsync(Envelope(binary: BuildOggFrame(0x00)));
+            }
+            else
+            {
+                session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow.AddMilliseconds(-1300);
+                replies = await service.HandleIdleAsync(session, envelope);
+            }
+        }
+
+        Assert.Equal(3, replies.Count);
+        Assert.Equal(expectedIntent, session.LastIntent);
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+        Assert.False(session.TurnState.DeferredIncompleteVisualRequest);
+    }
+
     [Fact]
     public async Task BufferedHotphraseOggAudio_ContinuousStreamEarlyProbesBeforeHardTimeout()
     {

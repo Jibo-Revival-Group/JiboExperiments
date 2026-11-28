@@ -1126,6 +1126,7 @@ public sealed class WebSocketTurnFinalizationService(
         session.TurnState.LastAudioReceivedUtc = null;
         session.TurnState.LastAutoFinalizeAttemptUtc = null;
         session.TurnState.DeferredIncompleteAudioBytes = 0;
+        session.TurnState.DeferredIncompleteVisualRequest = false;
         session.TurnState.BufferedAudioFrames.Clear();
         session.TurnState.FinalizeAttemptCount = 0;
         session.TurnState.AutoFinalizeBlockedUntilUtc = null;
@@ -1159,6 +1160,7 @@ public sealed class WebSocketTurnFinalizationService(
         turnState.LastAudioReceivedUtc = null;
         turnState.LastAutoFinalizeAttemptUtc = null;
         turnState.DeferredIncompleteAudioBytes = 0;
+        turnState.DeferredIncompleteVisualRequest = false;
         turnState.ListenSosTimeout = null;
         turnState.ListenMaxSpeechTimeout = null;
         turnState.BufferedAudioChunkCount = 0;
@@ -1668,7 +1670,15 @@ public sealed class WebSocketTurnFinalizationService(
                 // Block STT retry storms until more audio arrives. Early probes at
                 // 100–400ms were re-transcribing the same truncated buffer and either
                 // burned ~3s or eventually finalized incomplete text into the wrong skill.
-                turnState.DeferredIncompleteAudioBytes = turnState.BufferedAudioBytes;
+                if (incompleteCommandReason == "visual_request_incomplete")
+                {
+                    turnState.DeferredIncompleteVisualRequest = true;
+                    turnState.DeferredIncompleteAudioBytes = ReadProbedAudioBytes(finalizedTurn, turnState);
+                }
+                else
+                {
+                    turnState.DeferredIncompleteAudioBytes = turnState.BufferedAudioBytes;
+                }
                 turnState.LastAutoFinalizeAttemptUtc = DateTimeOffset.UtcNow;
                 var turnAge = turnState.FirstAudioReceivedUtc.HasValue
                     ? DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value
@@ -2124,7 +2134,8 @@ public sealed class WebSocketTurnFinalizationService(
             turnState.BufferedAudioBytes <= turnState.DeferredIncompleteAudioBytes &&
             !receivedEndOfStream &&
             !reachedHardTimeout &&
-            !reachedContentSilence)
+            (!reachedContentSilence || turnState.DeferredIncompleteVisualRequest) &&
+            !(turnState.DeferredIncompleteVisualRequest && reachedSilenceWindow))
             return false;
 
         return turnState is
@@ -3440,6 +3451,20 @@ public sealed class WebSocketTurnFinalizationService(
         if (!string.IsNullOrWhiteSpace(commandTranscript))
             normalized = NormalizeUsableTranscript(commandTranscript);
 
+        // A speculative probe can end before the final word arrives. Give an
+        // incomplete visual request one chance to collect more audio.
+        if (!turnState.DeferredIncompleteVisualRequest && turnAge < hardAge &&
+            IsHotphraseOggProbeCandidate(turnState) &&
+            (turnState.BufferedAudioBytes > ReadProbedAudioBytes(turn, turnState) ||
+             !forceCloseIncomplete && turnState.LastAudioReceivedUtc is { } lastAudio &&
+             DateTimeOffset.UtcNow - lastAudio < AutoFinalizeHotphraseOggArrivalGap) &&
+            PegasusQuipRoutes.LooksLikeIncompleteVisualRequest(
+                TranscriptTextNormalizer.NormalizeLooseText(normalized)))
+        {
+            reason = "visual_request_incomplete";
+            return true;
+        }
+
         if (LooksLikeCloudVersionSelfAudioOnly(normalized))
         {
             if (forceCloseIncomplete) return false;
@@ -3463,6 +3488,11 @@ public sealed class WebSocketTurnFinalizationService(
         reason = "clock_command_incomplete";
         return true;
     }
+
+    private static int ReadProbedAudioBytes(TurnContext turn, WebSocketTurnState turnState) =>
+        turn.Attributes.TryGetValue("bufferedAudioBytes", out var bytes) && bytes is int count
+            ? count
+            : turnState.BufferedAudioBytes;
 
     private static TurnContext CompleteIncompleteLaunchTranscriptIfClosing(
         TurnContext turn,

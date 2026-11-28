@@ -641,6 +641,23 @@ public static class PegasusQuipRoutes
         Routes.SelectMany(route => route.Phrases.Select(phrase => (Phrase: phrase, route.Intent)))
             .ToLookup(entry => entry.Phrase, entry => entry.Intent, StringComparer.Ordinal);
 
+    private static readonly string[] VisualRequests = SpokenIntents
+        .Select(group => group.Key)
+        .Where(phrase => phrase.StartsWith("show me ", StringComparison.Ordinal))
+        .ToArray();
+
+    internal static bool LooksLikeIncompleteVisualRequest(string transcript)
+    {
+        var start = transcript.LastIndexOf("show me ", StringComparison.Ordinal);
+        if (start < 0 || (start > 0 && transcript[start - 1] != ' ')) return false;
+
+        var request = transcript[start..];
+        if (request.Length - request.LastIndexOf(' ') < 4 || SpokenIntents.Contains(request))
+            return false;
+
+        return VisualRequests.Any(phrase => phrase.StartsWith(request, StringComparison.Ordinal));
+    }
+
     internal static string? Resolve(
         string phrase, string? clientIntent, IReadOnlyDictionary<string, string> entities)
     {

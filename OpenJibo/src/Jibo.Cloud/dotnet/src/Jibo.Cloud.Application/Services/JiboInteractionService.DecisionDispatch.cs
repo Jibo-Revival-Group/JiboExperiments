@@ -63,6 +63,7 @@ public sealed partial class JiboInteractionService
         var isAlarmValueTurn = IsClockAlarmValueTurn(clientRules, listenRules);
         var semanticIntent = ResolveSemanticIntent(
             lowered,
+            turn.RawTranscript ?? transcript,
             referenceLocalTime,
             clientIntent,
             clientRules,

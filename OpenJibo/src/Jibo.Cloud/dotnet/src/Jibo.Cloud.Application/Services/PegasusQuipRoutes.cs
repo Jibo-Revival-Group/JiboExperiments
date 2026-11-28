@@ -671,29 +671,74 @@ public static class PegasusQuipRoutes
             ?.Intent;
     }
 
-    internal static string? TryRecoverFromTrailingSpeech(string phrase)
+    internal static string? TryRecoverFromDisfluentSpeech(string phrase, string sourceTranscript)
     {
-        // Try the longest command prefix first. Cap the search at ten trailing words
-        // and only accept a known command of at least three words.
-        const int maxTrailingWords = 10;
-        phrase = NormalizeSpokenPhrase(phrase);
-        var boundary = phrase.Length;
-        for (var trailingWords = 1; trailingWords <= maxTrailingWords && boundary > 0; trailingWords++)
-        {
-            boundary = phrase.LastIndexOf(' ', boundary - 1);
-            if (boundary < 0) return null;
+        if (sourceTranscript.IndexOfAny(['"', '“', '”']) >= 0) return null;
 
+        // Try the longest command first, with at most ten trailing words.
+        const int maxTrailingWords = 10;
+        phrase = SkipLeadingDisfluencies(NormalizeSpokenPhrase(phrase), sourceTranscript);
+        var boundary = phrase.Length;
+        for (var trailingWords = 0; trailingWords <= maxTrailingWords && boundary > 0; trailingWords++)
+        {
             var request = phrase[..boundary];
             if (request.AsSpan().Count(' ') < 2) return null;
 
-            if (!SpokenIntents.Contains(request)) continue;
-            if (!IsTrailingConversation(phrase[(boundary + 1)..])) return null;
+            var intents = SpokenIntents[request];
+            if (!intents.Any() && CollapseImmediateRepeats(request) is { } withoutRepeats)
+                intents = SpokenIntents[withoutRepeats];
 
-            var intents = SpokenIntents[request].Distinct(StringComparer.Ordinal).Take(2).ToArray();
-            return intents.Length == 1 ? intents[0] : null;
+            if (intents.Any())
+            {
+                if (trailingWords > 0 && !IsTrailingConversation(phrase[(boundary + 1)..])) return null;
+
+                var distinctIntents = intents.Distinct(StringComparer.Ordinal).Take(2).ToArray();
+                return distinctIntents.Length == 1 ? distinctIntents[0] : null;
+            }
+
+            boundary = phrase.LastIndexOf(' ', boundary - 1);
         }
 
         return null;
+    }
+
+    private static string SkipLeadingDisfluencies(string phrase, string sourceTranscript)
+    {
+        for (var i = 0; i < 3; i++)
+        {
+            var space = phrase.IndexOf(' ');
+            if (space < 0 || phrase[..space] is not ("oh" or "uh" or "um" or "er" or "hmm")) break;
+            phrase = phrase[(space + 1)..];
+        }
+
+        const string interruptedSpeech = "i hear a ";
+        const string restartedFalseStart = "i don't i don't ";
+        if (phrase.StartsWith(interruptedSpeech, StringComparison.Ordinal))
+            return phrase[interruptedSpeech.Length..];
+        if (phrase.StartsWith(restartedFalseStart, StringComparison.Ordinal))
+        {
+            // Command normalization already removes hesitation words like "oh".
+            var opening = TranscriptTextNormalizer.StripLeadingWakePhrase(sourceTranscript).Split(' ', 2)[0];
+            if (opening is "oh" or "uh" or "um" or "er" or "hmm")
+                return phrase[restartedFalseStart.Length..];
+        }
+
+        return phrase;
+    }
+
+    private static string? CollapseImmediateRepeats(string request)
+    {
+        var words = request.Split(' ');
+        var start = words is [var first, var second, var third, var fourth, ..] &&
+                    first == third && second == fourth ? 2 : 0;
+        var count = 0;
+        for (var i = start; i < words.Length; i++)
+        {
+            if (count == 0 || words[i] != words[count - 1])
+                words[count++] = words[i];
+        }
+
+        return count >= 3 && count < words.Length ? string.Join(' ', words, 0, count) : null;
     }
 
     private static bool IsTrailingConversation(string tail)
@@ -706,13 +751,15 @@ public static class PegasusQuipRoutes
         // with a subject and a verb before treating it as background speech.
         var words = tail.Split(' ');
         if (words is ["and" or "in", "i" or "we" or "he" or "she" or "they" or "it",
-            "go" or "went" or "did" or "said" or "know" or "think"])
+            "go" or "went" or "did" or "said" or "know" or "think"] or
+            ["and" or "in", "i" or "we" or "he" or "she" or "they", "go" or "went", "to", "the",
+                "circus" or "zoo" or "park" or "store" or "movies" or "kitchen" or "office"])
             return true;
 
         return words is ["and" or "in", "i" or "we" or "he" or "she" or "they",
             "don't" or "didn't" or "doesn't", "know", "why" or "how" or "what" or "where" or "when",
             "i" or "we" or "he" or "she" or "they" or "it",
-            "hear" or "heard" or "saw" or "said" or "thought", .. var ending] &&
+            "hear" or "heard" or "had" or "saw" or "said" or "thought", .. var ending] &&
             // Accept ordinary sentence endings here. A second instruction can
             // otherwise be hidden after a valid conversational lead-in.
             ending is [] or

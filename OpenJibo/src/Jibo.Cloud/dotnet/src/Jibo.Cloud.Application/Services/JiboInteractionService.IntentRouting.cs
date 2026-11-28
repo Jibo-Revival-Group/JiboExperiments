@@ -6,6 +6,7 @@ public sealed partial class JiboInteractionService
 {
     private static string ResolveSemanticIntentCore(
         string loweredTranscript,
+        string sourceTranscript,
         DateTimeOffset? referenceLocalTime,
         string? clientIntent,
         IReadOnlyList<string> clientRules,
@@ -3374,7 +3375,7 @@ public sealed partial class JiboInteractionService
 
         if (!isYesNoTurn && !isTimerValueTurn && !isAlarmValueTurn && !isSkillOwnedListen &&
             !wordOfDayPuzzleTurn && clientEntities.Count == 0 &&
-            PegasusQuipRoutes.TryRecoverFromTrailingSpeech(spokenRequest) is { } recoveredQuip)
+            PegasusQuipRoutes.TryRecoverFromDisfluentSpeech(spokenRequest, sourceTranscript) is { } recoveredQuip)
             return recoveredQuip;
 
         return "chat";

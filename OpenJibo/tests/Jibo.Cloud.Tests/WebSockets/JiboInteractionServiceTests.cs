@@ -1719,6 +1719,21 @@ public sealed class JiboInteractionServiceTests
     [InlineData("Show me Christmas stockings, I think", "robot_show_christmas_stockings")]
     [InlineData("Show me Christmas stockings and she said", "robot_show_christmas_stockings")]
     [InlineData("Show me a turkey and I don't know why I hear some", "robot_show_turkey")]
+    [InlineData("Show me a turkey and I don't know why I had some", "robot_show_turkey")]
+    [InlineData("Show me ping pong and we go to the circus", "robot_play_ping_pong")]
+    [InlineData("Show me ping pong in they went to the park", "robot_play_ping_pong")]
+    [InlineData("I hear a show me Christmas stockings", "robot_show_christmas_stockings")]
+    [InlineData("Oh I don't I don't show me a turkey", "robot_show_turkey")]
+    [InlineData("Um show show me a turkey", "robot_show_turkey")]
+    [InlineData("Show me show me a turkey", "robot_show_turkey")]
+    [InlineData("Show me me a turkey", "robot_show_turkey")]
+    [InlineData("I hear a show show me ping pong and we go to the circus", "robot_play_ping_pong")]
+    [InlineData("I hear a show me Christmas stockings and follow along", "not_understood")]
+    [InlineData("I hear a \"show me Christmas stockings\"", "not_understood")]
+    [InlineData("Oh I don't show me a turkey", "not_understood")]
+    [InlineData("I don't I don't show me a turkey", "not_understood")]
+    [InlineData("Oh I don't I don't show me a turkey and play ping pong", "not_understood")]
+    [InlineData("Show me ping pong and we go to the circus then play chess", "not_understood")]
     [InlineData("Show me a turkey in I don't know why I hear some", "robot_show_turkey")]
     [InlineData("Show me a turkey and I don't know why I hear some voices nearby", "robot_show_turkey")]
     [InlineData("Show me Christmas stockings and she didn't know what they heard earlier", "robot_show_christmas_stockings")]
@@ -1739,6 +1754,23 @@ public sealed class JiboInteractionServiceTests
         string transcript, string expectedIntent)
     {
         var decision = await CreateService().BuildDecisionAsync(new TurnContext { RawTranscript = transcript });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+    }
+
+    [Theory]
+    [InlineData("Hey Jibo, oh I don't I don't show me a turkey",
+        "i don't i don't show me a turkey", "robot_show_turkey")]
+    [InlineData("I hear a \"show me Christmas stockings\"",
+        "i hear a show me christmas stockings", "not_understood")]
+    public async Task BuildDecisionAsync_PegasusQuip_UsesOriginalSpeechForHesitationAndQuotation(
+        string rawTranscript, string normalizedTranscript, string expectedIntent)
+    {
+        var decision = await CreateService().BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = rawTranscript,
+            NormalizedTranscript = normalizedTranscript
+        });
 
         Assert.Equal(expectedIntent, decision.IntentName);
     }

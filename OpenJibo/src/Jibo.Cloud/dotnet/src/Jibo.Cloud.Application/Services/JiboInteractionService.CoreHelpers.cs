@@ -18,6 +18,7 @@ public sealed partial class JiboInteractionService
 
     private static string ResolveSemanticIntent(
         string loweredTranscript,
+        string sourceTranscript,
         DateTimeOffset? referenceLocalTime,
         string? clientIntent,
         IReadOnlyList<string> clientRules,
@@ -32,6 +33,7 @@ public sealed partial class JiboInteractionService
     {
         return ResolveSemanticIntentCore(
             loweredTranscript,
+            sourceTranscript,
             referenceLocalTime,
             clientIntent,
             clientRules,
